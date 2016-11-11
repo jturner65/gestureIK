@@ -1,0 +1,53 @@
+<?xml version="1.0" ?>
+<GestIKParams version="1.0">
+	<parameter>
+		<name>IK_alpha</name>
+		<val>0.01</val>   
+	</parameter>
+	<parameter>
+		<name>IK_maxSqError</name>
+		<val>0.0001</val>   
+	</parameter>
+	<parameter>
+		<name>IK_reachPct</name>
+		<val>0.75</val>   
+	</parameter>
+	<parameter>
+		<name>IK_solveIters</name>
+		<val>100</val>   
+	</parameter>
+	<parameter>
+		<name>IK_drawRad</name>
+		<val>0.2</val>   
+	</parameter>
+	<parameter>
+		<name>dataCapTestTrainThresh</name>
+		<val>.5</val>   
+	</parameter>
+	<parameter>
+		<name>dataCapNumExamples</name>
+		<val>100</val>   
+	</parameter>
+	<parameter>
+		<name>trajLenThresh</name>
+		<val>0.01</val>   
+	</parameter>
+	<parameter>
+		<name>trajNumReps</name>
+		<val>5</val>   
+	</parameter>
+	<parameter>
+		<name>trajDistMult</name>
+		<val>.3</val>   
+	</parameter>
+	<parameter>
+		<name>trajDesiredVel</name>
+		<val>.02</val>   
+	</parameter>
+	<parameter>
+		<name>trajNev4OvPct</name>
+		<val>.2</val>   
+	</parameter>
+	
+</GestIKParams>
+<!-- Template to build gesture IK xml configuration file to store params -- all file names relative to dart data path -->
