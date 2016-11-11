@@ -1,0 +1,3 @@
+ptrFinger_r X,ptrFinger_r Y,ptrFinger_r Z,ptrElbow_r X,ptrElbow_r Y,ptrElbow_r Z,right_scapula X,right_scapula Y,right_scapula Z,left_scapula X,left_scapula Y,left_scapula Z,head_right X,head_right Y,head_right Z,head_left X,head_left Y,head_left Z,abdomen X,abdomen Y,abdomen Z
+false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true
+0.447007204,0.659492037,0.155049765,0.260711858,0.246309835,0.169572475,-0.035355342,0.436244398,0.174413378,0.035355342,0.436244398,-0.174413378,-0.014900200,0.668500000,0.073504993,0.014900200,0.668500000,-0.073504993,0.073504993,0.156200000,0.014900200
