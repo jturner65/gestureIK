@@ -89,6 +89,8 @@ namespace gestureIKApp {
 		void drawLetter(dart::renderer::RenderInterface* mRI);
 
 		std::string getCurSymbolName() { return symbols[curSymbol]->name; }
+		//return screen cap dir name
+		std::string getCurLtrDirName();
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestLetter& ltr);
 

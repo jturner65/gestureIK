@@ -78,9 +78,14 @@ namespace gestureIKApp {
 	bool MyGestLetter::solve() {
 		bool finished = symbols[curSymbol]->solve();
 		if (finished) {
-
+			cout << "Finished drawing letter : " << symbols[curSymbol]->name << "\n";
 		}
 		return finished;
+	}
+
+	std::string MyGestLetter::getCurLtrDirName() {
+		std::string res = "";
+		return res;
 	}
 
 	//sets random index in symbol list for letter to draw

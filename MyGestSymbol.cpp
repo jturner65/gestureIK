@@ -49,7 +49,6 @@ namespace gestureIKApp {
 		avgLoc(0,0,0), maxLoc(0,0,0)
 	{
 		flags[diffClrIDX] = true;
-
 		//show connecting trajectories
 		flags[drawConnTrajIDX] = true;
 	}
@@ -77,9 +76,7 @@ namespace gestureIKApp {
 		std::vector<std::shared_ptr<gestureIKApp::MyGestTraj> > tmpTraj(0);
 		//get rid of tiny trajectories - don't want to connect to them
 		for (int i = 0; i < trajectories.size(); ++i) {
-			if (trajectories[i]->useTraj()) {
-				tmpTraj.push_back(trajectories[i]);
-			}			
+			if (trajectories[i]->useTraj()) {			tmpTraj.push_back(trajectories[i]);		}			
 		}
 		trajectories = tmpTraj;
 
@@ -150,9 +147,9 @@ namespace gestureIKApp {
 		//find idx's of 
 		//cout << "Cur Traj Dist for " << name << " in solve : " << curTrajDist << " and start length : " << trajStartLoc << " and end length of this traj : " << trajLens[curTraj] << "\n";
 		trajectories[curTraj]->setTrkMrkrAndSolve(curTrajDist - trajStartLoc);
-		curFrame++;
+		++curFrame;
 		curTrajDist += IKSolve->params->trajDesiredVel;		//desired displacement per frame
-		if (curTrajDist >= allTrajsLen) { initSymbolIK(); return true; }	//traversed entire length of trajectory
+		if (curTrajDist > allTrajsLen) { initSymbolIK(); return true; }	//traversed entire length of trajectory
 		return false;
 	}//solve
 
@@ -264,7 +261,7 @@ namespace gestureIKApp {
 
 		//NOTE : playback of trajectory needs to be driven by desired motion velocity
 		return res;
-	}
+	}//genConnectTraj
 
 	//generate trajectory to be used between symbols - this symbol's last traj point and next symbol's first traj point
 	//4 pt neville between end points through pt

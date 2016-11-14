@@ -78,11 +78,11 @@ public:
 	//check capturing state upon reset of indexes (always start capturing at beginning of trajectory TODO change this to manage automated multi-capture also)
 	void checkCapture(bool drawLtr) {//should only be called when t transitions to 0, at the end of a trajectory
 		mCapture = false;			//turn off capturing
-		if (drawLtr) {
+		if (drawLtr) {																//drawing a letter trajectory and not a sample symbol trajectory
 
 		}
 		else {
-			if (flags[collectDataIDX]) { trainDatManageCol(); return; }				//manage transitions for automated training data capture whenever t transitions to 0 (a trajectory has just finished)
+			if (flags[collectDataIDX]) { trainSymDatManageCol(); return; }				//manage transitions for automated training data capture whenever t transitions to 0 (a trajectory has just finished)
 			if (flags[stCaptAtZeroIDX]) {
 				flags[stCaptAtZeroIDX] = false;
 				mCapture = true;
@@ -101,10 +101,10 @@ public:
 	void drawPoint(const Eigen::Ref<const Eigen::Vector3d>& pt);
 	virtual void drawSkels();
 
-	//get file directory for current trajectory
+	//get file directory for current trajectory - only for SYMBOLS
 	std::string getCurTrajFileDir(int dataIterVal);
 
-	//get file name for screencapture, including file path - called by capture function
+	//get file name for screencapture, including file path - called by capture function - for both symbols and letters
 	std::string getScreenCapDirFileName();
 
 	Eigen::Vector3d getCirclEndPoint(const Eigen::Ref<const Eigen::Vector3d>& ctrPt, double theta, double rad);
@@ -115,6 +115,9 @@ public:
 		val += mu;
 		return val;
 	}
+	//open index file for current data collection
+	void openIndexFile(bool isTrain, std::ofstream& strm, const std::string& filePrefix);
+
 
 	virtual void keyboard(unsigned char _key, int _x, int _y);
 	//regenerate sample object trajectories with or without randomization
@@ -140,7 +143,7 @@ public:
 	//initialize state to automate training data collection
 	void trainDatInitCol();
 	//manage the process of writing all training and testing data
-	void trainDatManageCol();
+	void trainSymDatManageCol();
 	//write line in text file to 
 	void trainDatWriteIndexFile(std::ofstream& outFile, const std::string& fileDir, int cls);
 	//update the time click after each IK iteration

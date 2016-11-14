@@ -154,33 +154,48 @@ void MyWindow::calcCircleTrajPoints(eignVecTyp& _trajPts) {
 	}
 }
 
+void MyWindow::openIndexFile(bool isTrain, std::ofstream& strm, const std::string& filePrefix) {
+	stringstream ss;
+	ss.str("");
+	ss << framesFilePath << filePrefix << (isTrain ? "TrainDataIndexFile.txt" : "TestDataIndexFile.txt");
+	const std::string tmp = ss.str();
+	strm.open(tmp.c_str());
+	if (!strm.is_open()) {
+		cout << tmp << " failed to open!\n";
+	}
+}
+
+
 //set up necessary functionality and state to conduct randomized data collection
 //this will entail building trajectories for triangle, square and star, starting at each vertex,
 //with and without random shifts in end points,  [and moving in clockwise or ccw direction (TODO)]
 void MyWindow::trainDatInitCol() {
-	cout << "Initializing random data collection \n";
+	cout << "Initializing random data collection for "<<((flags[useLtrTrajIDX]) ? "Letter Trajectories." : "Symbols." )<<"\n";
 	flags[collectDataIDX] = true;
 	//turn off all markers and trajectory displays
 	flags[drawTrkMrkrsIDX] = false;
 	flags[drawLtrTrajIDX] = false;
 	mShowMarkers = false;
-	stringstream ss;
-	ss.str("");
-	ss << framesFilePath << "TestDataIndexFile.txt";
-	const std::string tmp = ss.str();
-	testOutFile.open(tmp.c_str());
 
-	if (!testOutFile.is_open()) {
-		cout << "testOutFile failed to open!\n";
-	}
+	openIndexFile(false, testOutFile, "");
+	openIndexFile(false, trainOutFile, "");
+	//stringstream ss;
+	//ss.str("");
+	//ss << framesFilePath << "TestDataIndexFile.txt";
+	//const std::string tmp = ss.str();
+	//testOutFile.open(tmp.c_str());
 
-	ss.str("");
-	ss << framesFilePath << "TrainDataIndexFile.txt";
-	const std::string tmp2 = ss.str();
-	trainOutFile.open(tmp2.c_str());
-	if (!testOutFile.is_open()) {
-		cout << "trainOutFile failed to open!\n";
-	}
+	//if (!testOutFile.is_open()) {
+	//	cout << "testOutFile failed to open!\n";
+	//}
+
+	//ss.str("");
+	//ss << framesFilePath << "TrainDataIndexFile.txt";
+	//const std::string tmp2 = ss.str();
+	//trainOutFile.open(tmp2.c_str());
+	//if (!trainOutFile.is_open()) {
+	//	cout << "trainOutFile failed to open!\n";
+	//}
 	 
 
 	//initialize starting idxs, t values and counts of training and testing data for all trajectories
@@ -194,12 +209,16 @@ void MyWindow::trainDatInitCol() {
 	setDrawLtrOrSmpl(false, 1);
 
 	//start capture
-	trainDatManageCol();
+	trainSymDatManageCol();
 }//trainDatInitCol
 
 //get current trajectory's file directory
 //dataIterVal is value of current iteration of data generation
 std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
+	//if(){
+	//	return curLetter->
+	//}
+
 	stringstream ss("");
 	//<trajType>_<trajIter>
 	ss << curTrajStr << "_" << dataIterVal;
@@ -208,7 +227,7 @@ std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
 
 //manage the process of writing all training and testing data - call whenever a trajectory has been captured (from checkCapture() )
 //ONLY FOR SAMPLE SYMBOLS that consist of single trajectories!
-void MyWindow::trainDatManageCol() {
+void MyWindow::trainSymDatManageCol() {
 	//call first time right after init
 	//flags[collectDataIDX] pre-empts flags[stCaptAtZeroIDX] so needs to set mCapture
 	//regerenate all endpoints - we start on non-random data - for current trajectory, make #verts trajectories starting on each vert without random, before using random trajectories
@@ -268,7 +287,7 @@ void MyWindow::buildLetterList() {
 		letters.push_back(std::make_shared<MyGestLetter>(c));
 		letters[i]->setSolver(IKSolve);
 		GestIKParser::readGestLetterXML(letters[i]);
-		cout << "letter : " << (*letters[i]) << " Made.\n";
+		cout << "Made letter : " << (*letters[i]) << "\n";
 	}
 }
 
@@ -345,7 +364,7 @@ void MyWindow::writeTrajCSVFileRow(std::ofstream& outFile, eignVecTyp& _trajAra)
 void MyWindow::displayTimer(int _val){
 	if (flags[useLtrTrajIDX]) {
 		//cout << "TODO : IK on letter " << curLetter->ltrName << " symbol idx : "<< curLetter->curSymbol <<"\n";
-		curLetter->solve();
+		flags[doneTrajIDX] = curLetter->solve();
 	}
 	else {
 		switch (curTraj) {
@@ -355,8 +374,8 @@ void MyWindow::displayTimer(int _val){
 		case 3: {		calcTrajPoints(mTrajPoints, starCrnrs, (curTraj + 2), tVals[curTraj]);		break;		}
 		}
 		IKSolve->solve(mTrajPoints);
-		if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(false); }
 	}
+	if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }
 	glutPostRedisplay();
 	glutTimerFunc(mDisplayTimeout, refreshTimer, _val);
 }
