@@ -42,7 +42,7 @@
 	</parameter>
 	<parameter>
 		<name>trajDesiredVel</name>
-		<val>.04</val>   
+		<val>.03126</val>   
 	</parameter>
 	<parameter>
 		<name>trajNev4OvPct</name>

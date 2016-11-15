@@ -83,7 +83,7 @@ namespace gestureIKApp {
 
 	//global variables and functions
 	//static const float origZoom = .65f;
-	static const Eigen::Vector3d origMTrans(27.36, -370.1, -100.00);
+	static const Eigen::Vector3d origMTrans(27.36, -370.1, -200.00);
 	//const Eigen::Quaterniond origTrackBallQ(0.78389, 0, -0.6209, 0);
 	static const Eigen::Quaterniond origTrackBallQ(0.5*sqrt(2), 0, -0.5*sqrt(2), 0);
 
