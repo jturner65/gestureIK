@@ -84,7 +84,8 @@ int main(int argc, char* argv[]) {
 
 	glutInit(&argc, argv);
 	//window.initWindow(320, 240, "Gesture IK");
-	window.initWindow(800, 800, "Gesture IK");
+	//window.initWindow(800, 800, "Gesture IK");
+	window.initCustWindow("Gesture IK");
 	glutMainLoop();
 
 	return 0;

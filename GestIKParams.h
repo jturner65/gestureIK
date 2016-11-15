@@ -95,6 +95,13 @@ namespace gestureIKApp {
 		double trajDesiredVel;
 		//amount of overshoot to use for 4-pt neville (for building connecting trajs)
 		double trajNev4OvPct;
+		//int width/height of windows
+		int win_Width, win_Height;
+		//# of letters in alphabet to process (first n) - 26 for whole alphabet, 1 for just a, etc
+		int numLetters;
+		//initial zoom
+		float origZoom;
+
 
 
 		std::vector<bool> flags;									//various boolean flags used to drive GestIK

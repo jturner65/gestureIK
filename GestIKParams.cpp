@@ -43,7 +43,7 @@ namespace gestureIKApp {
 
 	GestIKParams::GestIKParams() : defaultVals(), dataCapNumExamples(100), dataCapTestTrainThresh(.5),
 		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), trajLenThresh(0.01),
-		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2),
+		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26),origZoom(.65f),
 		flags(numFlags, false)
 	{
 		cout << "GestIK params ctor\n";
@@ -69,6 +69,11 @@ namespace gestureIKApp {
 		if (_name.compare("dataCapNumExamples") == 0) { dataCapNumExamples = stoi(s);			return; }
 		if (_name.compare("IK_solveIters") == 0) { IK_solveIters = stoi(s);			return; }
 		if (_name.compare("trajNumReps") == 0) { trajNumReps = stoi(s);			return; }
+		if (_name.compare("win_Width") == 0) { win_Width = stoi(s);			return; }
+		if (_name.compare("win_Height") == 0) { win_Height = stoi(s);			return; }
+		if (_name.compare("numLetters") == 0) { numLetters = stoi(s);			return; }
+		//floats
+		if (_name.compare("origZoom") == 0) { origZoom = stof(s);			return; }
 		//strings
 		//if (_name.compare("skelFileName") == 0) { skelFileName = std::string(s);	return; }
 		//boolean
@@ -90,6 +95,10 @@ namespace gestureIKApp {
 		trajNumReps = 5;
 		trajDesiredVel = .03;
 		trajNev4OvPct = .2;
+		win_Width = 800;
+		win_Height = 800;
+		numLetters = 26;
+		origZoom = .65f;
 		flags[IDX_useLeftHand] = false;
 		defaultVals = accumulateVals();			//set default values as current param vals
 	}//setDefaultVals
@@ -112,7 +121,8 @@ namespace gestureIKApp {
 		res.push_back(trajNumReps);
 		res.push_back(trajDesiredVel);
 		res.push_back(trajNev4OvPct);
-
+		res.push_back(win_Width);
+		res.push_back(win_Height);
 		return res;
 	}
 
@@ -129,8 +139,8 @@ namespace gestureIKApp {
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
 		out << "GestIK Params values : \n";
 		out << "dataCapNumExamples : " << p.dataCapNumExamples << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << "\n";
-		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| trajLenThresh : " << p.trajLenThresh << "\n";
-		out << "trajDistMult : " << p.trajDistMult << "\t| trajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel <<"\t| trajNev4OvPct : "<< p.trajNev4OvPct <<"\n";
+		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult << "\n";
+		out << "trajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\t| win_Width" << p.win_Width << "\t| win_Height" << p.win_Height <<"\t| orig zoom : "<<p.origZoom <<"\n";
 		out << "Use Left Hand to Draw : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False")  << "\n";
 		return out;
 	}

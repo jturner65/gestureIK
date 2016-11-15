@@ -80,7 +80,9 @@ namespace gestureIKApp {
 		//set solver for this trajectory
 		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
 		//set symbol to draw to be random entry in symbols list
-		void setRandSymbolIdx();
+		void setRandSymbolIdx(int idx);
+		//set symbol and letter idx
+		void setSymbolIdx(int idx, int symIdx);
 		//set flags of all subordinate symbols
 		void setSymbolFlags(int idx, bool val);
 
@@ -88,18 +90,22 @@ namespace gestureIKApp {
 		//draw all components of trajectory of current symbol
 		void drawLetter(dart::renderer::RenderInterface* mRI);
 
-		std::string getCurSymbolName() { return symbols[curSymbol]->name; }
-		//return screen cap dir name
-		std::string getCurLtrDirName();
+		std::string getCurSymbolName() { return symbols[curSymbolIDX]->name; }
+		int getCurSymbolFrame() { return symbols[curSymbolIDX]->curFrame; }
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestLetter& ltr);
 
 
 	public :	//variables
 		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver
-		unsigned int curSymbol,													//current symbol used
-						numSymbols;												//# of examples of this letter
-		std::vector<std::shared_ptr<gestureIKApp::MyGestSymbol> > symbols;		//instances of this letter
+		//idx in letters array (0 == a, 1 == b etc)
+		unsigned int curIDX;
+		//current symbol idx used
+		unsigned int curSymbolIDX;
+		//# of examples of this letter
+		unsigned int numSymbols;
+		//instances of this letter
+		std::vector<std::shared_ptr<gestureIKApp::MyGestSymbol> > symbols;		
 		
 		std::string ltrName;													//letter name
 		std::string fileName;													//xml filename source for the symbols and trajectories of this letter

@@ -69,6 +69,7 @@ public:
 	///////////////////
 	//end templates
 	////
+	void initCustWindow(std::string _winTtl);
 
 	void buildLetterList();
 	eignVecVecTyp buildTrajSeq(void (MyWindow::*trajFunc)(eignVecTyp&), int traj, double& t);
@@ -77,9 +78,13 @@ public:
 	void calcTrajPoints(eignVecTyp& _trajPts, eignVecVecTyp& arr, int numPts, double& globT);
 	//check capturing state upon reset of indexes (always start capturing at beginning of trajectory TODO change this to manage automated multi-capture also)
 	void checkCapture(bool drawLtr) {//should only be called when t transitions to 0, at the end of a trajectory
-		mCapture = false;			//turn off capturing
+		mCapture = false;			//turn off capturing - will turn back on if necessary
 		if (drawLtr) {																//drawing a letter trajectory and not a sample symbol trajectory
+			if (flags[collectDataIDX]) { //finished complete letter trajectory, performing screen capture, set up next letter
+				trainLtrDatManageCol();
 
+				return; 
+			}				//manage transitions for automated training data capture whenever letter is finished
 		}
 		else {
 			if (flags[collectDataIDX]) { trainSymDatManageCol(); return; }				//manage transitions for automated training data capture whenever t transitions to 0 (a trajectory has just finished)
@@ -89,6 +94,9 @@ public:
 			}
 		}
 	}
+
+	//screen cap all letters
+	void trainLtrDatManageCol();
 
 	//override
 	virtual void displayTimer(int _val);
@@ -115,8 +123,8 @@ public:
 		val += mu;
 		return val;
 	}
-	//open index file for current data collection
-	void openIndexFile(bool isTrain, std::ofstream& strm, const std::string& filePrefix);
+	//open index file for current data collection, either training or testing idx
+	void openIndexFile(bool isTrain, std::ofstream& strm);
 
 
 	virtual void keyboard(unsigned char _key, int _x, int _y);
@@ -125,23 +133,35 @@ public:
 	//override glutwindow screenshot function
 	virtual bool screenshot();
 
-	void setDrawLtrOrSmpl(bool drawLtr, int idx) {
+	void setDrawLtrOrSmpl(bool drawLtr, int idx, bool useRandSym = false, int symIdx = 0) {
 		flags[useLtrTrajIDX] = drawLtr;
 		flags[doneTrajIDX] = false;
 		if (drawLtr) {
+			curLtrIDX = idx;
 			curLetter = letters[idx];
-			curLetter->setRandSymbolIdx();							//set random symbol among list of symbols for this letter
-			curTrajStr = curLetter->getCurSymbolName();				//build name of current symbol trajectory for screen cap purposes
+			if (useRandSym) {	curLetter->setRandSymbolIdx(idx);	}			//set random symbol among list of symbols for this letter			
+			else {				curLetter->setSymbolIdx(idx, symIdx);}
+			curSymIDX = curLetter->curSymbolIDX;
+			curTrajStr = curLetter->getCurSymbolName();							//build name of current symbol trajectory for screen cap purposes
+			curClassName = std::string(curLetter->ltrName);			//class name for test/train index file - use letter name not symbol name
 		} else {
 			curTraj = idx;
 			tVals[idx] = 0;
 			curTrajStr = trajNames[curTraj];
+			curClassName = std::string(trajNames[curTraj]);
 			captCount[idx] = 0;
 		}
 	}
 
+	//return string of full path to where the screen cap files will be written
+	inline std::string getFullBasePath() {
+		stringstream ss;
+		ss << framesFilePath << (flags[useLtrTrajIDX] ? "letters/" : "samples/" );
+		return ss.str();
+	}
+
 	//initialize state to automate training data collection
-	void trainDatInitCol();
+	void trainDatInitCol(bool isLtr);
 	//manage the process of writing all training and testing data
 	void trainSymDatManageCol();
 	//write line in text file to 
@@ -177,6 +197,9 @@ private:
 	//IK solver
 	std::shared_ptr<IKSolver> IKSolve;
 
+	//current trajectory name as string, current class name as string - for letters curTrajStr will be e.g a_12 and curClassName will be e.g. a
+	std::string curTrajStr, curClassName;
+
 	///sample generated non-letter trajectory symbols
 	//points to track - finger and elbow, fixed points around shoulders and head
 	eignVecTyp mTrajPoints;
@@ -184,32 +207,30 @@ private:
 	eignVecVecTyp triCrnrs, sqrCrnrs, starCrnrs;
 	//current sample trajectory idx
 	int curTraj;
-	//current screen capture idx for each of 4 trajs
-	std::vector<int> captCount;
-	//current start vertex for each of 4 trajs (circle idx ignored TODO)
-	std::vector<int> curStIdx;
-	//# of trajectories catured for training data, testing data
-	std::vector<int> dataGenIters;
-	//current trajectory as string
-	std::string curTrajStr;
+	//all idxed by curTraj (symbols only): current screen capture idx for each of 4 trajs,current start vertex for each of 4 trajs (circle idx ignored TODO),# of trajectories catured for training data, testing data for each of 4 trajs
+	std::vector<int> captCount, curStIdx, dataGenIters;
+
 
 	///letter trajectories
 	//structure holding all letters
 	std::vector<std::shared_ptr<MyGestLetter>> letters;
 	//currently drawn letter
 	std::shared_ptr<MyGestLetter> curLetter;
+	//current letter in list of shrd ptrs of ltrs, current symbol in list of symbols in letter
+	int curLtrIDX, curSymIDX;
 
 	//state flags 
 	std::vector<bool> flags;				
 	static const unsigned int debugIDX = 0,				//debug mode
 		stCaptAtZeroIDX = 1,					//start capturing trajectory when t == 0
-		useLtrTrajIDX = 2,						//use curLetter trajectory to draw, instead of sample circle/tri/square/star
-		drawTrkMrkrsIDX = 3,					//yes/no to draw markers on skel
-		drawLtrTrajIDX = 4,						//draw all trajectory components of symbol or sample symbol
-		collectDataIDX = 5,						//turn on the training/testing data collection mechanism
-		doneTrajIDX = 6;						//finished current trajectory
+		initTrnDatCapIDX = 2,					//start capturing all trajectories at next displayTimer loop
+		useLtrTrajIDX = 3,						//use curLetter trajectory to draw, instead of sample circle/tri/square/star
+		drawTrkMrkrsIDX = 4,					//yes/no to draw markers on skel
+		drawLtrTrajIDX = 5,						//draw all trajectory components of symbol or sample symbol
+		collectDataIDX = 6,						//turn on the training/testing data collection mechanism
+		doneTrajIDX = 7;						//finished current trajectory
 
-	static const unsigned int numFlags = 7;
+	static const unsigned int numFlags = 8;
 
 	std::shared_ptr<std::normal_distribution<double> > normdist;
 };

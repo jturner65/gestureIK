@@ -45,7 +45,7 @@
 
 namespace gestureIKApp {
 
-	MyGestLetter::MyGestLetter(std::string _ltrName):IKSolve(nullptr),curSymbol(0), numSymbols(0), symbols(0), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags){
+	MyGestLetter::MyGestLetter(std::string _ltrName):IKSolve(nullptr), curSymbolIDX(0), numSymbols(0), symbols(0), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags){
 		stringstream ss;
 		ss.str("");
 		ss << lettersPath << "ltr_" << ltrName<<"/ltr_"<<ltrName<<".xml";
@@ -68,7 +68,6 @@ namespace gestureIKApp {
 			symbols[i]->_self = symbols[i];
 			symbols[i]->setSolver(IKSolve);
 			symbols[i]->readTrajFiles(trajFileNames[i], symbols[i]);
-
 		}
 		//build distribution of potential symbols to draw from to find random symbol idx to ik to 
 		uni = make_shared< uniform_int_distribution<int> > (0, (numSymbols-1));
@@ -76,25 +75,29 @@ namespace gestureIKApp {
 
 	//solve IK on current letter - get current symbol, cycle through all trajectories until drawn
 	bool MyGestLetter::solve() {
-		bool finished = symbols[curSymbol]->solve();
+		bool finished = symbols[curSymbolIDX]->solve();
 		if (finished) {
-			cout << "Finished drawing letter : " << symbols[curSymbol]->name << "\n";
+			cout << "Finished drawing letter : " << symbols[curSymbolIDX]->name << "\n";
 		}
 		return finished;
 	}
 
-	std::string MyGestLetter::getCurLtrDirName() {
-		std::string res = "";
-		return res;
+	//sets random index in symbol list for letter to draw
+	void MyGestLetter::setRandSymbolIdx(int idx) {
+		curIDX = idx;
+		curSymbolIDX = (*uni)(mtrn_gen);
+		symbols[curSymbolIDX]->initSymbolIK();
+		cout << "Curr Rand symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << "\n";
 	}
 
-	//sets random index in symbol list for letter to draw
-	void MyGestLetter::setRandSymbolIdx() {
-		curSymbol = (*uni)(mtrn_gen);
-		symbols[curSymbol]->initSymbolIK();
-		cout << "Curr symbol to use for ltr : " << ltrName << " : " << curSymbol << "\n";
+	//sets specific index in symbol list for letter to draw - used to let myWindow control which symbols to draw (for train and test data)
+	void MyGestLetter::setSymbolIdx(int idx, int symIdx) {
+		curIDX = idx;
+		curSymbolIDX = symIdx;
+		symbols[curSymbolIDX]->initSymbolIK();
+		cout << "Specified symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << "\n";
 	}
-	
+
 	//set reference to IK solver - set in all trajectories
 	void MyGestLetter::setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv) {
 		IKSolve = _slv;
@@ -109,7 +112,7 @@ namespace gestureIKApp {
 
 	//draw all trajectory components of current symbol being used for IK
 	void MyGestLetter::drawLetter(dart::renderer::RenderInterface* mRI) {
-		symbols[curSymbol]->drawTrajs(mRI);
+		symbols[curSymbolIDX]->drawTrajs(mRI);
 	}
 
 	std::ostream& operator<<(std::ostream& out, MyGestLetter& ltr) {

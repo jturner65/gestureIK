@@ -48,16 +48,17 @@ using namespace Eigen;
 using namespace gestureIKApp;
 using namespace dart::gui;
 
+static int screenCapCnt = 0, trainSymDatCnt = 0, trainLtrtCnt = 0, displayTmrCnt = 0, drawCnt = 0;
 
 MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_ikslvr), tVals(4), tBnds(4,1), tIncr(4,1), testOutFile(), trainOutFile(),
-	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curTrajStr(trajNames[0]),
+	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curTrajStr(trajNames[0]), curClassName(trajNames[0]),
 	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0),
 	flags(numFlags,false), normdist(nullptr){
 	tBnds[0] = DART_2PI;//circle bounds on t value
 	//set init display vals
 	mDisplayTimeout = 10;				//set to be faster frame rate
 	mTrackBall.setQuaternion(origTrackBallQ);
-	mZoom = origZoom;
+	mZoom = IKSolve->params->origZoom;
 	mTrans = origMTrans;
 
 	//start trajectory at initial position of hand
@@ -79,7 +80,7 @@ MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_i
 
 	tIncr[0] = .2;//set to be .2 because it is a deltaTheta for the circle
 	for (int i = 1; i < 4; ++i) {
-		tIncr[i] = IKSolve->params->trajDesiredVel / (i + 2.0);//dividing by # of sides because interpolating between each pair of verts with a local t: 0->1, but treating all sets of edges as complete trajectory (i.e. glbl t 0->1)
+		tIncr[i] = IKSolve->params->trajDesiredVel;// / (i + 2.0);//dividing by # of sides because interpolating between each pair of verts with a local t: 0->1, but treating all sets of edges as complete trajectory (i.e. glbl t 0->1)
 	}
 	cout << "Per Frame ptr distance travelled calculated : " << IKSolve->params->trajDesiredVel << "\n";
 
@@ -88,23 +89,11 @@ MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_i
 	starCrnrs = regenCorners<5U>(strCrnrConsts, false, curStIdx[3]);
 
 	////writes trajectory for circle
+	//curTraj = 0;//set to 1,2, 3 for tri/square/star
 	//void(MyWindow::*trajFunc)(eignVecTyp&);
 	//trajFunc = &MyWindow::calcCircleTrajPoints;
-	//auto trajSeq = buildTrajSeq(trajFunc, 0, tVals[0]);
+	//auto trajSeq = buildTrajSeq(trajFunc, curTraj, tVals[curTraj]);
 	//writeTrajCSVFile(trajNames[curTraj], trajSeq);
-	
-	////writes 1st trajectory for triangle, square, star
-	//trajFunc = &MyWindow::calcTriangleTrajPoints;
-	//trajSeq = buildTrajSeq(trajFunc, 1, tVals[1]);
-	//writeTrajCSVFile(trajNames[1], trajSeq);
-
-	//trajFunc = &MyWindow::calcSquareTrajPoints;
-	//trajSeq = buildTrajSeq(trajFunc, 2, tVals[2]);
-	//writeTrajCSVFile(trajNames[2], trajSeq);
-
-	//trajFunc = &MyWindow::calcStarTrajPoints;
-	//trajSeq = buildTrajSeq(trajFunc, 3, tVals[3]);
-	//writeTrajCSVFile(trajNames[3], trajSeq);
 
 	//read all letter files and build trajectories
 	buildLetterList();
@@ -118,116 +107,81 @@ MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_i
 
 MyWindow::~MyWindow() {}
 
-//project points at certain t (== theta) in trajectory upon a plane described by normal n, inscribed within a circle of radius 2*rad, centered at ctrPt
-//plane normal always points back to tstRShldrSt
-Eigen::Vector3d MyWindow::getCirclEndPoint(const Eigen::Ref<const Eigen::Vector3d>& ctrPt, double theta, double rad) {
-	Eigen::Vector3d n = (IKSolve->tstRShldrSt - ctrPt).normalized();
-	Eigen::Vector3d R(0, 0, 1), S = n.cross(R).normalized();
-	double hlfRC = rad* std::cos(theta), hlfRS = rad* std::sin(theta);
-	return ctrPt + (hlfRC * R) + (hlfRS * S);
+//set window size based on params value loaded from xml
+void MyWindow::initCustWindow(std::string _winTtl) {
+	initWindow(IKSolve->params->win_Width, IKSolve->params->win_Height, _winTtl.c_str());
 }
 
-void MyWindow::calcTrajPoints(eignVecTyp& _trajPts, eignVecVecTyp& vec, int numPts, double& globT) {
-	int sIdx = (int)(numPts*globT);
-	int nextIDX = (sIdx + 1) % vec.size();//1 bigger to catch final point - so that the trajectoires dont close if they have
-	double t = (numPts*globT) - sIdx;
 
-	_trajPts[0] = interpVec(vec[sIdx][0], vec[nextIDX][0], t);
-	_trajPts[1] = interpVec(vec[sIdx][1], vec[nextIDX][1], t);
-
-	int numTraj = numPts - 2;
-	globT += tIncr[numTraj];
-	if (globT > tBnds[numTraj]) {
-		globT = 0;
-		flags[doneTrajIDX] = true;
-	}
-}
-
-void MyWindow::calcCircleTrajPoints(eignVecTyp& _trajPts) {
-	_trajPts[0] = getCirclEndPoint(IKSolve->drawCrclCtr, tVals[curTraj], IKSolve->params->IK_drawRad);
-	_trajPts[1] = getCirclEndPoint(IKSolve->drawElbowCtr, tVals[curTraj], .25 * IKSolve->params->IK_drawRad);
-
-	tVals[curTraj] += tIncr[curTraj];
-	if (tVals[curTraj] > tBnds[curTraj]) {
-		tVals[curTraj] = 0;
-		flags[doneTrajIDX] = true;
-	}
-}
-
-void MyWindow::openIndexFile(bool isTrain, std::ofstream& strm, const std::string& filePrefix) {
+void MyWindow::openIndexFile(bool isTrain, std::ofstream& strm) {
 	stringstream ss;
-	ss.str("");
-	ss << framesFilePath << filePrefix << (isTrain ? "TrainDataIndexFile.txt" : "TestDataIndexFile.txt");
+	ss << getFullBasePath() << (isTrain ? "TrainDataIndexFile.txt" : "TestDataIndexFile.txt");
 	const std::string tmp = ss.str();
 	strm.open(tmp.c_str());
 	if (!strm.is_open()) {
 		cout << tmp << " failed to open!\n";
 	}
-}
+}//openIndexFile
 
+ //get current trajectory's file directory
+ //dataIterVal is value of current iteration of data generation
+//or current symbol name if using letters
+std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
+	if (flags[useLtrTrajIDX]) {
+		return curLetter->getCurSymbolName();
+	}
+	else {
+		stringstream ss("");
+		//<trajType>_<trajIter>
+		ss << curTrajStr << "_" << dataIterVal;
+		return ss.str();
+	}
+}
 
 //set up necessary functionality and state to conduct randomized data collection
 //this will entail building trajectories for triangle, square and star, starting at each vertex,
 //with and without random shifts in end points,  [and moving in clockwise or ccw direction (TODO)]
-void MyWindow::trainDatInitCol() {
-	cout << "Initializing random data collection for "<<((flags[useLtrTrajIDX]) ? "Letter Trajectories." : "Symbols." )<<"\n";
+void MyWindow::trainDatInitCol(bool isLtr) {
+	flags[useLtrTrajIDX] = isLtr;
 	flags[collectDataIDX] = true;
 	//turn off all markers and trajectory displays
 	flags[drawTrkMrkrsIDX] = false;
 	flags[drawLtrTrajIDX] = false;
 	mShowMarkers = false;
+	openIndexFile(false, testOutFile);
+	openIndexFile(true, trainOutFile);
+	
+	if (flags[useLtrTrajIDX]) {
+		cout << "Initializing random data collection for Letter Trajectories.\n";
+		//1st time initialize letter collection - init curLtrIDX, curSymIDX
+		curLtrIDX = 0;
+		curSymIDX = 0;
 
-	openIndexFile(false, testOutFile, "");
-	openIndexFile(false, trainOutFile, "");
-	//stringstream ss;
-	//ss.str("");
-	//ss << framesFilePath << "TestDataIndexFile.txt";
-	//const std::string tmp = ss.str();
-	//testOutFile.open(tmp.c_str());
+		//start capture
+		trainLtrDatManageCol();
+	}
+	else {
+		cout << "Initializing random data collection for Symbols.\n";
+		//initialize starting idxs, t values and counts of training and testing data for all symbol trajectories
+		for (int i = 0; i < 4; ++i) {
+			curStIdx[i] = 0;
+			tVals[i] = 0;
+			dataGenIters[i] = 0;
+			captCount[i] = 0;
+		}//idx 0 corresponds to circle but not used currently
+			//start on triangle - set all relevant info
+		setDrawLtrOrSmpl(false, 1);
+		//start capture
+		trainSymDatManageCol();
+	}
 
-	//if (!testOutFile.is_open()) {
-	//	cout << "testOutFile failed to open!\n";
-	//}
-
-	//ss.str("");
-	//ss << framesFilePath << "TrainDataIndexFile.txt";
-	//const std::string tmp2 = ss.str();
-	//trainOutFile.open(tmp2.c_str());
-	//if (!trainOutFile.is_open()) {
-	//	cout << "trainOutFile failed to open!\n";
-	//}
-	 
-
-	//initialize starting idxs, t values and counts of training and testing data for all trajectories
-	for (int i = 0; i < 4; ++i) { 
-		curStIdx[i] = 0;	
-		tVals[i] = 0; 
-		dataGenIters[i] = 0;
-		captCount[i] = 0;
-	}//idx 0 corresponds to circle but not used currently
-	 //start on triangle - set all relevant info
-	setDrawLtrOrSmpl(false, 1);
-
-	//start capture
-	trainSymDatManageCol();
 }//trainDatInitCol
 
-//get current trajectory's file directory
-//dataIterVal is value of current iteration of data generation
-std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
-	//if(){
-	//	return curLetter->
-	//}
-
-	stringstream ss("");
-	//<trajType>_<trajIter>
-	ss << curTrajStr << "_" << dataIterVal;
-	return ss.str();
-}
 
 //manage the process of writing all training and testing data - call whenever a trajectory has been captured (from checkCapture() )
 //ONLY FOR SAMPLE SYMBOLS that consist of single trajectories!
 void MyWindow::trainSymDatManageCol() {
+	//if (flags[debugIDX]) { cout << "Start trainSymDatManageCol : " << trainSymDatCnt << "\n"; }
 	//call first time right after init
 	//flags[collectDataIDX] pre-empts flags[stCaptAtZeroIDX] so needs to set mCapture
 	//regerenate all endpoints - we start on non-random data - for current trajectory, make #verts trajectories starting on each vert without random, before using random trajectories
@@ -252,7 +206,7 @@ void MyWindow::trainSymDatManageCol() {
 	//after transitioning to a different symbol, the following needs to be reset
 	if (dataGenIters[curTraj] > IKSolve->params->dataCapNumExamples) {
 		dataGenIters[curTraj] = 0;
-		setDrawLtrOrSmpl(false, (curTraj + 1) % 4);
+		setDrawLtrOrSmpl(false, (curTraj + 1) % trajNames.size());		//iterate to next trajectory if we've capture sufficient samples
 		dataGenIters[curTraj] = 0;
 		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
 		std::cout << "Test/train data gen transition to sample " << trajNames[curTraj] << " trajectory\n";
@@ -266,13 +220,42 @@ void MyWindow::trainSymDatManageCol() {
 		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
 		std::cout << "Finished generating test/train data, reset to sample " << trajNames[curTraj] << " trajectory\n";
 	}	
+	//if (flags[debugIDX]) { cout << "End trainSymDatManageCol : " << trainSymDatCnt++ << "\n"; }
 }
+
+//capture all letters
+void MyWindow::trainLtrDatManageCol() {
+	//if (flags[debugIDX]) { cout << "start trainLtrDatManageCol : " << trainLtrtCnt << "\tcurLtrIDX : " << curLtrIDX << "\tcurSymbIDX : " << curSymIDX << "\n"; }
+	//need to cycle through all letters 
+	setDrawLtrOrSmpl(true, curLtrIDX, false, curSymIDX);
+	curTrajDirName = getCurTrajFileDir(-1);
+	//need to write entry into either testing or training file - if dataGenIters > some threshold make train file, else make test file
+	if (curSymIDX < IKSolve->params->dataCapTestTrainThresh*curLetter->symbols.size()) {
+		trainDatWriteIndexFile(trainOutFile, curTrajDirName, curLtrIDX);
+	}
+	else {
+		trainDatWriteIndexFile(testOutFile, curTrajDirName, curLtrIDX);
+	}
+
+	//for next iteration
+	curSymIDX += 1;
+	if (curSymIDX >= curLetter->symbols.size()){
+		curSymIDX = 0;
+		curLtrIDX += 1;
+		if (curLtrIDX >= letters.size()) {//done every letter
+			curLtrIDX = 0;
+			flags[collectDataIDX] = false;
+		}
+	}
+	//if (flags[debugIDX]) { cout << "End trainLtrDatManageCol : " << trainLtrtCnt++ << "\n"; }
+
+}//trainLtrDatManageCol
 
 //write line in index/label text file for each example
 void MyWindow::trainDatWriteIndexFile(std::ofstream& outFile, const std::string& fileDir, int cls) {
 	stringstream ss;
 	ss.str("");
-	ss << curTrajStr<<"/"<<fileDir << " " << cls << "\n";
+	ss << curClassName <<"/"<<fileDir << " " << cls << "\n";
 	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
 	outFile << ss.str();
 }
@@ -281,8 +264,7 @@ void MyWindow::trainDatWriteIndexFile(std::ofstream& outFile, const std::string&
 //build map of all available symbols, idxed by name
 void MyWindow::buildLetterList() {
 	letters.clear();
-	int ltrsToDo = 26;		//26;
-	for (int i = 0; i < ltrsToDo; ++i) {
+	for (int i = 0; i < IKSolve->params->numLetters; ++i) {
 		string c(1, i + 97);
 		letters.push_back(std::make_shared<MyGestLetter>(c));
 		letters[i]->setSolver(IKSolve);
@@ -307,64 +289,21 @@ eignVecVecTyp MyWindow::buildTrajSeq(void (MyWindow::*trajFunc)(eignVecTyp&), in
 	return _trajAraAra;
 }
 
-//write trajectory file to csv named _fname
-void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajAraAra) {
-	int numRows = _trajAraAra.size(), numCols = _trajAraAra[0].size();
-	stringstream ss;
-	ss.str("");
-	ss << csvFilePath << _fname << "Traj.csv";
-	std::ofstream outFile;
-	if (flags[debugIDX]) { std::cout << "Fully Qualified File name : " << ss.str() << "\tnumRows : " << numRows << "\tnumCols : " << numCols << "\n"; }
-	outFile.open(ss.str());
-	//output column marker names and whether fixed or not - 3 cols per value (x,y,z)
-	ss.str("");
-	std::array<std::string, 3> const dims{ " X"," Y"," Z" };
-
-	//column names
-	ss << trkedMrkrNames[0] << dims[0];
-	for (int i = 1; i < 3; ++i) { ss << "," << trkedMrkrNames[0] << dims[i]; }//first set without leading comma
-	for (int col = 1; col < numCols; ++col) {
-		for (int i = 0; i < 3; ++i) { ss << "," << trkedMrkrNames[col] << dims[i]; }
-	}
-	ss << "\n";
-	if (flags[debugIDX]){ std::cout << ss.str(); }	//debug
-	outFile << ss.str();
-
-	ss.str("");
-	//fixed or not
-	std::string isFixed = ((*IKSolve->trkMarkers)[trkedMrkrNames[0]]->IsFixed() ? "true" : "false");
-	ss << isFixed << "," << isFixed << "," << isFixed;
-	for (int col = 1; col < numCols; ++col) {
-		isFixed = ((*IKSolve->trkMarkers)[trkedMrkrNames[col]]->IsFixed() ? "true" : "false");
-		ss << "," << isFixed << "," << isFixed << "," << isFixed;
-	}
-	ss << "\n";
-	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
-	outFile << ss.str();
-
-	//traj data
-	for (int row = 0; row < numRows; ++row) {
-		writeTrajCSVFileRow(outFile, _trajAraAra[row]);
-	}
-}//writeTrajCSVFile
-
- //write a row == 1 frame of 1-mrkr-per-col traj data
-void MyWindow::writeTrajCSVFileRow(std::ofstream& outFile, eignVecTyp& _trajAra) {
-	int numCols = _trajAra.size();
-	int numSigDigs = 9;
-	stringstream ss;
-	ss.str("");
-	ss << buildStrFrmEigV3d(_trajAra[0], numSigDigs);
-	for (int col = 1; col < numCols; ++col) { ss << "," << buildStrFrmEigV3d(_trajAra[col], numSigDigs); }
-	ss << "\n";
-	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
-	outFile << ss.str();
-}
-
 void MyWindow::displayTimer(int _val){
+	if (flags[initTrnDatCapIDX]) {//initialize trajectories for training/testing data capture
+		flags[initTrnDatCapIDX] = false;
+		trainDatInitCol(flags[useLtrTrajIDX]);
+	}
+	//if last time around we finished trajectory, reset values/recapture, etc, for next trajectory
+	if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }			//check at end of trajectory if attempting to save screen shots
+
+	if (flags[debugIDX]) { cout << "displayTimer : IKSolve start\n"; }
 	if (flags[useLtrTrajIDX]) {
 		//cout << "TODO : IK on letter " << curLetter->ltrName << " symbol idx : "<< curLetter->curSymbol <<"\n";
+		//setup trajectories before calling solve 
+		//if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }			//check at end of trajectory if attempting to save screen shots
 		flags[doneTrajIDX] = curLetter->solve();
+		if (flags[debugIDX]) { cout << "displayTimer : letter solve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << "\n"; }
 	}
 	else {
 		switch (curTraj) {
@@ -374,8 +313,9 @@ void MyWindow::displayTimer(int _val){
 		case 3: {		calcTrajPoints(mTrajPoints, starCrnrs, (curTraj + 2), tVals[curTraj]);		break;		}
 		}
 		IKSolve->solve(mTrajPoints);
+		//if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }			//check at end of trajectory if attempting to save screen shots
+		if (flags[debugIDX]) { cout << "displayTimer : IKSolve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << "\n"; }
 	}
-	if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }
 	glutPostRedisplay();
 	glutTimerFunc(mDisplayTimeout, refreshTimer, _val);
 }
@@ -395,7 +335,8 @@ void MyWindow::drawCurTraj() {
 void MyWindow::draw() {
 	glDisable(GL_LIGHTING);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	
+	//cout << "draw start : " << (drawCnt) << "\n";
+
 	drawSkels();
 	//traw tracked markers
 	if (flags[drawTrkMrkrsIDX]) {
@@ -415,6 +356,7 @@ void MyWindow::draw() {
 		dart::gui::drawStringOnScreen(0.02f, 0.02f, getCurrLocAndQuat());
 	}
 	glEnable(GL_LIGHTING);
+	//cout << "draw end : " << (drawCnt++) << "\n";
 }
 
 std::string MyWindow::getCurrLocAndQuat() {
@@ -425,9 +367,6 @@ std::string MyWindow::getCurrLocAndQuat() {
 }
 
 void MyWindow::drawSkels() {
-	//for (unsigned int i = 0; i < mWorld->getNumSkeletons(); i++) {
-	//	mWorld->getSkeleton(i)->draw(mRI);
-	//}
 	skelPtr->draw(mRI);
 	// Draw the markers on the skeleton.
 	if (mShowMarkers) {
@@ -441,7 +380,7 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 	unsigned int keyVal = _key;
 	if ((keyVal >= 65) && (keyVal <= 90)) {		//draw letter trajectories if any capital letter is selected
 		int idx = keyVal - 65;
-		setDrawLtrOrSmpl(true, idx);
+		setDrawLtrOrSmpl(true, idx, true, -1);
 		return;
 	} 
 	switch (_key) {
@@ -467,29 +406,17 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		break; }
 	case '`':          //reset trackball loc with origTrackBallQ and zoom with 1
 		mTrackBall.setQuaternion(origTrackBallQ);
-		mZoom = origZoom;
+		mZoom = IKSolve->params->origZoom;
 		mTrans = origMTrans;
 		break;
-	//case 'p': { // playBack
-	//	mPlay = !mPlay;
-	//	if (mPlay) {
-	//		mSimulating = false;
-	//	}
-	//	break;}
- //   case '[': {  // step backward
-	//	if (!mSimulating) {
-	//		mPlayFrame--;
-	//		if (mPlayFrame < 0){mPlayFrame = 0;}
-	//		glutPostRedisplay();
-	//	}
-	//	break;}
- //   case ']': { // step forwardward
-	//	if (!mSimulating) {
-	//		mPlayFrame++;
-	//		if (mPlayFrame >= mWorld->getRecording()->getNumFrames()){mPlayFrame = 0;}
-	//		glutPostRedisplay();
-	//	}
-	//	break;}
+
+	case 'a': {  // screen capture all letters (train and test)
+		flags[initTrnDatCapIDX] = true;
+		flags[useLtrTrajIDX] = true;
+		//trainDatInitCol(true);				//capture letter trajectories
+		cout << "Capture all letters\n.";
+		break; }
+
 	case 'c': {  // screen capture
 		flags[stCaptAtZeroIDX] = true;				//start capturing when trajectory gets to 0
 		cout << "start capturing when trajectory gets to t == 0\n.";
@@ -511,7 +438,9 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		mShowMarkers = !mShowMarkers;
 		break; }
 	case 'w': {//generate test and train data on triangle, square, star
-		trainDatInitCol();
+		flags[initTrnDatCapIDX] = true;
+		flags[useLtrTrajIDX] = false;
+		//trainDatInitCol(false);
 		break; }
 	case 'y': {//un-randomize
 		regenerateSampleData(false);
@@ -536,10 +465,9 @@ void MyWindow::regenerateSampleData(bool rand) {
 
 //get file name for screen shot based on current trajectory name and count of frames
 std::string MyWindow::getScreenCapDirFileName() {
-	//TODO query current symbol being displayed
+
 	stringstream ss;
-	ss.str("");
-	ss << framesFilePath << curTrajDirName;
+	ss << getFullBasePath() << curTrajDirName;
 	const std::string tmp = ss.str();
 
 	int nError = 0;
@@ -554,18 +482,20 @@ std::string MyWindow::getScreenCapDirFileName() {
 
 	ss.str("");
 	char buf[5];
-	sprintf(buf, "%.4d", captCount[curTraj]++);
+	sprintf(buf, "%.4d", (flags[useLtrTrajIDX] ? curLetter->getCurSymbolFrame() : captCount[curTraj]++));
 	ss << tmp <<"/"<< curTrajDirName<<"."<< buf << ".png";
 	return ss.str();
 }
 
 bool MyWindow::screenshot() {
-	
+	//cout << "Screen cap start : " << screenCapCnt << " for draw iter : "<< (drawCnt-1)<<"\n";
 	const std::string tmp = getScreenCapDirFileName();
 	const char* fileName = tmp.c_str();
 
 	int tw = glutGet(GLUT_WINDOW_WIDTH);
 	int th = glutGet(GLUT_WINDOW_HEIGHT);
+
+	//glReadBuffer(GL_FRONT);
 	glReadPixels(0, 0, tw, th, GL_RGBA, GL_UNSIGNED_BYTE, &mScreenshotTemp[0]);
 
 	// reverse temp2 temp1
@@ -583,10 +513,13 @@ bool MyWindow::screenshot() {
 		return false;
 	}
 	else {
-		std::cout << "wrote screenshot " << fileName << "\n";
+		std::cout << "wrote screenshot " << fileName //<< "\t screenCapCnt : " << screenCapCnt++ 
+			<< "\n";
+
 		return true;
 	}
 }//screenshot
+
 void MyWindow::drawAxes(const Vector3d& axesLoc, float len, bool altColor) {
 	float col = (altColor ? .5f : 0);
 	glPushMatrix();
@@ -625,4 +558,93 @@ void MyWindow::drawPoint(const Eigen::Ref<const Eigen::Vector3d>& pt) {
 	mRI->popMatrix();
 }
 
+//project points at certain t (== theta) in trajectory upon a plane described by normal n, inscribed within a circle of radius 2*rad, centered at ctrPt
+//plane normal always points back to tstRShldrSt
+Eigen::Vector3d MyWindow::getCirclEndPoint(const Eigen::Ref<const Eigen::Vector3d>& ctrPt, double theta, double rad) {
+	Eigen::Vector3d n = (IKSolve->tstRShldrSt - ctrPt).normalized();
+	Eigen::Vector3d R(0, 0, 1), S = n.cross(R).normalized();
+	double hlfRC = rad* std::cos(theta), hlfRS = rad* std::sin(theta);
+	return ctrPt + (hlfRC * R) + (hlfRS * S);
+}//getCirclEndPoint
+
+void MyWindow::calcTrajPoints(eignVecTyp& _trajPts, eignVecVecTyp& vec, int numPts, double& globT) {
+	int sIdx = (int)(numPts*globT);
+	int nextIDX = (sIdx + 1) % vec.size();//1 bigger to catch final point - so that the trajectoires dont close if they have
+	double t = (numPts*globT) - sIdx;
+
+	_trajPts[0] = interpVec(vec[sIdx][0], vec[nextIDX][0], t);
+	_trajPts[1] = interpVec(vec[sIdx][1], vec[nextIDX][1], t);
+
+	int numTraj = numPts - 2;
+	globT += tIncr[numTraj];
+	if (globT > tBnds[numTraj]) {
+		globT = 0;
+		flags[doneTrajIDX] = true;
+	}
+}//calcTrajPoints
+
+void MyWindow::calcCircleTrajPoints(eignVecTyp& _trajPts) {
+	_trajPts[0] = getCirclEndPoint(IKSolve->drawCrclCtr, tVals[curTraj], IKSolve->params->IK_drawRad);
+	_trajPts[1] = getCirclEndPoint(IKSolve->drawElbowCtr, tVals[curTraj], .25 * IKSolve->params->IK_drawRad);
+
+	tVals[curTraj] += tIncr[curTraj];
+	if (tVals[curTraj] > tBnds[curTraj]) {
+		tVals[curTraj] = 0;
+		flags[doneTrajIDX] = true;
+	}
+}//calcCircleTrajPoints
+
+//write trajectory file to csv named _fname
+void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajAraAra) {
+	int numRows = _trajAraAra.size(), numCols = _trajAraAra[0].size();
+	stringstream ss;
+	ss.str("");
+	ss << csvFilePath << _fname << "Traj.csv";
+	std::ofstream outFile;
+	if (flags[debugIDX]) { std::cout << "Fully Qualified File name : " << ss.str() << "\tnumRows : " << numRows << "\tnumCols : " << numCols << "\n"; }
+	outFile.open(ss.str());
+	//output column marker names and whether fixed or not - 3 cols per value (x,y,z)
+	ss.str("");
+	std::array<std::string, 3> const dims{ " X"," Y"," Z" };
+
+	//column names
+	ss << trkedMrkrNames[0] << dims[0];
+	for (int i = 1; i < 3; ++i) { ss << "," << trkedMrkrNames[0] << dims[i]; }//first set without leading comma
+	for (int col = 1; col < numCols; ++col) {
+		for (int i = 0; i < 3; ++i) { ss << "," << trkedMrkrNames[col] << dims[i]; }
+	}
+	ss << "\n";
+	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
+	outFile << ss.str();
+
+	ss.str("");
+	//fixed or not
+	std::string isFixed = ((*IKSolve->trkMarkers)[trkedMrkrNames[0]]->IsFixed() ? "true" : "false");
+	ss << isFixed << "," << isFixed << "," << isFixed;
+	for (int col = 1; col < numCols; ++col) {
+		isFixed = ((*IKSolve->trkMarkers)[trkedMrkrNames[col]]->IsFixed() ? "true" : "false");
+		ss << "," << isFixed << "," << isFixed << "," << isFixed;
+	}
+	ss << "\n";
+	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
+	outFile << ss.str();
+
+	//traj data
+	for (int row = 0; row < numRows; ++row) {
+		writeTrajCSVFileRow(outFile, _trajAraAra[row]);
+	}
+}//writeTrajCSVFile
+
+ //write a row == 1 frame of 1-mrkr-per-col traj data
+void MyWindow::writeTrajCSVFileRow(std::ofstream& outFile, eignVecTyp& _trajAra) {
+	int numCols = _trajAra.size();
+	int numSigDigs = 9;
+	stringstream ss;
+	ss.str("");
+	ss << buildStrFrmEigV3d(_trajAra[0], numSigDigs);
+	for (int col = 1; col < numCols; ++col) { ss << "," << buildStrFrmEigV3d(_trajAra[col], numSigDigs); }
+	ss << "\n";
+	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
+	outFile << ss.str();
+}
 

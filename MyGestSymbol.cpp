@@ -270,7 +270,7 @@ namespace gestureIKApp {
 		//start with 4 pt neville in plane of motion and take result and generate regular neville to get "pull back"
 		std::shared_ptr<MyGestTraj> res = genConnectTraj(ctPt, sym1End, sym2St);
 		//interpolate res toward midpt - midpt needs to be center of res trajectory moved back in neg direction of (normal from shoulder forward) some %
-
+		//TODO
 		return res;
 	}
 	

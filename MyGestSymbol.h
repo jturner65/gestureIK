@@ -49,18 +49,18 @@ namespace dart {
 	}  // namespace renderer
 } // namespace dart
 
-/* 
-this class represents an instance of a letter.  it will consist of a collection of trajectories
-it is responsible for determining which component traj should be used and for linking components together 
-which may include making new non-specified trajectories to link existing components whose endpoints don't meet in space
+	/* 
+		this class represents an instance of a letter.  it will consist of a collection of trajectories
+		it is responsible for determining which component traj should be used and for linking components together 
+		which may include making new non-specified trajectories to link existing components whose endpoints don't meet in space
 
-omniglot is collected turk data
-symbols in BPL omniglot data have x,y data and time in milliseconds, individually recorded for each component trajectory
-alphabet is #22, latin, in dataset
+		omniglot is collected turk data
+		symbols in BPL omniglot data have x,y data and time in milliseconds, individually recorded for each component trajectory
+		alphabet is #22, latin, in dataset
 		
-each symbol will be recorded in xml file with # of component trajectories, names of each trajectory file.
-each trajectory file will be csv file of location of primary trajectory x,y points and velocities
-*/
+		each symbol will be recorded in xml file with # of component trajectories, names of each trajectory file.
+		each trajectory file will be csv file of location of primary trajectory x,y points and velocities
+	*/
 namespace gestureIKApp {
 	class IKSolver;
 	class MyGestTraj;
@@ -72,24 +72,21 @@ namespace gestureIKApp {
 		virtual ~MyGestSymbol();
 
 		//load this symbol's raw trajectories and build MyGestTrajs for each trajectory - build at symbol level, not trajectory level
-
 		void readTrajFiles(vector<std::string>& trajFileNames, std::shared_ptr<MyGestSymbol> _this);
-		//set solver for this trajectory
-		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
 		//find average x-y location of trajectory points in component trajectories of this symbol, and closest and furthest points from average. - these will be used to map to "drawing plane" in ik sim world frame 
 		void calcTransformPts();
-
 		//draw trajectories of this symbol - if set change color for each trajectory
 		void drawTrajs(dart::renderer::RenderInterface* mRI);
 
+		//call when symbol first chosen to be IKed to
+		void initSymbolIK();
 		//solve IK for this symbol's current trajectory - returns true if finished
 		bool solve();
 
 		//set flags of all subordinate symbols
 		void setFlags(int idx, bool val);
-
-		//call when symbol first chosen to be IKed to
-		void initSymbolIK();
+		//set solver for this trajectory
+		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
 
 
 		//generate transition traj between symbols using neville

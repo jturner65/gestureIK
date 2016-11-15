@@ -42,12 +42,27 @@
 	</parameter>
 	<parameter>
 		<name>trajDesiredVel</name>
-		<val>.02</val>   
+		<val>.04</val>   
 	</parameter>
 	<parameter>
 		<name>trajNev4OvPct</name>
 		<val>.2</val>   
 	</parameter>
-	
+	<parameter>
+		<name>win_Width</name>
+		<val>200</val>   
+	</parameter>
+	<parameter>
+		<name>win_Height</name>
+		<val>200</val>   
+	</parameter>
+	<parameter>
+		<name>origZoom</name>
+		<val>0.80</val> 
+	</parameter>
+	<parameter>
+		<name>numLetters</name>
+		<val>26</val> 
+	</parameter>
 </GestIKParams>
 <!-- Template to build gesture IK xml configuration file to store params -- all file names relative to dart data path -->
