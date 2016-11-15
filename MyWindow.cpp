@@ -54,6 +54,12 @@ MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_i
 	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curTrajStr(trajNames[0]), curClassName(trajNames[0]),
 	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0),
 	flags(numFlags,false), normdist(nullptr){
+
+	mBackground[0] = IKSolve->params->bkgR;
+	mBackground[1] = IKSolve->params->bkgG;
+	mBackground[2] = IKSolve->params->bkgB;
+	mBackground[3] = IKSolve->params->bkgA;
+
 	tBnds[0] = DART_2PI;//circle bounds on t value
 	//set init display vals
 	mDisplayTimeout = 10;				//set to be faster frame rate
@@ -297,13 +303,12 @@ void MyWindow::displayTimer(int _val){
 	//if last time around we finished trajectory, reset values/recapture, etc, for next trajectory
 	if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }			//check at end of trajectory if attempting to save screen shots
 
-	if (flags[debugIDX]) { cout << "displayTimer : IKSolve start\n"; }
+	//if (flags[debugIDX]) { cout << "displayTimer : IKSolve start\n"; }
 	if (flags[useLtrTrajIDX]) {
 		//cout << "TODO : IK on letter " << curLetter->ltrName << " symbol idx : "<< curLetter->curSymbol <<"\n";
-		//setup trajectories before calling solve 
-		//if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }			//check at end of trajectory if attempting to save screen shots
+		//setup trajectories and then solve 
 		flags[doneTrajIDX] = curLetter->solve();
-		if (flags[debugIDX]) { cout << "displayTimer : letter solve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << "\n"; }
+		//if (flags[debugIDX]) { cout << "displayTimer : letter solve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << "\n"; }
 	}
 	else {
 		switch (curTraj) {
@@ -313,8 +318,7 @@ void MyWindow::displayTimer(int _val){
 		case 3: {		calcTrajPoints(mTrajPoints, starCrnrs, (curTraj + 2), tVals[curTraj]);		break;		}
 		}
 		IKSolve->solve(mTrajPoints);
-		//if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }			//check at end of trajectory if attempting to save screen shots
-		if (flags[debugIDX]) { cout << "displayTimer : IKSolve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << "\n"; }
+		//if (flags[debugIDX]) { cout << "displayTimer : IKSolve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << "\n"; }
 	}
 	glutPostRedisplay();
 	glutTimerFunc(mDisplayTimeout, refreshTimer, _val);
@@ -362,7 +366,7 @@ void MyWindow::draw() {
 std::string MyWindow::getCurrLocAndQuat() {
 	stringstream ss;
 	ss.str("");
-	ss << "Loc : " << buildStrFrmEigV3d(this->mTrans) << "\tQuat : w:" << this->mTrackBall.getCurrQuat().w() << " vec : (" << buildStrFrmEigV3d(this->mTrackBall.getCurrQuat().vec()) << ")\n";
+	ss << "Loc : " << buildStrFrmEigV3d(this->mTrans) << "\tZoom : "<<(this->mZoom)<<"\tQuat : w:" << this->mTrackBall.getCurrQuat().w() << " vec : (" << buildStrFrmEigV3d(this->mTrackBall.getCurrQuat().vec()) << ")\n";
 	return ss.str();
 }
 

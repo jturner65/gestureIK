@@ -64,5 +64,21 @@
 		<name>numLetters</name>
 		<val>26</val> 
 	</parameter>
+	<parameter>
+		<name>bkgR</name>
+		<val>.3</val> 
+	</parameter>
+	<parameter>
+		<name>bkgG</name>
+		<val>.3</val> 
+	</parameter>
+	<parameter>
+		<name>bkgB</name>
+		<val>.3</val> 
+	</parameter>
+	<parameter>
+		<name>bkgA</name>
+		<val>1.0</val> 
+	</parameter>
 </GestIKParams>
 <!-- Template to build gesture IK xml configuration file to store params -- all file names relative to dart data path -->

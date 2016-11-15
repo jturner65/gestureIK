@@ -44,6 +44,7 @@ namespace gestureIKApp {
 	GestIKParams::GestIKParams() : defaultVals(), dataCapNumExamples(100), dataCapTestTrainThresh(.5),
 		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), trajLenThresh(0.01),
 		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26),origZoom(.65f),
+		bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0),
 		flags(numFlags, false)
 	{
 		cout << "GestIK params ctor\n";
@@ -65,6 +66,10 @@ namespace gestureIKApp {
 		if (_name.compare("trajDistMult") == 0) { trajDistMult = stod(s);      return; }
 		if (_name.compare("trajDesiredVel") == 0) { trajDesiredVel = stod(s); return; }
 		if (_name.compare("trajNev4OvPct") == 0) { trajNev4OvPct = stod(s); return; }
+		if (_name.compare("bkgR") == 0) { bkgR = stod(s); return; }
+		if (_name.compare("bkgG") == 0) { bkgG = stod(s); return; }
+		if (_name.compare("bkgB") == 0) { bkgB = stod(s); return; }
+		if (_name.compare("bkgA") == 0) { bkgA = stod(s); return; }
 		//ints
 		if (_name.compare("dataCapNumExamples") == 0) { dataCapNumExamples = stoi(s);			return; }
 		if (_name.compare("IK_solveIters") == 0) { IK_solveIters = stoi(s);			return; }
@@ -99,6 +104,10 @@ namespace gestureIKApp {
 		win_Height = 800;
 		numLetters = 26;
 		origZoom = .65f;
+		bkgR = 1.0;
+		bkgG = 1.0;
+		bkgB = 1.0;
+		bkgA = 1.0;
 		flags[IDX_useLeftHand] = false;
 		defaultVals = accumulateVals();			//set default values as current param vals
 	}//setDefaultVals
@@ -114,6 +123,7 @@ namespace gestureIKApp {
 		res.push_back(dataCapTestTrainThresh);
 		res.push_back(IK_reachPct);
 		res.push_back(IK_solveIters);
+		res.push_back(IK_drawRad);
 		res.push_back(IK_alpha);
 		res.push_back(IK_maxSqError);
 		res.push_back(trajLenThresh);
@@ -123,6 +133,13 @@ namespace gestureIKApp {
 		res.push_back(trajNev4OvPct);
 		res.push_back(win_Width);
 		res.push_back(win_Height);
+		res.push_back(numLetters);
+		res.push_back(origZoom);
+		res.push_back(bkgR);
+		res.push_back(bkgG);
+		res.push_back(bkgB);
+		res.push_back(bkgA);
+
 		return res;
 	}
 

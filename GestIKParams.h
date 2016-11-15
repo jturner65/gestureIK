@@ -101,8 +101,8 @@ namespace gestureIKApp {
 		int numLetters;
 		//initial zoom
 		float origZoom;
-
-
+		//background colors
+		double bkgR, bkgG, bkgB, bkgA;
 
 		std::vector<bool> flags;									//various boolean flags used to drive GestIK
 		static const int IDX_useLeftHand	= 0;						//whether or not to use left hand to draw
