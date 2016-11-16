@@ -269,8 +269,8 @@ void MyWindow::buildLetterList() {
 	}
 	//buildRandomSymbolTrajs
 	for (int i = 0; i < letters.size(); ++i) {
-		letters[i]->buildRandomSymbolTrajs(2 * letters[i]->numTotSymbols);
-		cout << "Made Random versions of letter : " << (*letters[i]) << "\n";
+		letters[i]->buildRandomSymbolTrajs(IKSolve->params->numTotSymPerLtr);
+		cout << "Made "<<(IKSolve->params->numTotSymPerLtr - letters[i]->numFileSymbols)<<" Random versions of letter : " << (*letters[i]) << "\n";
 	}
 
 }
@@ -328,7 +328,6 @@ void MyWindow::drawCurTraj() {
 	case 2: {	for (double t = 0; t < 1.0; t += .01) { calcTrajPoints(drawPoints, sqrCrnrs, 4, t); drawPoint(drawPoints[0]); }		break;		}
 	case 3: {	for (double t = 0; t < 1.0; t += .01) { calcTrajPoints(drawPoints, starCrnrs, 5, t);  drawPoint(drawPoints[0]); }	break;		}
 	}
-
 }
 
 //override draw in simwindow

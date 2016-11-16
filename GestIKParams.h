@@ -91,6 +91,11 @@ namespace gestureIKApp {
 		double IK_fastTrajMult;
 		//min allowed traj length for multi-point trajectories
 		double trajLenThresh;
+		//std of randomized trajectory scales
+		double trajRandCtrStd;
+		//std of randomized trajectory center
+		double trajRandSclStd;
+
 		//# of iterations of tuck/untuck/subdivide
 		int trajNumReps;
 		//multiplier of trajectory distance per frame for trajectory point gen
@@ -103,6 +108,8 @@ namespace gestureIKApp {
 		int win_Width, win_Height;
 		//# of letters in alphabet to process (first n) - 26 for whole alphabet, 1 for just a, etc
 		int numLetters;
+		//# of total symbols of a particular letter we're generating - if < # of file-based examples, is ignored, if > then we generate random versions of the file based letters to make up diff
+		int numTotSymPerLtr;
 		//initial zoom
 		float origZoom;
 		//background colors

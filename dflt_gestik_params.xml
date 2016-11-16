@@ -53,6 +53,14 @@
 		<val>.03126</val>   
 	</parameter>
 	<parameter>
+		<name>trajRandCtrStd</name>
+		<val>.2</val>   
+	</parameter>
+	<parameter>
+		<name>trajRandSclStd</name>
+		<val>.05</val>   
+	</parameter>
+	<parameter>
 		<name>trajNev4OvPct</name>
 		<val>.2</val>   
 	</parameter>
@@ -70,7 +78,11 @@
 	</parameter>
 	<parameter>
 		<name>numLetters</name>
-		<val>2</val> 
+		<val>26</val> 
+	</parameter>
+	<parameter>
+		<name>numTotSymPerLtr</name>
+		<val>200</val> 
 	</parameter>
 	<parameter>
 		<name>bkgR</name>

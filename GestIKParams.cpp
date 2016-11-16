@@ -42,8 +42,8 @@ using namespace Eigen;
 namespace gestureIKApp {
 
 	GestIKParams::GestIKParams() : defaultVals(), dataCapNumExamples(100), dataCapTestTrainThresh(.5),
-		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), IK_elbowScale(0.36), IK_fastTrajMult(1.5), trajLenThresh(0.01),
-		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26),origZoom(.65f),
+		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), IK_elbowScale(0.36), IK_fastTrajMult(1.5), trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1),
+		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26), numTotSymPerLtr(40), origZoom(.65f),
 		bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0),
 		flags(numFlags, false)
 	{
@@ -68,6 +68,8 @@ namespace gestureIKApp {
 		if (_name.compare("trajDistMult") == 0) { trajDistMult = stod(s);      return; }
 		if (_name.compare("trajDesiredVel") == 0) { trajDesiredVel = stod(s); return; }
 		if (_name.compare("trajNev4OvPct") == 0) { trajNev4OvPct = stod(s); return; }
+		if (_name.compare("trajRandCtrStd") == 0) { trajRandCtrStd = stod(s); return; }
+		if (_name.compare("trajRandSclStd") == 0) { trajRandSclStd = stod(s); return; }
 		if (_name.compare("bkgR") == 0) { bkgR = stod(s); return; }
 		if (_name.compare("bkgG") == 0) { bkgG = stod(s); return; }
 		if (_name.compare("bkgB") == 0) { bkgB = stod(s); return; }
@@ -79,6 +81,7 @@ namespace gestureIKApp {
 		if (_name.compare("win_Width") == 0) { win_Width = stoi(s);			return; }
 		if (_name.compare("win_Height") == 0) { win_Height = stoi(s);			return; }
 		if (_name.compare("numLetters") == 0) { numLetters = stoi(s);			return; }
+		if (_name.compare("numTotSymPerLtr") == 0) { numTotSymPerLtr = stoi(s);			return; }
 		//floats
 		if (_name.compare("origZoom") == 0) { origZoom = stof(s);			return; }
 		//strings
@@ -100,6 +103,8 @@ namespace gestureIKApp {
 		IK_elbowScale = 0.36;
 		IK_fastTrajMult = 1.5;
 		trajLenThresh = 0.01;
+		trajRandCtrStd = .1;
+		trajRandSclStd = .1;
 		trajDistMult = 0.1;
 		trajNumReps = 5;
 		trajDesiredVel = .03;
@@ -107,6 +112,7 @@ namespace gestureIKApp {
 		win_Width = 800;
 		win_Height = 800;
 		numLetters = 26;
+		numTotSymPerLtr = 40;
 		origZoom = .65f;
 		bkgR = 1.0;
 		bkgG = 1.0;
@@ -133,6 +139,8 @@ namespace gestureIKApp {
 		res.push_back(IK_elbowScale);
 		res.push_back(IK_fastTrajMult);
 		res.push_back(trajLenThresh);
+		res.push_back(trajRandCtrStd);
+		res.push_back(trajRandSclStd);
 		res.push_back(trajDistMult);
 		res.push_back(trajNumReps);
 		res.push_back(trajDesiredVel);
@@ -140,6 +148,7 @@ namespace gestureIKApp {
 		res.push_back(win_Width);
 		res.push_back(win_Height);
 		res.push_back(numLetters);
+		res.push_back(numTotSymPerLtr);
 		res.push_back(origZoom);
 		res.push_back(bkgR);
 		res.push_back(bkgG);

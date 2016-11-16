@@ -172,14 +172,15 @@ namespace gestureIKApp {
 		avgLoc << _src->avgLoc;		//avg location in matlab space
 
 		//use this for random :  double getRandDbl(double mu, double std = 1.0) 
-		sclAmt = IKSolve->getRandDbl(_src->sclAmt, .2);		
-
+		do {
+			sclAmt = IKSolve->getRandDbl(_src->sclAmt, IKSolve->params->trajRandSclStd);
+		} while (sclAmt <= 0);
 		bool isFastTraj = isFast;
 		trajVel = IKSolve->params->trajDesiredVel;
 		if (isFastTraj) {
 			trajVel *= IKSolve->params->IK_fastTrajMult;
 		}
-		ptrCtrPt << IKSolve->getRandVec(_src->ptrCtrPt, .3);				//
+		ptrCtrPt << IKSolve->getRandVec(_src->ptrCtrPt, IKSolve->params->trajRandCtrStd);				//
 		setSymbolCenters(ptrCtrPt);				//need to set this before interacting with trajectories
 		trajectories.clear();
 		for (int i = 0; i < _src->trajectories.size(); ++i) {
