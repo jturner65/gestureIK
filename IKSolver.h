@@ -63,7 +63,6 @@ namespace gestureIKApp {
 		//tracked markers are markers that are solved for in IK solver, fixed means they use the original positions as their targets
 		trackedMarker(dart::dynamics::Marker* _m) :	ID(_m->getID()), m(_m), isFixed(false), origPos(_m->getWorldPosition()), tarPos(0, 0, 0) {}
 		virtual ~trackedMarker() {}
-
 		//set obj target position to current or original location and set to be fixed
 		void fixToLoc(bool useOrig) { isFixed = true; tarPos << (useOrig ? origPos : m->getWorldPosition());}
 		//release fixed object
@@ -108,28 +107,26 @@ namespace gestureIKApp {
 		void solve();
 		//get error in current pose between markers and targets
 		double getPoseError();
-		
-		//set which points are to be used for ptrfinger center and ptrElbow center
-		void setDrawingCenters() {
-			tstRShldrSt = skelPtr->getMarker("right_scapula")->getWorldPosition();
-			drawCrclCtr = skelPtr->getMarker("right_scapula")->getWorldPosition();
-			//move forward (in x dir) by reachPct
-			drawCrclCtr(0) += (params->IK_reachPct * reach);
+		//set sample trajectory pointer and elbow centers and normal vectors of planes drawn on (also used for defaults)
+		void setSampleCenters();
 
-			//instead of winging it for elbow, IK to draw center and update elbow location
-			drawElbowCtr = drawCrclCtr;
-			drawElbowCtr(0) *= .5;
-			drawElbowCtr(1) -= (reach * .36);
-			//normal point from elbow to shoulder as arm is extended to ~average position
-			elbowShldrNormal = (tstRShldrSt - drawElbowCtr).normalized();
+		//get random double with mean mu and std = std - put here so that accessible in all classes
+		inline double getRandDbl(double mu, double std = 1.0) {
+			double val = (*normDist)(mtrn_gen);
+			val *= (std * std);
+			val += mu;
+			return val;
 		}
 
-		void updateElbowLoc() {
-			cout << "Elbow Location being updated after IKing to Ctr point in IKSolver\n";
-			drawElbowCtr = skelPtr->getMarker("ptrElbow_r")->getWorldPosition();
-			//normal point from elbow to shoulder as arm is extended to ~average position
-			elbowShldrNormal = (tstRShldrSt - drawElbowCtr).normalized();
-		}	
+
+		//get random double with mean mu and std = std - put here so that accessible in all classes
+		inline Eigen::Vector3d getRandVec(const Eigen::Ref<const Eigen::Vector3d>& mu, double std = 1.0) {
+			Eigen::Vector3d val(0, 0, 0);
+			val<< (*normDist)(mtrn_gen), (*normDist)(mtrn_gen), (*normDist)(mtrn_gen);
+			val *= (std * std);
+			val += mu;
+			return val;
+		}
 
 		void drawTrkMrkrs(dart::renderer::RenderInterface* mRI, bool onlyTraj);
 
@@ -141,6 +138,8 @@ namespace gestureIKApp {
 		inline Eigen::Vector3d getPtrPos() { return  skelPtr->getMarker("ptrFinger_r")->getWorldPosition(); }
 		inline Eigen::Vector3d getElbowPos() { return  skelPtr->getMarker("ptrElbow_r")->getWorldPosition(); }
 
+		inline Eigen::Vector3d getPtrCenter() { return  skelPtr->getMarker("ptrElbow_r")->getWorldPosition(); }
+
 
 		std::shared_ptr<trkMrkMap> trkMarkers;										//all tracked markers in this skeleton
 
@@ -150,6 +149,7 @@ namespace gestureIKApp {
 			handLen;	//length from wrist marker to ptrFinger_r marker
 		
 		//center of drawn circle (some distance forward from drawing arm's shoulder); center of circle of drawing elbow; 
+
 		Eigen::Vector3d drawCrclCtr, drawElbowCtr, tstRShldrSt, elbowShldrNormal;
 
 		std::shared_ptr<gestureIKApp::GestIKParams> params;
@@ -165,7 +165,7 @@ namespace gestureIKApp {
 		std::map<std::string, double> mrkrWts;
 
 		unsigned int numDofs;// , numCnstrnts;
-
+		std::shared_ptr<std::normal_distribution<double> > normDist;
 	
 		Eigen::VectorXd initPose, newPose, lastNewPose, grads, mC;
 		Eigen::MatrixXd mJ;

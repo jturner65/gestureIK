@@ -21,6 +21,14 @@
 		<val>0.2</val>   
 	</parameter>
 	<parameter>
+		<name>IK_elbowScale</name>
+		<val>0.36</val>   
+	</parameter>
+	<parameter>
+		<name>IK_fastTrajMult</name>
+		<val>1.4</val>   
+	</parameter>
+	<parameter>
 		<name>dataCapTestTrainThresh</name>
 		<val>.5</val>   
 	</parameter>
@@ -50,11 +58,11 @@
 	</parameter>
 	<parameter>
 		<name>win_Width</name>
-		<val>200</val>   
+		<val>800</val>   
 	</parameter>
 	<parameter>
 		<name>win_Height</name>
-		<val>200</val>   
+		<val>800</val>   
 	</parameter>
 	<parameter>
 		<name>origZoom</name>
@@ -62,7 +70,7 @@
 	</parameter>
 	<parameter>
 		<name>numLetters</name>
-		<val>26</val> 
+		<val>2</val> 
 	</parameter>
 	<parameter>
 		<name>bkgR</name>

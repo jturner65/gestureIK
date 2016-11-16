@@ -60,15 +60,12 @@ public:
 	template<std::size_t SIZE>
 	eignVecVecTyp regenCorners(std::array<double, SIZE>const & arr, bool randomize, int stCrnr);
 
-	//template<std::size_t SIZE>
-	//void calcCornerTrajPoints(eignVecTyp& _trajPts, std::array<double, SIZE>const & arr,  double& t);
-
 	template<std::size_t SIZE>
 	double calcTrajLength(std::array<double, SIZE>const & arr);
-
 	///////////////////
 	//end templates
 	////
+
 	void initCustWindow(std::string _winTtl);
 
 	void buildLetterList();
@@ -94,7 +91,6 @@ public:
 			}
 		}
 	}
-
 	//screen cap all letters
 	void trainLtrDatManageCol();
 
@@ -116,16 +112,15 @@ public:
 	std::string getScreenCapDirFileName();
 
 	Eigen::Vector3d getCirclEndPoint(const Eigen::Ref<const Eigen::Vector3d>& ctrPt, double theta, double rad);
-	//get random double with mean mu and std = std
-	inline double getRandDbl(double mu, double std = 1.0) {
-		double val = (*normdist)(mtrn_gen);
-		val *= (std * std);
-		val += mu;
-		return val;
-	}
+	////get random double with mean mu and std = std
+	//inline double getRandDbl(double mu, std::shared_ptr<std::normal_distribution<double> >normDist, double std = 1.0) {
+	//	double val = (*normDist)(mtrn_gen);
+	//	val *= (std * std);
+	//	val += mu;
+	//	return val;
+	//}
 	//open index file for current data collection, either training or testing idx
 	void openIndexFile(bool isTrain, std::ofstream& strm);
-
 
 	virtual void keyboard(unsigned char _key, int _x, int _y);
 	//regenerate sample object trajectories with or without randomization
@@ -179,7 +174,7 @@ private:
 	inline void testRandom() {
 		double mu = 0;
 		for (int i = 0; i < 1000; ++i) {
-			auto rnd = getRandDbl(mu, .00001);
+			auto rnd = IKSolve->getRandDbl(mu, .00001);
 			cout << "i : " << i << "\tgetRandDbl with mu : " << mu << " : " << rnd << "\n";
 
 		}
@@ -210,7 +205,6 @@ private:
 	//all idxed by curTraj (symbols only): current screen capture idx for each of 4 trajs,current start vertex for each of 4 trajs (circle idx ignored TODO),# of trajectories catured for training data, testing data for each of 4 trajs
 	std::vector<int> captCount, curStIdx, dataGenIters;
 
-
 	///letter trajectories
 	//structure holding all letters
 	std::vector<std::shared_ptr<MyGestLetter>> letters;
@@ -231,8 +225,6 @@ private:
 		doneTrajIDX = 7;						//finished current trajectory
 
 	static const unsigned int numFlags = 8;
-
-	std::shared_ptr<std::normal_distribution<double> > normdist;
 };
 
 //calc total length of combined trajectories
@@ -249,7 +241,6 @@ double MyWindow::calcTrajLength(std::array<double, SIZE>const & arr) {
 	return res;
 }
 
-
 //regenerate the corners for the passed array - use this vector of vector of corners for sample trajectory building
 template<std::size_t SIZE>
 eignVecVecTyp MyWindow::regenCorners(std::array<double, SIZE>const & arr, bool randomize, int stCrnr) {
@@ -263,8 +254,8 @@ eignVecVecTyp MyWindow::regenCorners(std::array<double, SIZE>const & arr, bool r
 			eignVecTyp crnrVec(0);
 			int arrIdx = ((i%SIZE) + stCrnr) % SIZE;
 			if (flags[debugIDX]) { cout << "Obj size : " << SIZE << "\tRandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << "\n"; }
-			randThet = getRandDbl(arr[arrIdx], .3);
-			randRad = getRandDbl(rad, .2);
+			randThet = IKSolve->getRandDbl(arr[arrIdx],  .3);
+			randRad = IKSolve->getRandDbl(rad, .2);
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawCrclCtr, randThet, randRad));
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawElbowCtr, randThet, .25 * randRad));
 			crnrs.push_back(std::move(crnrVec));

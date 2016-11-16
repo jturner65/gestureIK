@@ -53,7 +53,7 @@ static int screenCapCnt = 0, trainSymDatCnt = 0, trainLtrtCnt = 0, displayTmrCnt
 MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_ikslvr), tVals(4), tBnds(4,1), tIncr(4,1), testOutFile(), trainOutFile(),
 	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curTrajStr(trajNames[0]), curClassName(trajNames[0]),
 	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0),
-	flags(numFlags,false), normdist(nullptr){
+	flags(numFlags,false){
 
 	mBackground[0] = IKSolve->params->bkgR;
 	mBackground[1] = IKSolve->params->bkgG;
@@ -70,19 +70,8 @@ MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_i
 	//start trajectory at initial position of hand
 	skelPtr = IKSolve->getSkel();
 	
-	std::cout << "In MyWindow : Right arm reach : " << IKSolve->reach << " center " << buildStrFrmEigV3d(IKSolve->drawCrclCtr) << " elbow center " << buildStrFrmEigV3d(IKSolve->drawElbowCtr) <<" and rad of test circle "<< IKSolve->params->IK_drawRad<<"\n";
-	//calcCircleTrajPoints(mTrajPoints);
-	//fixed points
-	int numMovePts = trkedMrkrNames.size() - fixedMrkrNames.size();
-	mTrajPoints[0] << IKSolve->drawCrclCtr;
-	mTrajPoints[1] << IKSolve->drawElbowCtr;
-	//target positions for all fixed markers
-	for (int i = 0; i < fixedMrkrNames.size(); ++i) {
-		mTrajPoints[i + numMovePts] = skelPtr->getMarker(fixedMrkrNames[i])->getWorldPosition();
-	}
-	IKSolve->solve(mTrajPoints);
-	//recalc elbow center after IKing ptr to circle center location
-	IKSolve->updateElbowLoc();
+	//set values used to map out trajectories to draw - needs to be owned by each symbol
+	IKSolve->setSampleCenters();
 
 	tIncr[0] = .2;//set to be .2 because it is a deltaTheta for the circle
 	for (int i = 1; i < 4; ++i) {
@@ -103,8 +92,6 @@ MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_i
 
 	//read all letter files and build trajectories
 	buildLetterList();
-	//normal distribution randomiser
-	normdist = make_shared<normal_distribution<double> >(0, 1.0);
 	
 	curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
 	//set refresh function
@@ -117,7 +104,6 @@ MyWindow::~MyWindow() {}
 void MyWindow::initCustWindow(std::string _winTtl) {
 	initWindow(IKSolve->params->win_Width, IKSolve->params->win_Height, _winTtl.c_str());
 }
-
 
 void MyWindow::openIndexFile(bool isTrain, std::ofstream& strm) {
 	stringstream ss;
@@ -231,7 +217,15 @@ void MyWindow::trainSymDatManageCol() {
 
 //capture all letters
 void MyWindow::trainLtrDatManageCol() {
-	//if (flags[debugIDX]) { cout << "start trainLtrDatManageCol : " << trainLtrtCnt << "\tcurLtrIDX : " << curLtrIDX << "\tcurSymbIDX : " << curSymIDX << "\n"; }
+	if (curLtrIDX >= letters.size()) {//done every letter
+		curSymIDX = 0;
+		curLtrIDX = 0;
+		flags[collectDataIDX] = false;
+		mCapture = false;
+		return;
+	}
+
+	 cout << "start trainLtrDatManageCol : " << trainLtrtCnt << "\tcurLtrIDX : " << curLtrIDX << "\tcurSymbIDX : " << curSymIDX << "\n"; 
 	//need to cycle through all letters 
 	setDrawLtrOrSmpl(true, curLtrIDX, false, curSymIDX);
 	curTrajDirName = getCurTrajFileDir(-1);
@@ -242,18 +236,14 @@ void MyWindow::trainLtrDatManageCol() {
 	else {
 		trainDatWriteIndexFile(testOutFile, curTrajDirName, curLtrIDX);
 	}
-
+	mCapture = true;
 	//for next iteration
 	curSymIDX += 1;
 	if (curSymIDX >= curLetter->symbols.size()){
 		curSymIDX = 0;
 		curLtrIDX += 1;
-		if (curLtrIDX >= letters.size()) {//done every letter
-			curLtrIDX = 0;
-			flags[collectDataIDX] = false;
-		}
 	}
-	//if (flags[debugIDX]) { cout << "End trainLtrDatManageCol : " << trainLtrtCnt++ << "\n"; }
+	cout << "End trainLtrDatManageCol : " << trainLtrtCnt++ << "\n"; 
 
 }//trainLtrDatManageCol
 
@@ -277,6 +267,12 @@ void MyWindow::buildLetterList() {
 		GestIKParser::readGestLetterXML(letters[i]);
 		cout << "Made letter : " << (*letters[i]) << "\n";
 	}
+	//buildRandomSymbolTrajs
+	for (int i = 0; i < letters.size(); ++i) {
+		letters[i]->buildRandomSymbolTrajs(2 * letters[i]->numTotSymbols);
+		cout << "Made Random versions of letter : " << (*letters[i]) << "\n";
+	}
+
 }
 
 //build circular trajectory and write to csv file

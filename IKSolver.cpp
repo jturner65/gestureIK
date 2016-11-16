@@ -50,8 +50,8 @@ namespace gestureIKApp {
 	//TODO if doing left hand - reverse trajectories in z direction and then reverse display via scale(1,1,-1)
 
 	IKSolver::IKSolver(dart::dynamics::SkeletonPtr _skel) :
-		trkMarkers(nullptr), reach(0), bicepLen(0),frArmLen(0), handLen(0), elbowShldrNormal(0,0,0),
-		skelPtr(_skel), params(nullptr), trajectory(nullptr), numDofs(_skel->getNumDofs()), mrkrWts(),
+		trkMarkers(nullptr), reach(0), bicepLen(0),frArmLen(0), handLen(0), drawCrclCtr(0, 0, 0), drawElbowCtr(0, 0, 0), tstRShldrSt(0, 0, 0), elbowShldrNormal(0,0,0),
+		skelPtr(_skel), params(nullptr), trajectory(nullptr), numDofs(_skel->getNumDofs()), mrkrWts(), normDist(nullptr),
 		initPose(_skel->getPositions()), newPose(), lastNewPose(), grads(), mC(), mJ(){
 		//load sim parameters from default file
 		//build params file from xml
@@ -73,9 +73,10 @@ namespace gestureIKApp {
 		handLen = (skelPtr->getMarker("ptrFinger_r")->getWorldPosition() - skelPtr->getMarker("ptrWrist_r")->getWorldPosition()).norm();
 		//double sum = (bicepLen + frArmLen + handLen);
 		//cout << "Reach : " << reach << " bicep len : " << bicepLen << " forearm len : " << frArmLen << " hand len : " << handLen << " sum of lengths : " << sum << " diffs : " << (reach - sum) << "\n";
-
-		//set values used to map out trajectories to draw
-		setDrawingCenters();
+		//start location of shoulder in world
+		tstRShldrSt = skelPtr->getMarker("right_scapula")->getWorldPosition();	
+		////set values used to map out trajectories to draw - needs to be owned by each symbol
+		//setDrawingCenters();
 		//set all tracked markers (these are solved for in IKSolver)
 		for (int i = 0; i < trkedMrkrNames.size(); ++i) {
 			Marker* m = skelPtr->getMarker(trkedMrkrNames[i]);
@@ -99,9 +100,34 @@ namespace gestureIKApp {
 		mC.setZero(3* trkMarkers->size());
 		newPose = skelPtr->getPositions();
 		lastNewPose = newPose;
+		//normal distribution randomiser
+		normDist = make_shared<normal_distribution<double> >(0, 1.0);
+
 	}
 
 	IKSolver::~IKSolver(){}
+	//set default values for pointer finger avg loc and elbow avg loc, and plane normals for ptr finger inscribed circle and elbow inscribed circle
+	void IKSolver::setSampleCenters() {
+		//build pointer center and guess at elbow center
+		drawCrclCtr = skelPtr->getMarker("right_scapula")->getWorldPosition();
+		//move forward (in x dir) by reachPct
+		drawCrclCtr(0) += (params->IK_reachPct * reach);
+		//instead of winging it for elbow, IK to draw center and update elbow location - use this estimate as start loc
+		drawElbowCtr = drawCrclCtr;
+		drawElbowCtr(0) *= .5;
+		drawElbowCtr(1) -= (reach * params->IK_elbowScale);
+		//normal point from elbow to shoulder as arm is extended to ~average position
+		elbowShldrNormal = (tstRShldrSt - drawElbowCtr).normalized();
+		std::cout << "In IKSolve : Right arm reach : " << reach << " elbow scale : "<< params->IK_elbowScale<<"\tcenter " << buildStrFrmEigV3d(drawCrclCtr) << " elbow center " << buildStrFrmEigV3d(drawElbowCtr) << " and rad of test circle " << params->IK_drawRad << "\n";
+		(*trkMarkers)[trkedMrkrNames[0]]->setTarPos(drawCrclCtr);
+		(*trkMarkers)[trkedMrkrNames[1]]->setTarPos(drawElbowCtr);
+		solve();
+		//recalc elbow center after IKing ptr to circle center location
+		drawElbowCtr = skelPtr->getMarker("ptrElbow_r")->getWorldPosition();
+		cout << "Sample Elbow Location being updated after IKing to Ctr point in IKSolver" << buildStrFrmEigV3d(drawElbowCtr) << "\n";
+		//normal point from elbow to shoulder as arm is extended to ~average position
+		elbowShldrNormal = (tstRShldrSt - drawElbowCtr).normalized();
+	}//setSampleCenters
 
 	//compare current marker locations with target marker locations and return sq error
 	//only determines error in tracked markers

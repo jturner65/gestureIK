@@ -49,11 +49,11 @@ namespace dart {
 	}  // namespace renderer
 } // namespace dart
 
-
-//this class will build and manage a vector of per-frame vectors of per-constraint target positions
-//for tracked markers on skeleton
-//a trajectory consists of a single "stroke" without interruption.
-
+/*
+	this class will build and manage a vector of per-frame vectors of per-constraint target positions
+	for tracked markers on skeleton
+	a trajectory consists of a single "stroke" without interruption.
+*/
 namespace gestureIKApp {
 	class IKSolver;
 	class MyGestSymbol;
@@ -77,6 +77,8 @@ namespace gestureIKApp {
 
 		//convert pointer location to elbow space location
 		Eigen::Vector3d convPtrToElbow(const Eigen::Ref<const Eigen::Vector3d>& _pt);
+		//copy the source info from passed trajectory
+		void copySrcInfo(std::shared_ptr<gestureIKApp::MyGestTraj> _src);
 
 		inline eignVecTyp getTrajFrame(int idx) {	return trajTargets[idx];		}
 
@@ -84,7 +86,10 @@ namespace gestureIKApp {
 		inline eignVecTyp getLastFrame() { return trajTargets[trajTargets.size()-1]; }
 
 		//build full trajectories
-		void buildFullTraj();
+		void buildFullTraj(); 
+
+		//called by symbol - calculate src data traj disp vectors (vectors from avg location to point location in source data
+		void calcSrcTrajDispVecs(const Eigen::Ref<const Eigen::Vector3d>& _avgLoc);
 
 		//calculate length of trajectory at given idx (corresponding to which marker this trajectory is being applied to)
 		double calcTrajLength(eignVecTyp& _pts);
@@ -94,14 +99,12 @@ namespace gestureIKApp {
 		eignVecTyp resample(eignVecTyp& _pts, double _len, vector<double>& _ptsDistFromSt, int numPts, bool wrap);
 		std::vector<double> calcDistsFromStart(eignVecTyp& _pts);
 		Eigen::Vector3d at(double t, double _ttllen, eignVecTyp& _pts, std::vector<double>& _distAtEachPt);
-		void MyGestTraj::processPts(int numPts);
-		void MyGestTraj::setPts(eignVecTyp& tmp);
+		void processPts(int numPts);
+		void setPts(eignVecTyp& tmp);
 		//whether or not to use this trajectory - currently only ever set false if length of traj is >0 but < some small threshold.  denotes traj noise
 		inline bool useTraj() { return flags[useTrajIDX]; }
-
 		//whether or not this trajectory is a connecting trajectory
 		inline bool isConnTraj() { return flags[connTrajIDX]; }
-
 
 		//draw this trajectory
 		void drawTraj(dart::renderer::RenderInterface* mRI, const Eigen::Ref<const Eigen::Vector3d>& clr);
@@ -118,8 +121,11 @@ namespace gestureIKApp {
 
 		//used for mapping
 		Eigen::Vector3d avgLoc;				//average location of all trajectories in the symbol this traj belongs to	- !!in matlab space!!	
-		double sclAmt,						//amt to scale direction vectors from center based on max dist and trajRad
+		Eigen::Vector3d ctrPoint;				//center point of traj	- !!in IK space!!	
+
+		double //sclAmt,						//amt to scale direction vectors from center based on max dist and trajRad
 			trajLen,						//length of trajectory
+			lenMaxSrcDisp,					//longest source displacement length (to speed up scale calculation)
 			perPtSpace;						//space between points in final trajectory
 
 		std::string filename,				//filename source for this trajectory
@@ -143,9 +149,7 @@ namespace gestureIKApp {
 
 		static const unsigned int numFlags = 6;
 
-	};
-	
+	};	
 } //namespace
-
 #endif // #ifndef APPS_GESTURE_MYGESTTRAJ_H_
 

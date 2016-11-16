@@ -75,8 +75,14 @@ namespace gestureIKApp {
 
 		//solve IK on the current Letter - returns true if finished
 		bool solve();
-	
-		void buildSymbolTrajs(vector< vector< std::string > >& trajFileNames);
+		//build a uniform distribution engine to be able to select randomly from all the symbols that represent this letter (read from file and desired from random generation)
+		void buildUniDist() {
+			uni = make_shared< uniform_int_distribution<int> >(0, (numTotSymbols - 1));
+		}
+		//build the symbols that are built from file descriptions
+		void buildFileSymbolTrajs(vector< vector< std::string > >& trajFileNames);
+		//generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present (# randomized * # from files, probably)
+		void buildRandomSymbolTrajs(int _totNumDesSymb);
 		//set solver for this trajectory
 		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
 		//set symbol to draw to be random entry in symbols list
@@ -102,8 +108,10 @@ namespace gestureIKApp {
 		unsigned int curIDX;
 		//current symbol idx used
 		unsigned int curSymbolIDX;
-		//# of examples of this letter
-		unsigned int numSymbols;
+		//# of examples of this letter from files
+		unsigned int numFileSymbols;
+		//# of total symbols of this letter (# randomized * # from files, probably)
+		unsigned int numTotSymbols;
 		//instances of this letter
 		std::vector<std::shared_ptr<gestureIKApp::MyGestSymbol> > symbols;		
 		

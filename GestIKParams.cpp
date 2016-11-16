@@ -42,7 +42,7 @@ using namespace Eigen;
 namespace gestureIKApp {
 
 	GestIKParams::GestIKParams() : defaultVals(), dataCapNumExamples(100), dataCapTestTrainThresh(.5),
-		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), trajLenThresh(0.01),
+		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), IK_elbowScale(0.36), IK_fastTrajMult(1.5), trajLenThresh(0.01),
 		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26),origZoom(.65f),
 		bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0),
 		flags(numFlags, false)
@@ -59,6 +59,8 @@ namespace gestureIKApp {
 		//doubles
 		if (_name.compare("IK_alpha") == 0) { IK_alpha = stod(s);      return; }
 		if (_name.compare("IK_maxSqError") == 0) { IK_maxSqError = stod(s);      return; }
+		if (_name.compare("IK_elbowScale") == 0) { IK_elbowScale = stod(s);      return; }
+		if (_name.compare("IK_fastTrajMult") == 0) { IK_fastTrajMult = stod(s);      return; }		
 		if (_name.compare("IK_reachPct") == 0) { IK_reachPct = stod(s);      return; }
 		if (_name.compare("IK_drawRad") == 0) { IK_drawRad = stod(s);      return; }
 		if (_name.compare("dataCapTestTrainThresh") == 0) { dataCapTestTrainThresh = stod(s);      return; }
@@ -95,6 +97,8 @@ namespace gestureIKApp {
 		IK_alpha = 0.01;
 		IK_drawRad = .2;
 		IK_maxSqError = 0.0001;
+		IK_elbowScale = 0.36;
+		IK_fastTrajMult = 1.5;
 		trajLenThresh = 0.01;
 		trajDistMult = 0.1;
 		trajNumReps = 5;
@@ -126,6 +130,8 @@ namespace gestureIKApp {
 		res.push_back(IK_drawRad);
 		res.push_back(IK_alpha);
 		res.push_back(IK_maxSqError);
+		res.push_back(IK_elbowScale);
+		res.push_back(IK_fastTrajMult);
 		res.push_back(trajLenThresh);
 		res.push_back(trajDistMult);
 		res.push_back(trajNumReps);
@@ -156,8 +162,9 @@ namespace gestureIKApp {
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
 		out << "GestIK Params values : \n";
 		out << "dataCapNumExamples : " << p.dataCapNumExamples << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << "\n";
-		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult << "\n";
-		out << "trajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\t| win_Width" << p.win_Width << "\t| win_Height" << p.win_Height <<"\t| orig zoom : "<<p.origZoom <<"\n";
+		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult << "\n";
+		out << "trajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << "\n";
+		out << "#letters (out of 26) to load : "<<p.numLetters <<"\t| bkg clr (rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")\n";
 		out << "Use Left Hand to Draw : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False")  << "\n";
 		return out;
 	}

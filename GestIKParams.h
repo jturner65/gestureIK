@@ -85,6 +85,10 @@ namespace gestureIKApp {
 		double IK_alpha;
 		//max allowed IK sq error 
 		double IK_maxSqError;
+		//scale of circular projection of trajectory on elbow plane compared to pointer plane
+		double IK_elbowScale;
+		//multiplier to velocity for "fast" symbols (determined randomly)
+		double IK_fastTrajMult;
 		//min allowed traj length for multi-point trajectories
 		double trajLenThresh;
 		//# of iterations of tuck/untuck/subdivide
@@ -105,7 +109,9 @@ namespace gestureIKApp {
 		double bkgR, bkgG, bkgB, bkgA;
 
 		std::vector<bool> flags;									//various boolean flags used to drive GestIK
-		static const int IDX_useLeftHand	= 0;						//whether or not to use left hand to draw
+		static const int 
+			IDX_useLeftHand	= 0;						//whether or not to use left hand to draw
+
 
 		static const int numFlags = 1;
 	};

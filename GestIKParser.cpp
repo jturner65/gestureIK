@@ -87,7 +87,7 @@ namespace gestureIKApp {
 		tinyxml2::XMLElement* numSymbolElem = NULL;
 		numSymbolElem = configElement->FirstChildElement("symbolExampleCounts");
 		if (numSymbolElem == NULL) {						cout << "<symbolExampleCounts> missing in file " << _ltr->fileName << ".\n"; return; }
-		_ltr->numSymbols = getValueInt(configElement, "symbolExampleCounts");	
+		_ltr->numFileSymbols = getValueInt(configElement, "symbolExampleCounts");
 
 		tinyxml2::XMLElement* symbolsElem = NULL;
 		symbolsElem = configElement->FirstChildElement("symbols");
@@ -103,7 +103,7 @@ namespace gestureIKApp {
 	void GestIKParser::readGestSymbolsXML(std::shared_ptr<MyGestLetter> _ltr, tinyxml2::XMLElement* _xmlElement) {
 		vector< vector< std::string > > trajFileNames;			//all trajectory file names for all symbols of this ltr
 		tinyxml2::XMLElement* symElem = _xmlElement;
-		for (int i = 0; i < _ltr->numSymbols; ++i) {
+		for (int i = 0; i < _ltr->numFileSymbols; ++i) {
 			tinyxml2::XMLElement* numTrajsElem = NULL;
 			numTrajsElem = symElem->FirstChildElement("trajCounts");
 			if (numTrajsElem == NULL) { cout << "<trajCounts> missing in file " << _ltr->fileName << " symbol def # "<<i<<".\n"; return; }
@@ -120,6 +120,6 @@ namespace gestureIKApp {
 			trajFileNames.push_back(std::move(tmpSymbolTrajs));
 			symElem = symElem->NextSiblingElement("symbol");
 		}//for each symbol
-		_ltr->buildSymbolTrajs(trajFileNames);
+		_ltr->buildFileSymbolTrajs(trajFileNames);
 	}
 }

@@ -45,14 +45,15 @@
 
 namespace gestureIKApp {
 	MyGestTraj::MyGestTraj(const std::string& _fname, std::shared_ptr<gestureIKApp::MyGestSymbol> _p, int _num):
-		IKSolve(nullptr), parentSymbol(_p), avgLoc(0,0,0), sclAmt(1), trajLen(0),
+		IKSolve(nullptr), parentSymbol(_p), avgLoc(0,0,0), trajLen(0), lenMaxSrcDisp(0), ctrPoint(0,0,0),
 		filename(_fname), name("tmp"),trajTargets(), srcTrajData(), srcTrajDispVecs(), convTrajPts(), debugTrajPts(), srtTrajTiming(), trajPtDistFromSt(),
-		flags(numFlags, false) {
+		flags(numFlags, false) 
+	{
 		stringstream ss;
 		ss << parentSymbol->name << "_" << _num;
 		name = ss.str();
 	}
-
+	 
 	MyGestTraj::~MyGestTraj() {}
 
 	//set tracked marker trajectory target positions - perform this every frame, update the IKsolver's trackedMarkers to have the current frame's appropriate locations/trajectories
@@ -80,12 +81,26 @@ namespace gestureIKApp {
 		IKSolve->solve();
 	}//setTrkMrkrAndSolve
 
+	void MyGestTraj::calcSrcTrajDispVecs(const Eigen::Ref<const Eigen::Vector3d>& _avgLoc) {
+		avgLoc << _avgLoc;
+		srcTrajDispVecs.clear();
+		double maxSqDisp = -99999;
+		Eigen::Vector3d tmp(0, 0, 0);
+		for (int j = 0; j < srcTrajData.size(); ++j) {
+			tmp << 0, (srcTrajData[j](1) - avgLoc(1)), (srcTrajData[j](2) - avgLoc(2));			//only z-y coords since this is the format from the matlab data
+			double sqLen = tmp.squaredNorm();
+			if (sqLen > maxSqDisp) {	maxSqDisp = sqLen;	}
+			srcTrajDispVecs.push_back(std::move(tmp));
+		}
+		lenMaxSrcDisp = sqrt(maxSqDisp);
+	}//calcSrcTrajDispVecs
+
 	//return vector of points from srcTrajData transformed from matlab space to IK pointer space
 	eignVecTyp MyGestTraj::convSrcTrajToGestTraj() {
 		eignVecTyp res(0);
 		for (int i = 0; i < srcTrajData.size(); ++i) {//1 frame of trajtarget for every src traj value
-			Eigen::Vector3d tmp(IKSolve->drawCrclCtr);
-			tmp += (sclAmt * srcTrajDispVecs[i]);
+			Eigen::Vector3d tmp(ctrPoint);
+			tmp += (parentSymbol->sclAmt * srcTrajDispVecs[i]);
 			res.push_back(std::move(tmp));
 		}
 		return res;
@@ -93,7 +108,8 @@ namespace gestureIKApp {
 
 	//draw component trajectories of letters based on either matlab generated/mech turk data or manufactured inter-traj connecting trajectories
 	void MyGestTraj::buildTrajFromData(bool fileInit, eignVecTyp& _Initpts) {
-		if (fileInit) {
+		ctrPoint << parentSymbol->ptrCtrPt;
+		if (fileInit) {//if file init then ignore _initpts and instead transform points read in from file to be bounded by a circle at a given point with a specific radius on a plane with a particular normal
 			//scales around center point and using max dist point inscribed on a circle
 			convTrajPts = convSrcTrajToGestTraj();
 			trajLen = calcTrajLength(convTrajPts);
@@ -106,9 +122,9 @@ namespace gestureIKApp {
 		trajTargets.clear();
 		flags[useTrajIDX] = true;
 
-		//TODO (?) use matlab timings stored in srtTrajTiming to get drawing speed
+		//TODO (maybe?) use matlab timings stored in srtTrajTiming to get drawing speed
 		//using average desired speed from xml IK_desiredVel to decide how many points to find.
-		//we will end up picking points by moving some percentage along trajectory and interpolating locations between points
+		//we will end up picking points by moving some percentage along trajectory and interpolating locations between end-points of that trajectory component
 		perPtSpace = IKSolve->params->trajDistMult * IKSolve->params->trajDesiredVel;
 		int numObjs = (int)(trajLen / perPtSpace);
 		for (int i = 0; i < convTrajPts.size(); ++i) {
@@ -120,7 +136,7 @@ namespace gestureIKApp {
 				flags[useTrajIDX] = false;
 			}
 			else {
-				int beforeSize = convTrajPts.size();
+				//int beforeSize = convTrajPts.size();
 				//cout << "Traj : " << name << " convTrajPts before size : " << beforeSize << "\tdesired size : " << numObjs;
 				if (numObjs < 2) { 
 					numObjs = 2; 
@@ -133,6 +149,7 @@ namespace gestureIKApp {
 				//cout << "Traj : " << name << " convTrajPts before size : " << beforeSize << " debugTrajPts after size : " << debugTrajPts.size() << "\tRatio : "<<(debugTrajPts.size() /(1.0 * beforeSize))<<"\n";
 			}
 		}
+		debugTrajPts.clear();
 		//build actual tracking data trajectory
 		buildFullTraj();
 	}//buildTrajFromData
@@ -140,13 +157,18 @@ namespace gestureIKApp {
 	//convert passed point in IK pointer space to elbow space, using appropriate transformations - project on plane ortho to elbow-shoulder vector with scaled size .25 * the distance in pointer space for symbol center (avgLoc)
 	//and theta == angle of point
 	Eigen::Vector3d MyGestTraj::convPtrToElbow(const Eigen::Ref<const Eigen::Vector3d>& pt) {
-		Eigen::Vector3d res(0, 0, 0);
 		//new length is .25 * length of point from avg loc
-		Eigen::Vector3d tmp(pt - IKSolve->drawCrclCtr);
+		Eigen::Vector3d tmp(pt - ctrPoint);
 		tmp *= .25;
 		//target plane basis vex
-		Eigen::Vector3d R(0, 0, 1), S = IKSolve->elbowShldrNormal.cross(R).normalized();
-		return IKSolve->drawElbowCtr + (tmp(2) * R) + (tmp(1) * S);
+		//this is backwards projection onto elbow plane (for fast trajectories?)
+		//Eigen::Vector3d yVec(0, 1, 0);
+		Eigen::Vector3d yVec(0, -1, 0);
+		if (parentSymbol->flags[parentSymbol->isFastDrawnIDX]) { yVec *= -1; }
+		//use ptrPlaneNorm since wll never be colinear with 0,-1,0 (no drawing on ground)
+		//Eigen::Vector3d R = parentSymbol->ptrPlaneNorm.cross(yVec).normalized(), S = parentSymbol->elbowPlaneNorm.cross(R).normalized();
+		Eigen::Vector3d R = parentSymbol->elbowPlaneNorm.cross(yVec).normalized(), S = parentSymbol->elbowPlaneNorm.cross(R).normalized();
+		return parentSymbol->elbowCtrPt + (tmp(2) * R) + (tmp(1) * S);
 	}
 	//build full trajectory data based on convTrajPts - only build after convTrajPts is built!
 	void MyGestTraj::buildFullTraj() {
@@ -220,13 +242,6 @@ namespace gestureIKApp {
 		ptsDistFromSt = calcDistsFromStart(debugTrajPts);
 		debugTrajPts = resample(debugTrajPts, debugLen, ptsDistFromSt, numPts, flags[closeTrajIDX]);
 
-		//setPts(procPts(_equaldist, convTrajPts, .5f, trajLen, flags[closeTrajIDX]));
-		//for (int i = 0; i < numReps; ++i) {
-		//	//setPts(procPts(_subdivide, convTrajPts, 2, trajLen, flags[closeTrajIDX]));
-		//	setPts(procPts(_tuck, convTrajPts, .5f, trajLen, flags[closeTrajIDX]));
-		//	setPts(procPts(_tuck, convTrajPts, -.5f, trajLen, flags[closeTrajIDX]));
-		//}		//smooth curve - J4
-		//setPts(procPts(_resample, convTrajPts, numPts, trajLen, flags[closeTrajIDX]));
 	}
 
 	eignVecTyp MyGestTraj::procPts(int _typ, eignVecTyp& _pts, double val, bool wrap) {
@@ -295,6 +310,30 @@ namespace gestureIKApp {
 		return tmp;
 	}//equiDist
 
+	 //copy the source info from passed trajectory - should make this trajectory ready for buildTrajFromData call, except for setting center and radius of circle and plane of inscribed circle, all from symbol
+	void MyGestTraj::copySrcInfo(std::shared_ptr<gestureIKApp::MyGestTraj> _src) {
+		avgLoc << _src->avgLoc;				//in matlab space so will not change 
+		ctrPoint << parentSymbol->ptrCtrPt;
+		double newScaleAmt = parentSymbol->sclAmt / _src->parentSymbol->sclAmt;
+		for (int i = 0; i < numFlags; ++i) {		flags[i] = _src->flags[i];	}
+		//copy convTrajPts into this traj's convTrajPts
+		eignVecTyp tmpCtrToPtVecs(0);
+		for (int i = 0; i < _src->convTrajPts.size(); ++i) {
+			tmpCtrToPtVecs.push_back(_src->convTrajPts[i] - _src->ctrPoint);//vector of displacement in _src traj
+			tmpCtrToPtVecs[i] *= newScaleAmt;
+		}
+		//rotate vectors to lie on plane normal to parentSymbol->ptrPlaneNorm and displace from ctrPoint by tmpCtrToPtVecs 
+		eignVecTyp tmpPts(0);
+		for (int i = 0; i < tmpCtrToPtVecs.size(); ++i) {
+			Eigen::Vector3d tmp = tmpCtrToPtVecs[i],
+				yVec(0, -1, 0), R = parentSymbol->ptrPlaneNorm.cross(yVec).normalized(), S = parentSymbol->ptrPlaneNorm.cross(R).normalized();
+			tmpPts.push_back(ctrPoint + (tmp(2) * R) + (tmp(1) * S));
+
+		}
+		setPts(tmpPts);
+		//build actual tracking data trajectory - before this is called, _myParent's ctrPoint, elbowPt, and normal vex need to be calced
+		buildFullTraj();
+	}//copySrcInfo
 
 	/**
 	* using arc length parameterisation this will return a point along the curve at a
@@ -335,6 +374,12 @@ namespace gestureIKApp {
 			mRI->drawEllipsoid(ballSz);
 			mRI->popMatrix();
 		}
+		//draw center
+		mRI->setPenColor(Eigen::Vector3d(.9, .1, .9));
+		mRI->pushMatrix();
+		mRI->translate(ctrPoint);				//ptr finger trajectory location
+		mRI->drawEllipsoid(2 * ballSz);
+		mRI->popMatrix();
 
 		//mRI->pushMatrix();
 		//if (flags[connTrajIDX]) {

@@ -45,7 +45,7 @@
 
 namespace gestureIKApp {
 
-	MyGestLetter::MyGestLetter(std::string _ltrName):IKSolve(nullptr), curSymbolIDX(0), numSymbols(0), symbols(0), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags){
+	MyGestLetter::MyGestLetter(std::string _ltrName):IKSolve(nullptr), curSymbolIDX(0), numFileSymbols(0), numTotSymbols(0), symbols(0), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags){
 		stringstream ss;
 		ss.str("");
 		ss << lettersPath << "ltr_" << ltrName<<"/ltr_"<<ltrName<<".xml";
@@ -57,21 +57,46 @@ namespace gestureIKApp {
 	
 	//symbol file describing the trajectories that make up this symbol - called from xml parser
 	//per symbol list of trajectory file names
-	void MyGestLetter::buildSymbolTrajs(vector< vector< std::string > >& trajFileNames){
+	void MyGestLetter::buildFileSymbolTrajs(vector< vector< std::string > >& trajFileNames){
 		symbols.clear();
 		stringstream ss;
-		for (int i = 0; i < numSymbols; ++i) {
+		for (int i = 0; i < numFileSymbols; ++i) {
 			ss.str("");
 			ss << ltrName << "_" << i;
-			symbols.push_back(std::make_shared<MyGestSymbol>(ss.str()));
+			symbols.push_back(std::make_shared<MyGestSymbol>(ss.str(),i));
 			//set shared ptr ref to self
-			symbols[i]->_self = symbols[i];
 			symbols[i]->setSolver(IKSolve);
-			symbols[i]->readTrajFiles(trajFileNames[i], symbols[i]);
+			symbols[i]->buildTrajsFromFile(trajFileNames[i], symbols[i]);
 		}
+		numTotSymbols = numFileSymbols;
 		//build distribution of potential symbols to draw from to find random symbol idx to ik to 
-		uni = make_shared< uniform_int_distribution<int> > (0, (numSymbols-1));
+		buildUniDist();
 	}//readLetterFile
+
+	 //generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present - note this is total desired, so # to add is _totNumDesSymb - numFileSymbols
+	void MyGestLetter::buildRandomSymbolTrajs(int _totNumDesSymb) {
+		if (_totNumDesSymb <= numTotSymbols) {
+			cout << "Requested " << _totNumDesSymb << " random and file based symbols, but already have " << numTotSymbols << " made, so doing nothing.\n";
+			return;
+		}
+		stringstream ss;
+		int randSymbolIDX;
+		for (int i = numTotSymbols; i < _totNumDesSymb; ++i) {		//adding symbols
+			randSymbolIDX = (*uni)(mtrn_gen);						//random idx of source symbol
+			bool isFast = (2 * (*uni)(mtrn_gen)) > numTotSymbols;
+			ss.str("");
+			ss << ltrName << "_" << i<<(isFast ? "_F" : "_N");
+			symbols.push_back(std::make_shared<MyGestSymbol>(ss.str(), randSymbolIDX));
+			//set shared ptr ref to self
+			symbols[i]->setSolver(IKSolve);
+			symbols[i]->buildRandomSymbol(symbols[randSymbolIDX], symbols[i], isFast);
+		}
+		numTotSymbols = _totNumDesSymb;
+		//build new distribution of potential symbols to draw from to find random symbol idx to ik to 
+		buildUniDist();
+	}
+
+
 
 	//solve IK on current letter - get current symbol, cycle through all trajectories until drawn
 	bool MyGestLetter::solve() {
@@ -117,8 +142,7 @@ namespace gestureIKApp {
 
 	std::ostream& operator<<(std::ostream& out, MyGestLetter& ltr) {
 		out << "Letter :" << ltr.ltrName << "\tfile name : " << ltr.fileName << "\n";
-		out << "\t# symbols presents : " << ltr.numSymbols << "\n";
-
+		out << "\t# symbol files present : " << ltr.numFileSymbols << "\t total # symbols of this letter present : " << ltr.numTotSymbols << "\n";
 		return out;
 	}
 

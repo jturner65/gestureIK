@@ -68,13 +68,9 @@ namespace gestureIKApp {
 	//collection of 1 or more trajectories making up a symbol
 	class MyGestSymbol {
 	public:
-		MyGestSymbol(std::string name);
+		MyGestSymbol(std::string name, int srcIDX);
 		virtual ~MyGestSymbol();
 
-		//load this symbol's raw trajectories and build MyGestTrajs for each trajectory - build at symbol level, not trajectory level
-		void readTrajFiles(vector<std::string>& trajFileNames, std::shared_ptr<MyGestSymbol> _this);
-		//find average x-y location of trajectory points in component trajectories of this symbol, and closest and furthest points from average. - these will be used to map to "drawing plane" in ik sim world frame 
-		void calcTransformPts();
 		//draw trajectories of this symbol - if set change color for each trajectory
 		void drawTrajs(dart::renderer::RenderInterface* mRI);
 
@@ -88,6 +84,19 @@ namespace gestureIKApp {
 		//set solver for this trajectory
 		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
 
+		//buld a randomized version of the passed symbol
+		void buildRandomSymbol(std::shared_ptr<MyGestSymbol> _base, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast);
+		//load this symbol's raw trajectories and build MyGestTrajs for each trajectory - build at symbol level, not trajectory level
+		void buildTrajsFromFile(vector<std::string>& trajFileNames, std::shared_ptr<MyGestSymbol> _this);
+		//find average x-y location of trajectory points in component trajectories of this symbol, and closest and furthest points from average. - these will be used to map to "drawing plane" in ik sim world frame 
+		void calcTransformPts();
+		//find length of all trajectories
+		void calcAllTrajsLen();
+		//process trajectories and build linking trajectories to connect disjoint trajectories
+		void buildTrajComponents();
+
+		//set symbol trajectory pointer and elbow centers and normal vectors of planes drawn on - planeNorm must be specified first
+		void setSymbolCenters(const Eigen::Ref<const Eigen::Vector3d>& ctPt);
 
 		//generate transition traj between symbols using neville
 		std::shared_ptr<MyGestTraj> genConnectTraj(const Eigen::Ref<const Eigen::Vector3d>& ctPt, const Eigen::Ref<const Eigen::Vector3d>& traj1End, const Eigen::Ref<const Eigen::Vector3d>& traj2St);
@@ -97,27 +106,38 @@ namespace gestureIKApp {
 
 	public :	//variables
 		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver
-		std::shared_ptr<MyGestSymbol> _self;									//ref to shared ptr to self, for trajectories
+		std::shared_ptr<MyGestSymbol> _self;									//ref to shared ptr to self, to be handed off to trajectories
 
 		unsigned int curTraj,													//idx of current trajectory being processed
-			curFrame;															//current frame of this letter being processed
+			curFrame,															//current frame of this letter being processed
+			srcSymbolIDX;														//idx in owning letter symbols vector of source symbol for this symbol, or it's own idx if from a file
 
 		double allTrajsLen,													//length of all trajectories of this letter
+			trajVel,														//avg velocity to finish trajectory
+			sclAmt,															//scale amount for this symbol to scale from matlab space to IK space
 			curTrajDist;														//current position along length of trajectory
 
 		std::vector<std::shared_ptr<gestureIKApp::MyGestTraj> > trajectories;	//component trajectories making up this symbol
-		std::vector<double>trajLens;											//length of past part of trajectory including piece at IDX
+		std::vector<double>trajLens;											//array of total length of trajectory at a location, including piece at IDX
 		std::string name;														//symbol name - letter + # of symbol
 
 		std::vector<bool> flags;					//state flags of trajectory
-		static const unsigned int debugIDX = 0,		//debug mode
-						diffClrIDX = 1,			//use different colors for each component trajectory of this symbol
-						drawConnTrajIDX = 2;	//draw the connecting trajectories between two data trajectories	
-		static const unsigned int numFlags = 3;
+		static const unsigned int 
+			debugIDX = 0,			//debug mode
+			diffClrIDX = 1,			//use different colors for each component trajectory of this symbol
+			drawConnTrajIDX = 2,	//draw the connecting trajectories between two data trajectories	
+			randCircleIDX = 3,		//if true, randomize the center, radius and plane normal of the bounding circle of this letter
+			isFastDrawnIDX = 4;		//this symbol is drawn quickly - flip orientation of elbow plane normal, 1.5x base drawing speed
+		static const unsigned int numFlags = 5;
 
-		Eigen::Vector3d avgLoc,													//average location of symbol data in matlab space
-			maxLoc;
+		Eigen::Vector3d avgLoc;													//average location of symbol data in matlab space
+		//	maxLoc;																//disp vector of point furthest from average location of all points in this symbol
 
+		Eigen::Vector3d	ptrCtrPt,												//center point of circle the transformed version of this symbol is inscribed within 
+			elbowCtrPt,															//center point of circle the transformed elbow traj of this symbol is incribed within
+			ptrPlaneNorm,														//normal of plane of circle this symbol is inscribed upon
+			elbowPlaneNorm;														//normal of plane of elbow circle 
+		double circleRad;														//radius of circle this symbol is inscribed within
 
 	};
 } // namespace gestureIKApp
