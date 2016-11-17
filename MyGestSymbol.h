@@ -68,7 +68,7 @@ namespace gestureIKApp {
 	//collection of 1 or more trajectories making up a symbol
 	class MyGestSymbol {
 	public:
-		MyGestSymbol(std::string name, int srcIDX);
+		MyGestSymbol(const std::string& name, int srcIDX);
 		virtual ~MyGestSymbol();
 
 		//draw trajectories of this symbol - if set change color for each trajectory
@@ -85,9 +85,9 @@ namespace gestureIKApp {
 		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
 
 		//buld a randomized version of the passed symbol
-		void buildRandomSymbol(std::shared_ptr<MyGestSymbol> _base, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast);
+		bool buildRandomSymbol(std::shared_ptr<MyGestSymbol> _base, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast);
 		//load this symbol's raw trajectories and build MyGestTrajs for each trajectory - build at symbol level, not trajectory level
-		void buildTrajsFromFile(vector<std::string>& trajFileNames, std::shared_ptr<MyGestSymbol> _this);
+		void buildTrajsFromFile(std::vector<std::string>& trajFileNames, std::shared_ptr<MyGestSymbol> _this);
 		//find average x-y location of trajectory points in component trajectories of this symbol, and closest and furthest points from average. - these will be used to map to "drawing plane" in ik sim world frame 
 		void calcTransformPts();
 		//find length of all trajectories

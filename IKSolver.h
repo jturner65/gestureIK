@@ -100,9 +100,9 @@ namespace gestureIKApp {
 		virtual ~IKSolver();
 
 		//set tracked marker positions - call this or something like it before solve
-		void setTrkMrkrs(eignVecTyp _tarPos);
+		void setTrkMrkrs(eignVecTyp& _tarPos);
 
-		void solve(eignVecTyp _tarPos);
+		void solve(eignVecTyp& _tarPos);
 
 		void solve();
 		//get error in current pose between markers and targets

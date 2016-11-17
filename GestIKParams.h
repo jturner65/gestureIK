@@ -47,7 +47,6 @@
 #include "dart/utils/Parser.h"
 #include <boost/algorithm/string.hpp>
 
-using namespace std;
 namespace gestureIKApp {
 	//any necessary hyperparams needed to be loaded from XML file
 	class GestIKParams {
@@ -55,18 +54,25 @@ namespace gestureIKApp {
 		GestIKParams();
 		virtual ~GestIKParams();
 
-		vector<double> accumulateVals();
-		void distributeVals(vector<double>& vals);
+		std::vector<double> accumulateVals();
+		void distributeVals(std::vector<double>& vals);
 		void setDefaultVals();
 		void setCurrentValsAsDefault();
 		void setParamValFromXMLStr(const std::string& _name, const std::string& s);
+
+		//whether or not to add the possibility of using the left hand to draw to random letter gen
+		inline bool useLeftHand() { return flags[IDX_useLeftHand]; }
+		//whether or not to generate randomized versions of loaded letters - note numTotSymPerLtr still needs to be specified to be greater than # of file-based samples to get any random samples
+		inline bool genRandLtrs() { return flags[IDX_genRandLtrs]; }
+		//whether or not to make img sequences of the non-random-generated (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
+		inline bool mkNonRandSeq() { return flags[IDX_mkNonRandSeq]; }
 
 		void resetValues();
 
 		friend std::ostream& operator<<(std::ostream& out, GestIKParams& GestIK);
 
 	public:	//variables
-		vector<double> defaultVals;
+		std::vector<double> defaultVals;
 
 		//data collection parameters
 		//base value of # of trajectories to capture for training and testing data
@@ -95,8 +101,7 @@ namespace gestureIKApp {
 		double trajRandCtrStd;
 		//std of randomized trajectory center
 		double trajRandSclStd;
-
-		//# of iterations of tuck/untuck/subdivide
+		//# of iterations of tuck/untuck/subdivide for trajectory smoothing
 		int trajNumReps;
 		//multiplier of trajectory distance per frame for trajectory point gen
 		double trajDistMult;
@@ -110,17 +115,25 @@ namespace gestureIKApp {
 		int numLetters;
 		//# of total symbols of a particular letter we're generating - if < # of file-based examples, is ignored, if > then we generate random versions of the file based letters to make up diff
 		int numTotSymPerLtr;
+		//ltr idx to begin saving (>25 forced to 25)
+		int ltrIdxStSave;
 		//initial zoom
 		float origZoom;
 		//background colors
 		double bkgR, bkgG, bkgB, bkgA;
 
+	private :
 		std::vector<bool> flags;									//various boolean flags used to drive GestIK
 		static const int 
-			IDX_useLeftHand	= 0;						//whether or not to use left hand to draw
+			//whether or not to add the possibility of using the left hand to draw to random letter gen
+			IDX_useLeftHand	= 0,
+			//whether or not to generate randomized versions of loaded letters - note numTotSymPerLtr still needs to be specified to be greater than # of file-based samples to get any random samples
+			IDX_genRandLtrs = 1,
+			//whether or not to make img sequences of the non-random-generated (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
+			IDX_mkNonRandSeq = 2;						
 
 
-		static const int numFlags = 1;
+		static const int numFlags = 2;
 	};
 
 }//namespace gestureIKApp 

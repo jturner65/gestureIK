@@ -58,10 +58,8 @@ namespace gestureIKApp {
 	class IKSolver;
 	class MyGestSymbol;
 
-	class MyGestTraj {
-
+	class MyGestTraj { 
 	public:
-
 		MyGestTraj(const std::string& _fname,std::shared_ptr<gestureIKApp::MyGestSymbol> _p, int _num);
 		virtual ~MyGestTraj();
 
@@ -95,8 +93,8 @@ namespace gestureIKApp {
 		double calcTrajLength(eignVecTyp& _pts);
 		//double calcTrajLength(int idx);
 		eignVecTyp procPts(int _typ, eignVecTyp& _pts, double val, bool wrap);
-		eignVecTyp equiDist(eignVecTyp& _pts, double _len, vector<double>& ptsDistFromSt);
-		eignVecTyp resample(eignVecTyp& _pts, double _len, vector<double>& _ptsDistFromSt, int numPts, bool wrap);
+		eignVecTyp equiDist(eignVecTyp& _pts, double _len, std::vector<double>& ptsDistFromSt);
+		eignVecTyp resample(eignVecTyp& _pts, double _len, std::vector<double>& _ptsDistFromSt, int numPts, bool wrap);
 		std::vector<double> calcDistsFromStart(eignVecTyp& _pts);
 		Eigen::Vector3d at(double t, double _ttllen, eignVecTyp& _pts, std::vector<double>& _distAtEachPt);
 		void processPts(int numPts);

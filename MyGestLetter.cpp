@@ -45,8 +45,8 @@
 
 namespace gestureIKApp {
 
-	MyGestLetter::MyGestLetter(std::string _ltrName):IKSolve(nullptr), curSymbolIDX(0), numFileSymbols(0), numTotSymbols(0), symbols(0), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags){
-		stringstream ss;
+	MyGestLetter::MyGestLetter(const std::string& _ltrName):IKSolve(nullptr), curSymbolIDX(0), numFileSymbols(0), numTotSymbols(0), symbols(0), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags){
+		std::stringstream ss;
 		ss.str("");
 		ss << lettersPath << "ltr_" << ltrName<<"/ltr_"<<ltrName<<".xml";
 		//name of xml file holding instances of this letter
@@ -57,9 +57,9 @@ namespace gestureIKApp {
 	
 	//symbol file describing the trajectories that make up this symbol - called from xml parser
 	//per symbol list of trajectory file names
-	void MyGestLetter::buildFileSymbolTrajs(vector< vector< std::string > >& trajFileNames){
+	void MyGestLetter::buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames){
 		symbols.clear();
-		stringstream ss;
+		std::stringstream ss;
 		for (int i = 0; i < numFileSymbols; ++i) {
 			ss.str("");
 			ss << ltrName << "_" << i;
@@ -76,20 +76,28 @@ namespace gestureIKApp {
 	 //generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present - note this is total desired, so # to add is _totNumDesSymb - numFileSymbols
 	void MyGestLetter::buildRandomSymbolTrajs(int _totNumDesSymb) {
 		if (_totNumDesSymb <= numTotSymbols) {
-			cout << "Requested " << _totNumDesSymb << " random and file based symbols, but already have " << numTotSymbols << " made, so doing nothing.\n";
+			std::cout << "Requested " << _totNumDesSymb << " random and file based symbols, but already have " << numTotSymbols << " made, so doing nothing.\n";
 			return;
 		}
-		stringstream ss;
+		std::stringstream ss;
 		int randSymbolIDX;
+		std::shared_ptr<gestureIKApp::MyGestSymbol> tmpPtr;
 		for (int i = numTotSymbols; i < _totNumDesSymb; ++i) {		//adding symbols
-			randSymbolIDX = (*uni)(mtrn_gen);						//random idx of source symbol
+			bool isDone = false;
 			bool isFast = (2 * (*uni)(mtrn_gen)) > numTotSymbols;
-			ss.str("");
-			ss << ltrName << "_" << i<<(isFast ? "_F" : "_N");
-			symbols.push_back(std::make_shared<MyGestSymbol>(ss.str(), randSymbolIDX));
-			//set shared ptr ref to self
-			symbols[i]->setSolver(IKSolve);
-			symbols[i]->buildRandomSymbol(symbols[randSymbolIDX], symbols[i], isFast);
+			do {
+				randSymbolIDX = (*uni)(mtrn_gen);						//random idx of source symbol
+				ss.str("");
+				ss << ltrName << "_" << i << (isFast ? "_F" : "_N");
+				tmpPtr = std::make_shared<MyGestSymbol>(ss.str(), randSymbolIDX);
+				tmpPtr->setSolver(IKSolve);
+				//isDone returns false if there are non-
+				isDone = tmpPtr->buildRandomSymbol(symbols[randSymbolIDX], tmpPtr, isFast);
+			} while (!isDone);
+			symbols.push_back(tmpPtr);
+			////set shared ptr ref to self
+			//symbols[i]->setSolver(IKSolve);
+			//symbols[i]->buildRandomSymbol(symbols[randSymbolIDX], symbols[i], isFast);
 		}
 		numTotSymbols = _totNumDesSymb;
 		//build new distribution of potential symbols to draw from to find random symbol idx to ik to 
@@ -102,7 +110,7 @@ namespace gestureIKApp {
 	bool MyGestLetter::solve() {
 		bool finished = symbols[curSymbolIDX]->solve();
 		if (finished) {
-			cout << "Finished drawing letter : " << symbols[curSymbolIDX]->name << "\n";
+			std::cout << "Finished drawing letter : " << symbols[curSymbolIDX]->name << "\n";
 		}
 		return finished;
 	}
@@ -112,7 +120,7 @@ namespace gestureIKApp {
 		curIDX = idx;
 		curSymbolIDX = (*uni)(mtrn_gen);
 		symbols[curSymbolIDX]->initSymbolIK();
-		cout << "Curr Rand symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << "\n";
+		std::cout << "Curr Rand symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << "\n";
 	}
 
 	//sets specific index in symbol list for letter to draw - used to let myWindow control which symbols to draw (for train and test data)
@@ -120,7 +128,7 @@ namespace gestureIKApp {
 		curIDX = idx;
 		curSymbolIDX = symIdx;
 		symbols[curSymbolIDX]->initSymbolIK();
-		cout << "Specified symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << "\n";
+		std::cout << "Specified symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << "\n";
 	}
 
 	//set reference to IK solver - set in all trajectories

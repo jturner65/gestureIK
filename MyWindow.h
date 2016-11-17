@@ -98,7 +98,7 @@ public:
 	virtual void displayTimer(int _val);
 	//override draw function in SimWindow
 	virtual void draw();
-	void drawAxes(const Eigen::Vector3d& axesLoc, float len, bool altColor);
+	void drawAxes(const Eigen::Ref<const Eigen::Vector3d>& axesLoc, float len, bool altColor);
 	void drawCurTraj();
 	void drawJointAxis(dart::dynamics::BodyNode* node);
 	void drawJointAxes();
@@ -112,15 +112,9 @@ public:
 	std::string getScreenCapDirFileName();
 
 	Eigen::Vector3d getCirclEndPoint(const Eigen::Ref<const Eigen::Vector3d>& ctrPt, double theta, double rad);
-	////get random double with mean mu and std = std
-	//inline double getRandDbl(double mu, std::shared_ptr<std::normal_distribution<double> >normDist, double std = 1.0) {
-	//	double val = (*normDist)(mtrn_gen);
-	//	val *= (std * std);
-	//	val += mu;
-	//	return val;
-	//}
+
 	//open index file for current data collection, either training or testing idx
-	void openIndexFile(bool isTrain, std::ofstream& strm);
+	void openIndexFile(bool isTrain, std::ofstream& strm, bool append);
 
 	virtual void keyboard(unsigned char _key, int _x, int _y);
 	//regenerate sample object trajectories with or without randomization
@@ -150,7 +144,7 @@ public:
 
 	//return string of full path to where the screen cap files will be written
 	inline std::string getFullBasePath() {
-		stringstream ss;
+		std::stringstream ss;
 		ss << framesFilePath << (flags[useLtrTrajIDX] ? "letters/" : "samples/" );
 		return ss.str();
 	}
@@ -175,7 +169,7 @@ private:
 		double mu = 0;
 		for (int i = 0; i < 1000; ++i) {
 			auto rnd = IKSolve->getRandDbl(mu, .00001);
-			cout << "i : " << i << "\tgetRandDbl with mu : " << mu << " : " << rnd << "\n";
+			std::cout << "i : " << i << "\tgetRandDbl with mu : " << mu << " : " << rnd << "\n";
 
 		}
 	}
@@ -183,7 +177,7 @@ private:
 	//skeleton
 	dart::dynamics::SkeletonPtr skelPtr;
 	//ticks for sample traj drawing
-	vector<double> tVals, tBnds, tIncr;
+	std::vector<double> tVals, tBnds, tIncr;
 	//file stream for test and train index files
 	std::ofstream testOutFile, trainOutFile;
 	//strings for file names and directories
@@ -210,8 +204,8 @@ private:
 	std::vector<std::shared_ptr<MyGestLetter>> letters;
 	//currently drawn letter
 	std::shared_ptr<MyGestLetter> curLetter;
-	//current letter in list of shrd ptrs of ltrs, current symbol in list of symbols in letter
-	int curLtrIDX, curSymIDX;
+	//current letter in list of shrd ptrs of ltrs, current symbol in list of symbols in letter, start idx of symbols - either 0 or the # of file-loaded symbols for a letter (if specified to regen only random and not file-built sequences)
+	int curLtrIDX, curSymIDX, stSymIdx;
 
 	//state flags 
 	std::vector<bool> flags;				
@@ -253,7 +247,7 @@ eignVecVecTyp MyWindow::regenCorners(std::array<double, SIZE>const & arr, bool r
 		for (int i = 0; i < numCrnrs; ++i) {
 			eignVecTyp crnrVec(0);
 			int arrIdx = ((i%SIZE) + stCrnr) % SIZE;
-			if (flags[debugIDX]) { cout << "Obj size : " << SIZE << "\tRandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << "\n"; }
+			if (flags[debugIDX]) { std::cout << "Obj size : " << SIZE << "\tRandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << "\n"; }
 			randThet = IKSolve->getRandDbl(arr[arrIdx],  .3);
 			randRad = IKSolve->getRandDbl(rad, .2);
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawCrclCtr, randThet, randRad));
@@ -266,7 +260,7 @@ eignVecVecTyp MyWindow::regenCorners(std::array<double, SIZE>const & arr, bool r
 		for (int i = 0; i < numCrnrs; ++i) {
 			eignVecTyp crnrVec(0);
 			int arrIdx = ((i%SIZE) + stCrnr) % SIZE;
-			if (flags[debugIDX]) {	cout << "Obj size : " << SIZE << "\tNonrandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << "\n"; }
+			if (flags[debugIDX]) { std::cout << "Obj size : " << SIZE << "\tNonrandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << "\n"; }
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawCrclCtr, arr[arrIdx], rad));
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawElbowCtr, arr[arrIdx], .25 * rad));
 			crnrs.push_back(std::move(crnrVec));

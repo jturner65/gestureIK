@@ -36,23 +36,21 @@
 
 #include "apps/gestureIK/GestIKParser.h"
 
-using namespace std;
-using namespace Eigen;
 using namespace dart::utils;
 namespace gestureIKApp {
 	//read info from filename, set params value controlling IK sim and data collection variables
 	void GestIKParser::readGestIKXML(const std::string& _filename, std::shared_ptr<GestIKParams>& params) {
 		//_filename includes path
-		cout << "Read params from file name : " << _filename << "\n";
+		std::cout << "Read params from file name : " << _filename << "\n";
 		// Load xml and create Document
 		tinyxml2::XMLDocument _configFile;
 		try { dart::utils::openXMLFile(_configFile, _filename.c_str()); }
-		catch (std::exception const& e) { cout << "readGestIKXML: LoadFile  " << _filename << " Fails: " << e.what() << ".\n"; }
+		catch (std::exception const& e) { std::cout << "readGestIKXML: LoadFile  " << _filename << " Fails: " << e.what() << ".\n"; }
 
 		std::string pname;
 		tinyxml2::XMLElement* paramElem = NULL;
 		paramElem = _configFile.FirstChildElement("GestIKParams");
-		if (paramElem == NULL) { cout << "readGestIKXML:Params Config file " << _filename << " does not contain <GestIKParams> as an element.\n";				return; }
+		if (paramElem == NULL) { std::cout << "readGestIKXML:Params Config file " << _filename << " does not contain <GestIKParams> as an element.\n";				return; }
 		else {//read in configuration params
 			ElementEnumerator parameters(paramElem, "parameter");
 			while (parameters.next()) {
@@ -71,50 +69,50 @@ namespace gestureIKApp {
 		// Load xml and create Document
 		tinyxml2::XMLDocument _configFile;
 		try { dart::utils::openXMLFile(_configFile, _ltr->fileName.c_str()); }
-		catch (std::exception const& e) {					cout << "readGestLetterXML : LoadFile  " << _ltr->fileName << " Fails: " << e.what() << ".\n"; }
+		catch (std::exception const& e) {					std::cout << "readGestLetterXML : LoadFile  " << _ltr->fileName << " Fails: " << e.what() << ".\n"; }
 
 		// letterData element
 		tinyxml2::XMLElement* configElement = NULL;
 		configElement = _configFile.FirstChildElement("letterData");
-		if (configElement == NULL) {						cout << "Letter Config file " << _ltr->fileName  << " does not contain Required <letterData> as an element.\n";			return; }
+		if (configElement == NULL) {						std::cout << "Letter Config file " << _ltr->fileName  << " does not contain Required <letterData> as an element.\n";			return; }
 		// skeleton data
 		tinyxml2::XMLElement* ltrElement = NULL;
 		ltrElement = configElement->FirstChildElement("letter");
-		if (ltrElement == NULL) {							cout << "Unknown Letter - Letter Element missing in file " << _ltr->fileName << ".\n";			return; }
+		if (ltrElement == NULL) {							std::cout << "Unknown Letter - Letter Element missing in file " << _ltr->fileName << ".\n";			return; }
 		std::string ltr = ltrElement->GetText();
-		cout<<"Letter being read "<<ltr<<" in file : "<< _ltr->fileName << ".\n";
+		std::cout<<"Letter being read "<<ltr<<" in file : "<< _ltr->fileName << ".\n";
 
 		tinyxml2::XMLElement* numSymbolElem = NULL;
 		numSymbolElem = configElement->FirstChildElement("symbolExampleCounts");
-		if (numSymbolElem == NULL) {						cout << "<symbolExampleCounts> missing in file " << _ltr->fileName << ".\n"; return; }
+		if (numSymbolElem == NULL) {						std::cout << "<symbolExampleCounts> missing in file " << _ltr->fileName << ".\n"; return; }
 		_ltr->numFileSymbols = getValueInt(configElement, "symbolExampleCounts");
 
 		tinyxml2::XMLElement* symbolsElem = NULL;
 		symbolsElem = configElement->FirstChildElement("symbols");
-		if (symbolsElem == NULL) {						cout << "<symbols> Element missing in file " << _ltr->fileName << ".\n"; return; }
+		if (symbolsElem == NULL) {						std::cout << "<symbols> Element missing in file " << _ltr->fileName << ".\n"; return; }
 
 		tinyxml2::XMLElement* firstSymbolElem = NULL;
 		firstSymbolElem = symbolsElem->FirstChildElement("symbol");
-		if (firstSymbolElem == NULL) { cout << "<symbol> Element missing in <symbols> tag in file " << _ltr->fileName << ".\n"; return; }
+		if (firstSymbolElem == NULL) { std::cout << "<symbol> Element missing in <symbols> tag in file " << _ltr->fileName << ".\n"; return; }
 		readGestSymbolsXML(_ltr, firstSymbolElem);
 
 	}//readGestLetterXML
 
 	void GestIKParser::readGestSymbolsXML(std::shared_ptr<MyGestLetter> _ltr, tinyxml2::XMLElement* _xmlElement) {
-		vector< vector< std::string > > trajFileNames;			//all trajectory file names for all symbols of this ltr
+		std::vector< std::vector< std::string > > trajFileNames;			//all trajectory file names for all symbols of this ltr
 		tinyxml2::XMLElement* symElem = _xmlElement;
 		for (int i = 0; i < _ltr->numFileSymbols; ++i) {
 			tinyxml2::XMLElement* numTrajsElem = NULL;
 			numTrajsElem = symElem->FirstChildElement("trajCounts");
-			if (numTrajsElem == NULL) { cout << "<trajCounts> missing in file " << _ltr->fileName << " symbol def # "<<i<<".\n"; return; }
+			if (numTrajsElem == NULL) { std::cout << "<trajCounts> missing in file " << _ltr->fileName << " symbol def # "<<i<<".\n"; return; }
 
 			int numTrajs = getValueInt(symElem, "trajCounts");
-			vector< std::string > tmpSymbolTrajs;
+			std::vector< std::string > tmpSymbolTrajs;
 			tmpSymbolTrajs.resize(numTrajs);
 			numTrajsElem = numTrajsElem->NextSiblingElement("trajectory");
 			for (int j = 0; j < numTrajs; ++j) {
 				tmpSymbolTrajs[j] = numTrajsElem->GetText();
-				//cout << "\tRead " << i << "th symbol's " << j << "th trajectory : " << tmpSymbolTrajs[j] << "\n";
+				//std::cout << "\tRead " << i << "th symbol's " << j << "th trajectory : " << tmpSymbolTrajs[j] << "\n";
 				numTrajsElem = numTrajsElem->NextSiblingElement("trajectory");
 			}
 			trajFileNames.push_back(std::move(tmpSymbolTrajs));

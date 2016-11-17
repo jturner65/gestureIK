@@ -49,7 +49,7 @@ namespace gestureIKApp {
 		filename(_fname), name("tmp"),trajTargets(), srcTrajData(), srcTrajDispVecs(), convTrajPts(), debugTrajPts(), srtTrajTiming(), trajPtDistFromSt(),
 		flags(numFlags, false) 
 	{
-		stringstream ss;
+		std::stringstream ss;
 		ss << parentSymbol->name << "_" << _num;
 		name = ss.str();
 	}
@@ -236,7 +236,7 @@ namespace gestureIKApp {
 			debugTrajPts = procPts(_subdivide, debugTrajPts, 2, flags[closeTrajIDX]);
 		}		//smooth curve - J4
 		double debugLen = calcTrajLength(debugTrajPts);
-		vector<double> ptsDistFromSt = calcDistsFromStart(debugTrajPts);
+		std::vector<double> ptsDistFromSt = calcDistsFromStart(debugTrajPts);
 		debugTrajPts = equiDist(debugTrajPts, debugLen, ptsDistFromSt);
 		debugLen = calcTrajLength(debugTrajPts);
 		ptsDistFromSt = calcDistsFromStart(debugTrajPts);
@@ -272,7 +272,7 @@ namespace gestureIKApp {
 	}
 
 	//uses length of trajectory of _pts to respace points
-	eignVecTyp MyGestTraj::equiDist(eignVecTyp& _pts, double _len, vector<double>& _ptsDistFromSt) {
+	eignVecTyp MyGestTraj::equiDist(eignVecTyp& _pts, double _len, std::vector<double>& _ptsDistFromSt) {
 		eignVecTyp tmp(0);
 		double ratio = _len / (1.0f * _pts.size()), curDist = 0;					 //new distance between each vertex, iterative dist travelled so far			 
 		for (int i = 0; i<_pts.size(); ++i) {
@@ -284,7 +284,7 @@ namespace gestureIKApp {
 	}//equiDist
 
 	 //uses length of trajectory of _pts to resample points based on location along length - assumes equidistant
-	eignVecTyp MyGestTraj::resample(eignVecTyp& _pts, double _len, vector<double>& _ptsDistFromSt, int numPts, bool wrap) {
+	eignVecTyp MyGestTraj::resample(eignVecTyp& _pts, double _len, std::vector<double>& _ptsDistFromSt, int numPts, bool wrap) {
 		eignVecTyp tmp(0);
 		//if wrap then end at first point after wrap, otherwise end at last point
 		int num = (wrap ? _pts.size() : _pts.size() - 1);
@@ -342,8 +342,8 @@ namespace gestureIKApp {
 	* @return point @t along curve
 	*/
 	Eigen::Vector3d MyGestTraj::at(double t,  double _ttllen, eignVecTyp& _pts, std::vector<double>& _distAtEachPt) {
-		if (t<0) { cout << "In at : t=" << t << " needs to be [0,1]\n"; return _pts[0]; }
-		else if (t>1) { cout << "In at : t=" << t << " needs to be [0,1]\n"; return (flags[closeTrajIDX] ? _pts[0] : _pts[_pts.size() - 1]); }//last point on closed trajectory is first point
+		if (t<0) { std::cout << "In at : t=" << t << " needs to be [0,1]\n"; return _pts[0]; }
+		else if (t>1) { std::cout << "In at : t=" << t << " needs to be [0,1]\n"; return (flags[closeTrajIDX] ? _pts[0] : _pts[_pts.size() - 1]); }//last point on closed trajectory is first point
 		double dist = t * _ttllen, s;		
 		for (int i = 0; i < _distAtEachPt.size() - 1; ++i) {										//built off d_pts so that it will get wrap for closed curve
 			if (_distAtEachPt[i + 1] >= dist) {													//if current distance along arclength > dist we want for point
@@ -425,7 +425,7 @@ namespace gestureIKApp {
 			//debug output below : 
 			if (flags[debugIDX]) {
 				tmpDat << 0, dat(1), dat(2);
-				cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastDat).norm()) << "\ttiming:" << srtTrajTiming.back() << " timing diff " << (srtTrajTiming.back() - lastTime) << "\n";
+				std::cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastDat).norm()) << "\ttiming:" << srtTrajTiming.back() << " timing diff " << (srtTrajTiming.back() - lastTime) << "\n";
 				lastTime = srtTrajTiming.back();
 				lastDat << tmpDat;
 			}

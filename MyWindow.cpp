@@ -43,8 +43,7 @@
 
 #include <fstream>
 
-using namespace std;
-using namespace Eigen;
+
 using namespace gestureIKApp;
 using namespace dart::gui;
 
@@ -77,7 +76,7 @@ MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_i
 	for (int i = 1; i < 4; ++i) {
 		tIncr[i] = IKSolve->params->trajDesiredVel;// / (i + 2.0);//dividing by # of sides because interpolating between each pair of verts with a local t: 0->1, but treating all sets of edges as complete trajectory (i.e. glbl t 0->1)
 	}
-	cout << "Per Frame ptr distance travelled calculated : " << IKSolve->params->trajDesiredVel << "\n";
+	std::cout << "Per Frame ptr distance travelled calculated : " << IKSolve->params->trajDesiredVel << "\n";
 
 	triCrnrs = regenCorners<3U>(triCrnrConsts, false, curStIdx[1]);
 	sqrCrnrs = regenCorners<4U>(sqCrnrConsts, false, curStIdx[2]);
@@ -105,13 +104,14 @@ void MyWindow::initCustWindow(std::string _winTtl) {
 	initWindow(IKSolve->params->win_Width, IKSolve->params->win_Height, _winTtl.c_str());
 }
 
-void MyWindow::openIndexFile(bool isTrain, std::ofstream& strm) {
-	stringstream ss;
+void MyWindow::openIndexFile(bool isTrain, std::ofstream& strm, bool append) {
+	std::stringstream ss;
 	ss << getFullBasePath() << (isTrain ? "TrainDataIndexFile.txt" : "TestDataIndexFile.txt");
 	const std::string tmp = ss.str();
-	strm.open(tmp.c_str());
+	unsigned int mode = (append ? std::fstream::app : std::fstream::out);
+	strm.open(tmp.c_str(), mode);
 	if (!strm.is_open()) {
-		cout << tmp << " failed to open!\n";
+		std::cout << tmp << " failed to open!\n";
 	}
 }//openIndexFile
 
@@ -123,7 +123,7 @@ std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
 		return curLetter->getCurSymbolName();
 	}
 	else {
-		stringstream ss("");
+		std::stringstream ss("");
 		//<trajType>_<trajIter>
 		ss << curTrajStr << "_" << dataIterVal;
 		return ss.str();
@@ -134,26 +134,39 @@ std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
 //this will entail building trajectories for triangle, square and star, starting at each vertex,
 //with and without random shifts in end points,  [and moving in clockwise or ccw direction (TODO)]
 void MyWindow::trainDatInitCol(bool isLtr) {
+	if ((flags[useLtrTrajIDX]) && ((!IKSolve->params->mkNonRandSeq()) && (!IKSolve->params->genRandLtrs()))) {
+			std::cout << "XML specifies to not save sequences of file based letters(IDX_mkNonRandSeq), and to not make any random letters(IDX_genRandLtrs), and so there's nothing to save.\n";
+			curSymIDX = 0;
+			curLtrIDX = 0;
+			flags[collectDataIDX] = false;
+			setDrawLtrOrSmpl(false, 0);
+			mCapture = false;
+			return;
+	}	
 	flags[useLtrTrajIDX] = isLtr;
 	flags[collectDataIDX] = true;
 	//turn off all markers and trajectory displays
 	flags[drawTrkMrkrsIDX] = false;
 	flags[drawLtrTrajIDX] = false;
 	mShowMarkers = false;
-	openIndexFile(false, testOutFile);
-	openIndexFile(true, trainOutFile);
 	
 	if (flags[useLtrTrajIDX]) {
-		cout << "Initializing random data collection for Letter Trajectories.\n";
+		std::cout << "Initializing random data collection for Letter Trajectories.\n";
+		bool append = !IKSolve->params->mkNonRandSeq();
+		openIndexFile(false, testOutFile, append);
+		openIndexFile(true, trainOutFile, append);
 		//1st time initialize letter collection - init curLtrIDX, curSymIDX
-		curLtrIDX = 0;
-		curSymIDX = 0;
+		curLtrIDX = IKSolve->params->ltrIdxStSave;		//either start at beginning or start at a specific letter
+		stSymIdx = append ? letters[curLtrIDX]->numFileSymbols : 0;		//either start at beginning or start saving only randomized letters
+		curSymIDX = stSymIdx;
 
 		//start capture
 		trainLtrDatManageCol();
 	}
 	else {
-		cout << "Initializing random data collection for Symbols.\n";
+		openIndexFile(false, testOutFile, false);
+		openIndexFile(true, trainOutFile, false);
+		std::cout << "Initializing random data collection for Symbols.\n";
 		//initialize starting idxs, t values and counts of training and testing data for all symbol trajectories
 		for (int i = 0; i < 4; ++i) {
 			curStIdx[i] = 0;
@@ -166,7 +179,6 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 		//start capture
 		trainSymDatManageCol();
 	}
-
 }//trainDatInitCol
 
 
@@ -218,14 +230,18 @@ void MyWindow::trainSymDatManageCol() {
 //capture all letters
 void MyWindow::trainLtrDatManageCol() {
 	if (curLtrIDX >= letters.size()) {//done every letter
-		curSymIDX = 0;
 		curLtrIDX = 0;
+		stSymIdx = IKSolve->params->mkNonRandSeq() ? 0 : letters[curLtrIDX]->numFileSymbols;		//either start at beginning or start saving only randomized letters
+		curSymIDX = stSymIdx;
+		testOutFile.close();
+		trainOutFile.close();
 		flags[collectDataIDX] = false;
 		mCapture = false;
+		setDrawLtrOrSmpl(false, 0);
 		return;
 	}
 
-	 cout << "start trainLtrDatManageCol : " << trainLtrtCnt << "\tcurLtrIDX : " << curLtrIDX << "\tcurSymbIDX : " << curSymIDX << "\n"; 
+	std::cout << "start trainLtrDatManageCol : " << trainLtrtCnt << "\tcurLtrIDX : " << curLtrIDX << "\tcurSymbIDX : " << curSymIDX << "\n";
 	//need to cycle through all letters 
 	setDrawLtrOrSmpl(true, curLtrIDX, false, curSymIDX);
 	curTrajDirName = getCurTrajFileDir(-1);
@@ -240,16 +256,17 @@ void MyWindow::trainLtrDatManageCol() {
 	//for next iteration
 	curSymIDX += 1;
 	if (curSymIDX >= curLetter->symbols.size()){
-		curSymIDX = 0;
 		curLtrIDX += 1;
+		stSymIdx = IKSolve->params->mkNonRandSeq() ? 0 : (curLtrIDX >= letters.size() ? 0 : letters[curLtrIDX]->numFileSymbols);		//either start at beginning or start saving only randomized letters
+		curSymIDX = stSymIdx;
 	}
-	cout << "End trainLtrDatManageCol : " << trainLtrtCnt++ << "\n"; 
+	std::cout << "End trainLtrDatManageCol : " << trainLtrtCnt++ << "\n";
 
 }//trainLtrDatManageCol
 
 //write line in index/label text file for each example
 void MyWindow::trainDatWriteIndexFile(std::ofstream& outFile, const std::string& fileDir, int cls) {
-	stringstream ss;
+	std::stringstream ss;
 	ss.str("");
 	ss << curClassName <<"/"<<fileDir << " " << cls << "\n";
 	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
@@ -261,16 +278,24 @@ void MyWindow::trainDatWriteIndexFile(std::ofstream& outFile, const std::string&
 void MyWindow::buildLetterList() {
 	letters.clear();
 	for (int i = 0; i < IKSolve->params->numLetters; ++i) {
-		string c(1, i + 97);
+		std::string c(1, i + 97);
 		letters.push_back(std::make_shared<MyGestLetter>(c));
 		letters[i]->setSolver(IKSolve);
 		GestIKParser::readGestLetterXML(letters[i]);
-		cout << "Made letter : " << (*letters[i]) << "\n";
+		std::cout << "Made letter : " << (*letters[i]) << "\n";
 	}
 	//buildRandomSymbolTrajs
+	if (!IKSolve->params->genRandLtrs()) {
+		std::cout << "Not making random letters due to 'IDX_genRandLtrs' flag in config xml setting.  Set to true to make them.\n";
+	}
 	for (int i = 0; i < letters.size(); ++i) {
-		letters[i]->buildRandomSymbolTrajs(IKSolve->params->numTotSymPerLtr);
-		cout << "Made "<<(IKSolve->params->numTotSymPerLtr - letters[i]->numFileSymbols)<<" Random versions of letter : " << (*letters[i]) << "\n";
+		if (IKSolve->params->numTotSymPerLtr > letters[i]->symbols.size()) {
+			letters[i]->buildRandomSymbolTrajs(IKSolve->params->numTotSymPerLtr);
+			std::cout << "Made " << (IKSolve->params->numTotSymPerLtr - letters[i]->numFileSymbols) << " Random versions of letter : " << (*letters[i]) << "\n";
+		}
+		else {
+			std::cout << "Insufficient letters specified " << IKSolve->params->numTotSymPerLtr << " so no random versions of letter : " << (*letters[i]) << " made.\n";
+		}
 	}
 
 }
@@ -359,7 +384,7 @@ void MyWindow::draw() {
 }
 
 std::string MyWindow::getCurrLocAndQuat() {
-	stringstream ss;
+	std::stringstream ss;
 	ss.str("");
 	ss << "Loc : " << buildStrFrmEigV3d(this->mTrans) << "\tZoom : "<<(this->mZoom)<<"\tQuat : w:" << this->mTrackBall.getCurrQuat().w() << " vec : (" << buildStrFrmEigV3d(this->mTrackBall.getCurrQuat().vec()) << ")\n";
 	return ss.str();
@@ -369,7 +394,7 @@ void MyWindow::drawSkels() {
 	skelPtr->draw(mRI);
 	// Draw the markers on the skeleton.
 	if (mShowMarkers) {
-		Vector4d color;
+		Eigen::Vector4d color;
 		color << 0.95, 0.25, 0.25, 1.0;
 		skelPtr->drawMarkers(mRI, color, false);
 	}
@@ -413,12 +438,12 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		flags[initTrnDatCapIDX] = true;
 		flags[useLtrTrajIDX] = true;
 		//trainDatInitCol(true);				//capture letter trajectories
-		cout << "Capture all letters\n.";
+		std::cout << "Capture all letters\n.";
 		break; }
 
 	case 'c': {  // screen capture
 		flags[stCaptAtZeroIDX] = true;				//start capturing when trajectory gets to 0
-		cout << "start capturing when trajectory gets to t == 0\n.";
+		std::cout << "start capturing when trajectory gets to t == 0\n.";
 		break; }
 	case 'd': { // debug mode
 		flags[debugIDX] = !flags[debugIDX];
@@ -464,8 +489,7 @@ void MyWindow::regenerateSampleData(bool rand) {
 
 //get file name for screen shot based on current trajectory name and count of frames
 std::string MyWindow::getScreenCapDirFileName() {
-
-	stringstream ss;
+	std::stringstream ss;
 	ss << getFullBasePath() << curTrajDirName;
 	const std::string tmp = ss.str();
 
@@ -476,7 +500,7 @@ std::string MyWindow::getScreenCapDirFileName() {
 	nError = mkdir(tmp.c_str(), 0733); // can be used on non-Windows
 #endif
 	if ((nError != 0) && (nError != -1)) {//-1 is exists already
-		cout << "Error attempting to create path : " << tmp << "\terror : "<<nError<<"\n";
+		std::cout << "Error attempting to create path : " << tmp << "\terror : "<<nError<<"\n";
 	}
 
 	ss.str("");
@@ -519,7 +543,7 @@ bool MyWindow::screenshot() {
 	}
 }//screenshot
 
-void MyWindow::drawAxes(const Vector3d& axesLoc, float len, bool altColor) {
+void MyWindow::drawAxes(const Eigen::Ref<const Eigen::Vector3d>& axesLoc, float len, bool altColor) {
 	float col = (altColor ? .5f : 0);
 	glPushMatrix();
 	glTranslatef(axesLoc(0), axesLoc(1), axesLoc(2));
@@ -537,7 +561,7 @@ void MyWindow::drawAxes(const Vector3d& axesLoc, float len, bool altColor) {
 void MyWindow::drawJointAxis(dart::dynamics::BodyNode* node) {
 	glPushMatrix();
 	node->getParentJoint()->applyGLTransform(mRI);      //gives location but not orientation
-	drawAxes(Vector3d(0, 0, 0), .1f, false);
+	drawAxes(Eigen::Vector3d(0, 0, 0), .1f, false);
 	for (unsigned int i = 0; i < node->getNumChildBodyNodes(); i++) {
 		drawJointAxis(node->getChildBodyNode(i));
 	}
@@ -596,7 +620,7 @@ void MyWindow::calcCircleTrajPoints(eignVecTyp& _trajPts) {
 //write trajectory file to csv named _fname
 void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajAraAra) {
 	int numRows = _trajAraAra.size(), numCols = _trajAraAra[0].size();
-	stringstream ss;
+	std::stringstream ss;
 	ss.str("");
 	ss << csvFilePath << _fname << "Traj.csv";
 	std::ofstream outFile;
@@ -638,7 +662,7 @@ void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajA
 void MyWindow::writeTrajCSVFileRow(std::ofstream& outFile, eignVecTyp& _trajAra) {
 	int numCols = _trajAra.size();
 	int numSigDigs = 9;
-	stringstream ss;
+	std::stringstream ss;
 	ss.str("");
 	ss << buildStrFrmEigV3d(_trajAra[0], numSigDigs);
 	for (int col = 1; col < numCols; ++col) { ss << "," << buildStrFrmEigV3d(_trajAra[col], numSigDigs); }

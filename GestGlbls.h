@@ -45,8 +45,6 @@
 #include <random>
 #include "dart/dart.h"
 
-using namespace std;
-
 namespace gestureIKApp {
 	class trackedMarker;
 	class MyGestTraj;
@@ -167,7 +165,7 @@ namespace gestureIKApp {
 
 	static Eigen::Vector3d GenQInterp(const Eigen::Ref<const Eigen::Vector3d>& A, double a, const Eigen::Ref<const Eigen::Vector3d>& B, double b,
 		const Eigen::Ref<const Eigen::Vector3d>& C, double c, double t) {
-		auto res = interpVec(interpVec(A, B, (t - a) / (b - a)), interpVec(B, C, (t - b) / (c - b)), (t - a) / (c - a));
+		Eigen::Vector3d res = interpVec(interpVec(A, B, (t - a) / (b - a)), interpVec(B, C, (t - b) / (c - b)), (t - a) / (c - a));
 		return res;
 	}
 

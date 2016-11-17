@@ -66,7 +66,7 @@ namespace gestureIKApp {
 	//collection of 1 or more trajectories making up a symbol
 	class MyGestLetter {
 	public:
-		MyGestLetter(std::string _ltrName);
+		MyGestLetter(const std::string& _ltrName);
 		virtual ~MyGestLetter();
 
 		//data from matlab will be 3 cols per point : (x,y, timing data), where timing is how long between consecutive points in milliseconds.
@@ -77,10 +77,10 @@ namespace gestureIKApp {
 		bool solve();
 		//build a uniform distribution engine to be able to select randomly from all the symbols that represent this letter (read from file and desired from random generation)
 		void buildUniDist() {
-			uni = make_shared< uniform_int_distribution<int> >(0, (numTotSymbols - 1));
+			uni = std::make_shared< std::uniform_int_distribution<int> >(0, (numTotSymbols - 1));
 		}
 		//build the symbols that are built from file descriptions
-		void buildFileSymbolTrajs(vector< vector< std::string > >& trajFileNames);
+		void buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames);
 		//generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present (# randomized * # from files, probably)
 		void buildRandomSymbolTrajs(int _totNumDesSymb);
 		//set solver for this trajectory

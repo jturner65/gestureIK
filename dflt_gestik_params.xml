@@ -58,7 +58,7 @@
 	</parameter>
 	<parameter>
 		<name>trajRandSclStd</name>
-		<val>.05</val>   
+		<val>.01</val>   
 	</parameter>
 	<parameter>
 		<name>trajNev4OvPct</name>
@@ -66,11 +66,11 @@
 	</parameter>
 	<parameter>
 		<name>win_Width</name>
-		<val>800</val>   
+		<val>200</val>   
 	</parameter>
 	<parameter>
 		<name>win_Height</name>
-		<val>800</val>   
+		<val>200</val>   
 	</parameter>
 	<parameter>
 		<name>origZoom</name>
@@ -82,7 +82,11 @@
 	</parameter>
 	<parameter>
 		<name>numTotSymPerLtr</name>
-		<val>200</val> 
+		<val>100</val> 
+	</parameter>
+	<parameter>
+		<name>ltrIdxStSave</name>
+		<val>19</val> 
 	</parameter>
 	<parameter>
 		<name>bkgR</name>
@@ -99,6 +103,18 @@
 	<parameter>
 		<name>bkgA</name>
 		<val>1.0</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_useLeftHand</name>
+		<val>FALSE</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_mkNonRandSeq</name>
+		<val>TRUE</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_genRandLtrs</name>
+		<val>TRUE</val> 
 	</parameter>
 </GestIKParams>
 <!-- Template to build gesture IK xml configuration file to store params -- all file names relative to dart data path -->

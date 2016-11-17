@@ -48,7 +48,6 @@
 #include "apps/gestureIK/GestIKParams.h"
 #include "apps/gestureIK/MyGestLetter.h"
 
-using namespace std;
 namespace gestureIKApp {
 	//any necessary hyperparams needed to be loaded from XML file
 

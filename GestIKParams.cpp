@@ -36,14 +36,14 @@
 
 #include "apps/gestureIK/GestIKParams.h"
 
-using namespace std;
+using std::cout;
 using namespace Eigen;
 
 namespace gestureIKApp {
 
 	GestIKParams::GestIKParams() : defaultVals(), dataCapNumExamples(100), dataCapTestTrainThresh(.5),
 		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), IK_elbowScale(0.36), IK_fastTrajMult(1.5), trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1),
-		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26), numTotSymPerLtr(40), origZoom(.65f),
+		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26), numTotSymPerLtr(0), ltrIdxStSave(0),origZoom(.65f),
 		bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0),
 		flags(numFlags, false)
 	{
@@ -82,14 +82,21 @@ namespace gestureIKApp {
 		if (_name.compare("win_Height") == 0) { win_Height = stoi(s);			return; }
 		if (_name.compare("numLetters") == 0) { numLetters = stoi(s);			return; }
 		if (_name.compare("numTotSymPerLtr") == 0) { numTotSymPerLtr = stoi(s);			return; }
+		if (_name.compare("ltrIdxStSave") == 0) { ltrIdxStSave = stoi(s);	if (ltrIdxStSave >= numLetters) { ltrIdxStSave  = numLetters-1;} 		return; }
 		//floats
 		if (_name.compare("origZoom") == 0) { origZoom = stof(s);			return; }
 		//strings
 		//if (_name.compare("skelFileName") == 0) { skelFileName = std::string(s);	return; }
 		//boolean
-		//if (_name.compare("useGBP") == 0) { flags[IDX_useGBP] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		std::string sDest(s);
+		std::transform(s.begin(), s.end(), sDest.begin(), toupper);
+		if (_name.compare("IDX_useLeftHand") == 0) { flags[IDX_useLeftHand] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_genRandLtrs") == 0) { flags[IDX_genRandLtrs] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_mkNonRandSeq") == 0) { flags[IDX_mkNonRandSeq] = (s.compare("TRUE") == 0 ? true : false);        return; }
 
-	}	//set up reasonable default values to be used if XML is unavailable or unused.  the default values will be used whenever reset is called
+	}	//setParamValFromXMLStr
+
+	//set up reasonable default values to be used if XML is unavailable or unused.  the default values will be used whenever reset is called
 	void GestIKParams::setDefaultVals() {
 		//use as template - set any class variables to reasonable defaults
 		//fMaxSDMult = 4;						//fMaxSDMult is magic number from Unity code that multiples the sd for the per-step priors for the force limits- UI enterable? hardcoded to 4.0 in unity code
@@ -113,12 +120,15 @@ namespace gestureIKApp {
 		win_Height = 800;
 		numLetters = 26;
 		numTotSymPerLtr = 40;
+		ltrIdxStSave = 0;
 		origZoom = .65f;
 		bkgR = 1.0;
 		bkgG = 1.0;
 		bkgB = 1.0;
 		bkgA = 1.0;
 		flags[IDX_useLeftHand] = false;
+		flags[IDX_mkNonRandSeq] = true;
+		flags[IDX_genRandLtrs] = false;
 		defaultVals = accumulateVals();			//set default values as current param vals
 	}//setDefaultVals
 	//allow current values from UI to be set as defaults 
@@ -126,9 +136,8 @@ namespace gestureIKApp {
 		defaultVals = accumulateVals();
 	}//setCurrentValsAsDefault
 
-	vector<double> GestIKParams::accumulateVals() {		//grab all locals that are modifiable by UI or used elsewhere
-		vector<double> res;
-		int idx = 0;
+	std::vector<double> GestIKParams::accumulateVals() {		//grab all locals that are modifiable by UI or used elsewhere
+		std::vector<double> res;
 		res.push_back(dataCapNumExamples);
 		res.push_back(dataCapTestTrainThresh);
 		res.push_back(IK_reachPct);
@@ -149,23 +158,53 @@ namespace gestureIKApp {
 		res.push_back(win_Height);
 		res.push_back(numLetters);
 		res.push_back(numTotSymPerLtr);
+		res.push_back(ltrIdxStSave);
 		res.push_back(origZoom);
 		res.push_back(bkgR);
 		res.push_back(bkgG);
 		res.push_back(bkgB);
 		res.push_back(bkgA);
 
+		//represent boolean flags as vals
+		for (int i = 0; i < numFlags; ++i) {
+			res.push_back((flags[i] ? 1 : 0));
+		}
 		return res;
-	}
+	}//accumulateVals
 
-	void GestIKParams::distributeVals(vector<double>& vals) {//copy all UI values to their appropriate lcl variables (from UI or file)
-		//int idx = 0, lIdx = 0, hIdx = 0, lfIdx = 0, hfIdx = 0;
-		//armStdScale = vals[idx++];				//add slider for fMaxSDMult
-		//TODO no UI currently modifies values so only reading xml file should adjust IK/datacollection params
-	}
+	void GestIKParams::distributeVals(std::vector<double>& vals) {//copy all UI values to their appropriate lcl variables (from UI or file)
+		int idx = 0;
+		dataCapNumExamples = (int)floor(vals[idx++] + .5);
+		dataCapTestTrainThresh = vals[idx++];
+		IK_reachPct = vals[idx++];
+		IK_solveIters = (unsigned int)floor(vals[idx++] + .5);
+		IK_drawRad = vals[idx++];
+		IK_alpha = vals[idx++];
+		IK_maxSqError = vals[idx++];
+		IK_elbowScale = vals[idx++];
+		IK_fastTrajMult = vals[idx++];
+		trajLenThresh = vals[idx++];
+		trajRandCtrStd = vals[idx++];
+		trajRandSclStd = vals[idx++];
+		trajDistMult = vals[idx++];
+		trajNumReps = (int)floor(vals[idx++] + .5);
+		trajDesiredVel = vals[idx++];
+		trajNev4OvPct = vals[idx++];
+		win_Width = (int)floor(vals[idx++] + .5);
+		win_Height = (int)floor(vals[idx++] + .5);
+		numLetters = (int)floor(vals[idx++] + .5);
+		numTotSymPerLtr = (int)floor(vals[idx++] + .5);
+		ltrIdxStSave = (int)floor(vals[idx++] + .5);
+		origZoom = vals[idx++];
+		bkgR = vals[idx++];
+		bkgG = vals[idx++];
+		bkgB = vals[idx++];
+		bkgA = vals[idx++];
+		//represent boolean flags as vals
+		for (int i = 0; i < numFlags; ++i) {flags[i] = (vals[idx++] == 1.0);}
+	}//distributeVals
 	void GestIKParams::resetValues() {//set some reasonable defaults in here that we can return to them if not loaded from file
 		distributeVals(defaultVals);
-		flags[IDX_useLeftHand] = false;
 	}
 
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
@@ -174,7 +213,7 @@ namespace gestureIKApp {
 		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult << "\n";
 		out << "trajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << "\n";
 		out << "#letters (out of 26) to load : "<<p.numLetters <<"\t| bkg clr (rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")\n";
-		out << "Use Left Hand to Draw : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False")  << "\n";
+		out << "Use Left Hand to Draw : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False") << "\tGenerate Random Letters : " << (p.flags[p.IDX_genRandLtrs] ? "True" : "False") << "\tSave Non-random (File-based) letter IK (set to false to ignore these to add more random sequences): " << (p.flags[p.IDX_mkNonRandSeq] ? "True" : "False") << "\n";
 		return out;
 	}
 
