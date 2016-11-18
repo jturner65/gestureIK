@@ -82,11 +82,11 @@
 	</parameter>
 	<parameter>
 		<name>numTotSymPerLtr</name>
-		<val>100</val> 
+		<val>180</val> 
 	</parameter>
 	<parameter>
 		<name>ltrIdxStSave</name>
-		<val>19</val> 
+		<val>0</val> 
 	</parameter>
 	<parameter>
 		<name>bkgR</name>

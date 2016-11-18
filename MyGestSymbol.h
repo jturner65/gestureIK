@@ -108,36 +108,40 @@ namespace gestureIKApp {
 		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver
 		std::shared_ptr<MyGestSymbol> _self;									//ref to shared ptr to self, to be handed off to trajectories
 
-		unsigned int curTraj,													//idx of current trajectory being processed
+		unsigned int// curTraj,													//idx of current trajectory being processed
 			curFrame,															//current frame of this letter being processed
 			srcSymbolIDX;														//idx in owning letter symbols vector of source symbol for this symbol, or it's own idx if from a file
 
 		double allTrajsLen,													//length of all trajectories of this letter
-			trajVel,														//avg velocity to finish trajectory
 			sclAmt,															//scale amount for this symbol to scale from matlab space to IK space
 			curTrajDist;														//current position along length of trajectory
 
 		std::vector<std::shared_ptr<gestureIKApp::MyGestTraj> > trajectories;	//component trajectories making up this symbol
 		std::vector<double>trajLens;											//array of total length of trajectory at a location, including piece at IDX
+		std::vector<double>trajFrameIncrs;										//amount to move each frame - TODO make this variable to add velocity variance in motion
 		std::string name;														//symbol name - letter + # of symbol
 
-		std::vector<bool> flags;					//state flags of trajectory
-		static const unsigned int 
+		std::vector<bool> flags;					//state flags of symbol
+		static const unsigned int
 			debugIDX = 0,			//debug mode
 			diffClrIDX = 1,			//use different colors for each component trajectory of this symbol
 			drawConnTrajIDX = 2,	//draw the connecting trajectories between two data trajectories	
 			randCircleIDX = 3,		//if true, randomize the center, radius and plane normal of the bounding circle of this letter
-			isFastDrawnIDX = 4;		//this symbol is drawn quickly - flip orientation of elbow plane normal, 1.5x base drawing speed
-		static const unsigned int numFlags = 5;
+			isFastDrawnIDX = 4,		//this symbol is drawn quickly - flip orientation of elbow plane normal, 1.5x base drawing speed
+			isDoneDrawingIDX = 5;	//finished drawing this symbol
+		static const unsigned int numFlags = 6;
 
 		Eigen::Vector3d avgLoc;													//average location of symbol data in matlab space
-		//	maxLoc;																//disp vector of point furthest from average location of all points in this symbol
 
 		Eigen::Vector3d	ptrCtrPt,												//center point of circle the transformed version of this symbol is inscribed within 
 			elbowCtrPt,															//center point of circle the transformed elbow traj of this symbol is incribed within
 			ptrPlaneNorm,														//normal of plane of circle this symbol is inscribed upon
 			elbowPlaneNorm;														//normal of plane of elbow circle 
 		double circleRad;														//radius of circle this symbol is inscribed within
+
+	private : 
+		unsigned int curTraj;													//idx of current trajectory being processed
+
 
 	};
 } // namespace gestureIKApp

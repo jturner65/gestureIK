@@ -36,9 +36,6 @@
 
 #include "apps/gestureIK/GestIKParams.h"
 
-using std::cout;
-using namespace Eigen;
-
 namespace gestureIKApp {
 
 	GestIKParams::GestIKParams() : defaultVals(), dataCapNumExamples(100), dataCapTestTrainThresh(.5),
@@ -47,7 +44,7 @@ namespace gestureIKApp {
 		bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0),
 		flags(numFlags, false)
 	{
-		cout << "GestIK params ctor\n";
+		std::cout << "GestIK params ctor"<<std::endl;
 		setDefaultVals();																//set defaults from hardcoded values - overridden by xml data if necessary
 		setCurrentValsAsDefault();
 	}
@@ -55,7 +52,7 @@ namespace gestureIKApp {
 	GestIKParams::~GestIKParams() {}
 
 	void GestIKParams::setParamValFromXMLStr(const std::string& _name, const std::string& s) {
-		//cout << "Setting value : " << s << " from xml for " << _name << "\n";
+		//cout << "Setting value : " << s << " from xml for " << _name << std::endl;
 		//doubles
 		if (_name.compare("IK_alpha") == 0) { IK_alpha = stod(s);      return; }
 		if (_name.compare("IK_maxSqError") == 0) { IK_maxSqError = stod(s);      return; }
@@ -93,7 +90,6 @@ namespace gestureIKApp {
 		if (_name.compare("IDX_useLeftHand") == 0) { flags[IDX_useLeftHand] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_genRandLtrs") == 0) { flags[IDX_genRandLtrs] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_mkNonRandSeq") == 0) { flags[IDX_mkNonRandSeq] = (s.compare("TRUE") == 0 ? true : false);        return; }
-
 	}	//setParamValFromXMLStr
 
 	//set up reasonable default values to be used if XML is unavailable or unused.  the default values will be used whenever reset is called
@@ -208,12 +204,12 @@ namespace gestureIKApp {
 	}
 
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
-		out << "GestIK Params values : \n";
-		out << "dataCapNumExamples : " << p.dataCapNumExamples << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << "\n";
-		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult << "\n";
-		out << "trajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << "\n";
-		out << "#letters (out of 26) to load : "<<p.numLetters <<"\t| bkg clr (rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")\n";
-		out << "Use Left Hand to Draw : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False") << "\tGenerate Random Letters : " << (p.flags[p.IDX_genRandLtrs] ? "True" : "False") << "\tSave Non-random (File-based) letter IK (set to false to ignore these to add more random sequences): " << (p.flags[p.IDX_mkNonRandSeq] ? "True" : "False") << "\n";
+		out << "GestIK Params values : "<< std::endl;
+		out << "dataCapNumExamples : " << p.dataCapNumExamples << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
+		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult << std::endl;
+		out << "trajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << std::endl;
+		out << "#letters (out of 26) to load : "<<p.numLetters <<"\t| bkg clr (rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")"<< std::endl;
+		out << "Generate left hand data : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False") << "\tGenerate Random Letters : " << (p.flags[p.IDX_genRandLtrs] ? "True" : "False") << "\tSave Non-random (File-based) letter IK (set to false to ignore these to add more random sequences): " << (p.flags[p.IDX_mkNonRandSeq] ? "True" : "False") << std::endl;
 		return out;
 	}
 

@@ -334,10 +334,10 @@ namespace gestureIKApp {
 	}
 
 	std::ostream& operator<<(std::ostream& out, const MyUIComponent& cmp) {
-		out << "ID : " << cmp.ID << " label : " << cmp.label << " onClick : " << cmp.onclick << "\n";
-		out << "location : (" << cmp.x << ", " << cmp.y << ") dim : (" << cmp.w << ", " << cmp.h << ")" << "\n";
-		out << "Color : (r: " << cmp.clr[0] << " g: " << cmp.clr[1] << " b: " << cmp.clr[2] << " a: " << cmp.clr[3] << ") " << "\n";
-		out << "Flags : Display : " << cmp.flags[cmp.UIobjIDX_Display] << " Can Click : " << cmp.flags[cmp.UIobjIDX_CanClick] << " Can Drag : " << cmp.flags[cmp.UIobjIDX_CanDrag] << "\n";
+		out << "ID : " << cmp.ID << " label : " << cmp.label << " onClick : " << cmp.onclick << std::endl;
+		out << "location : (" << cmp.x << ", " << cmp.y << ") dim : (" << cmp.w << ", " << cmp.h << ")" << std::endl;
+		out << "Color : (r: " << cmp.clr[0] << " g: " << cmp.clr[1] << " b: " << cmp.clr[2] << " a: " << cmp.clr[3] << ") " << std::endl;
+		out << "Flags : Display : " << cmp.flags[cmp.UIobjIDX_Display] << " Can Click : " << cmp.flags[cmp.UIobjIDX_CanClick] << " Can Drag : " << cmp.flags[cmp.UIobjIDX_CanDrag] << std::endl;
 		return out;
 	}
 
@@ -457,7 +457,7 @@ namespace gestureIKApp {
 	int MyUISlider::drag(float _x, float _y) {
 		float del = ((horiz) ? _x - clkX : _y - clkY) * UIobj_DragSens;					                            //sensitivity is modifiable
 		slidePos += del / (1.0f*sbDimL);
-		// cout<<"slider mod amt : "<< del/(1.0f * sbDimL)<<" del : "<<del<<" sbDimL "<<(sbDimL)<<" x,y : ("<<x<<", "<<y<<") _x,_y : ("<<_x<<", "<<_y<<") clkX,clkY : ("<<clkX<<", "<<clkY<<")"<<"\n";
+		// cout<<"slider mod amt : "<< del/(1.0f * sbDimL)<<" del : "<<del<<" sbDimL "<<(sbDimL)<<" x,y : ("<<x<<", "<<y<<") _x,_y : ("<<_x<<", "<<_y<<") clkX,clkY : ("<<clkX<<", "<<clkY<<")"<< std::endl;
 		capSlidePos();
 		return ID;
 	}
@@ -468,17 +468,17 @@ namespace gestureIKApp {
 	}
 	std::ostream& operator<<(std::ostream& out, const MyUISlider& cmp) {
 		out << static_cast<const MyUIComponent&>(cmp);                                                                        //start with base class
-		out << "Slider specific attribs : Min Val : " << cmp.slideMin << " Range : " << cmp.slideRng << " Current position (% of range) : " << (cmp.slidePos * 100) << "% " << "\n";
-		out << "\t# of subdivisions of range : " << cmp.slideSubdiv << " Slider track dimensions (Len,Thk) : (" << cmp.sbDimL << ", " << cmp.sbDimTh << ") Orientation : " << (cmp.horiz ? "Horizontal " : "Vertical ") << "\n";
-		out << "\tIncreasing value dir : " << (cmp.horiz ? (cmp.LToR ? "Left to Right" : "Right To Left") : (cmp.LToR ? "Down to Up" : "Up to Down")) << "\n";
-		out << "\tUse list for values : " << cmp.useListVals << "\n";
+		out << "Slider specific attribs : Min Val : " << cmp.slideMin << " Range : " << cmp.slideRng << " Current position (% of range) : " << (cmp.slidePos * 100) << "% " << std::endl;
+		out << "\t# of subdivisions of range : " << cmp.slideSubdiv << " Slider track dimensions (Len,Thk) : (" << cmp.sbDimL << ", " << cmp.sbDimTh << ") Orientation : " << (cmp.horiz ? "Horizontal " : "Vertical ") << std::endl;
+		out << "\tIncreasing value dir : " << (cmp.horiz ? (cmp.LToR ? "Left to Right" : "Right To Left") : (cmp.LToR ? "Down to Up" : "Up to Down")) << std::endl;
+		out << "\tUse list for values : " << cmp.useListVals << std::endl;
 		if (cmp.useListVals) {
 			out << "\tDisplay List Values :";
 			for (int i = 0; i < cmp.dispListVals.size(); ++i) { out << (i == 0 ? " `" : ", `") << cmp.dispListVals[i] << "`"; }
-			out << "\n";
+			out << std::endl;
 			out << "\tReturned List Values : ";
 			for (int i = 0; i < cmp.resListVals.size(); ++i) { out << (i == 0 ? " `" : ", `") << cmp.resListVals[i] << "`"; }
-			out << "\n";
+			out << std::endl;
 		}
 		return out;
 	}//op<<
@@ -575,9 +575,9 @@ namespace gestureIKApp {
 	}
 	std::ostream& operator<<(std::ostream& out, const MyUITextBox& cmp) {
 		out << static_cast<const MyUIComponent&>(cmp);                                                         //start with base class
-		out << "\tText box : Current text : " << cmp.txtVal << "\n";
-		out << "\t Max Length : " << cmp.maxChars << " | Current state : " << cmp.tbState << " | Currently being edited : " << cmp.beingEdited << "\n";
-		out << "\t Current edit text : '" << cmp.newTxtVal << "'" << "\n";
+		out << "\tText box : Current text : " << cmp.txtVal << std::endl;
+		out << "\t Max Length : " << cmp.maxChars << " | Current state : " << cmp.tbState << " | Currently being edited : " << cmp.beingEdited << std::endl;
+		out << "\t Current edit text : '" << cmp.newTxtVal << "'" << std::endl;
 		return out;
 	}//op<<
 

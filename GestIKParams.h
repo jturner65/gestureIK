@@ -66,7 +66,6 @@ namespace gestureIKApp {
 		inline bool genRandLtrs() { return flags[IDX_genRandLtrs]; }
 		//whether or not to make img sequences of the non-random-generated (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
 		inline bool mkNonRandSeq() { return flags[IDX_mkNonRandSeq]; }
-
 		void resetValues();
 
 		friend std::ostream& operator<<(std::ostream& out, GestIKParams& GestIK);
@@ -75,7 +74,7 @@ namespace gestureIKApp {
 		std::vector<double> defaultVals;
 
 		//data collection parameters
-		//base value of # of trajectories to capture for training and testing data
+		//base value of # of trajectories to capture for training and testing data ONLY SAMPLE SYMBOLS - use numTotSymPerLtr for letter trajectories
 		int dataCapNumExamples;
 		//threshold between testing and training data as % of total data captured
 		double dataCapTestTrainThresh;
@@ -124,16 +123,16 @@ namespace gestureIKApp {
 
 	private :
 		std::vector<bool> flags;									//various boolean flags used to drive GestIK
-		static const int 
+		static const int
 			//whether or not to add the possibility of using the left hand to draw to random letter gen
-			IDX_useLeftHand	= 0,
+			IDX_useLeftHand = 0,
 			//whether or not to generate randomized versions of loaded letters - note numTotSymPerLtr still needs to be specified to be greater than # of file-based samples to get any random samples
 			IDX_genRandLtrs = 1,
 			//whether or not to make img sequences of the non-random-generated (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
-			IDX_mkNonRandSeq = 2;						
+			IDX_mkNonRandSeq = 2;
 
 
-		static const int numFlags = 2;
+		static const int numFlags = 3;
 	};
 
 }//namespace gestureIKApp 

@@ -72,7 +72,7 @@ namespace gestureIKApp {
 		}
 		frame2 = ((frame1 + 1 ) % trajPtDistFromSt.size());
 		double t = (lenFromStTraj - trajPtDistFromSt[frame1]) / (trajPtDistFromSt[frame2] - trajPtDistFromSt[frame1]);
-		//cout << "\tt in solve for " << name << " : " << t << "\t frame1 : " << frame1 <<" frame2 : " << frame2<<"\n";
+		if (t > 1) { t = 1; }
 		//set targets for IK
 		for (int i = 0; i < trkedMrkrNames.size(); ++i) {
 			Eigen::Vector3d vec = interpVec(trajTargets[frame1][i], trajTargets[frame2][i], t);
@@ -132,7 +132,7 @@ namespace gestureIKApp {
 		}
 		if(convTrajPts.size() > 1){
 			if ((trajLen > 0) && (trajLen < IKSolve->params->trajLenThresh)) {
-				//cout << "Traj len for traj : " << name << " smaller than threshold so traj will be ignored. |\t# conv pts : " << convTrajPts.size() << "|\t traj len : " << trajLen << "\n";
+				//cout << "Traj len for traj : " << name << " smaller than threshold so traj will be ignored. |\t# conv pts : " << convTrajPts.size() << "|\t traj len : " << trajLen << std::endl;
 				flags[useTrajIDX] = false;
 			}
 			else {
@@ -142,11 +142,11 @@ namespace gestureIKApp {
 					numObjs = 2; 
 				//	cout << "\tDesired Size is small - setting to 2 : traj Len : "<< trajLen; 
 				}
-				//cout << "\n";
+				//cout << std::endl;
 				processPts(numObjs);
 				//set actual conv traj points
 				setPts(debugTrajPts);
-				//cout << "Traj : " << name << " convTrajPts before size : " << beforeSize << " debugTrajPts after size : " << debugTrajPts.size() << "\tRatio : "<<(debugTrajPts.size() /(1.0 * beforeSize))<<"\n";
+				//cout << "Traj : " << name << " convTrajPts before size : " << beforeSize << " debugTrajPts after size : " << debugTrajPts.size() << "\tRatio : "<<(debugTrajPts.size() /(1.0 * beforeSize))<< std::endl;
 			}
 		}
 		debugTrajPts.clear();
@@ -342,8 +342,8 @@ namespace gestureIKApp {
 	* @return point @t along curve
 	*/
 	Eigen::Vector3d MyGestTraj::at(double t,  double _ttllen, eignVecTyp& _pts, std::vector<double>& _distAtEachPt) {
-		if (t<0) { std::cout << "In at : t=" << t << " needs to be [0,1]\n"; return _pts[0]; }
-		else if (t>1) { std::cout << "In at : t=" << t << " needs to be [0,1]\n"; return (flags[closeTrajIDX] ? _pts[0] : _pts[_pts.size() - 1]); }//last point on closed trajectory is first point
+		if (t<0) { std::cout << "In at : t=" << t << " needs to be [0,1]"<< std::endl; return _pts[0]; }
+		else if (t>1) { std::cout << "In at : t=" << t << " needs to be [0,1]"<< std::endl; return (flags[closeTrajIDX] ? _pts[0] : _pts[_pts.size() - 1]); }//last point on closed trajectory is first point
 		double dist = t * _ttllen, s;		
 		for (int i = 0; i < _distAtEachPt.size() - 1; ++i) {										//built off d_pts so that it will get wrap for closed curve
 			if (_distAtEachPt[i + 1] >= dist) {													//if current distance along arclength > dist we want for point
@@ -402,7 +402,7 @@ namespace gestureIKApp {
 	 //trajectory file expected to have 1 column for every tracked marker, 1 row for every sample.  needs to be resampled for frames/playback speed (?)
 	 //srcTrajData holds x,y,timing data mapped to z,y and separate timing ara.
 	void MyGestTraj::readTrajFile() {//read trajectory data from filename for this trajectory
-									 //cout << "Now Reading :" << filename << " trajectory file \n";
+									 //cout << "Now Reading :" << filename << " trajectory file "<< std::endl;
 		srcTrajData.clear();
 		srtTrajTiming.clear();
 		std::ifstream  trajData(filename);
@@ -425,18 +425,18 @@ namespace gestureIKApp {
 			//debug output below : 
 			if (flags[debugIDX]) {
 				tmpDat << 0, dat(1), dat(2);
-				std::cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastDat).norm()) << "\ttiming:" << srtTrajTiming.back() << " timing diff " << (srtTrajTiming.back() - lastTime) << "\n";
+				std::cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastDat).norm()) << "\ttiming:" << srtTrajTiming.back() << " timing diff " << (srtTrajTiming.back() - lastTime) << std::endl;
 				lastTime = srtTrajTiming.back();
 				lastDat << tmpDat;
 			}
 		}
 		flags[loadedIDX] = true;
-		//cout << "Finished Reading :" << filename << " trajectory file.   srcTrajData holds : "<< srcTrajData.size()<<" points.\n";
-		//cout << "\n";
+		//cout << "Finished Reading :" << filename << " trajectory file.   srcTrajData holds : "<< srcTrajData.size()<<" points."<< std::endl;
+		//cout << std::endl;
 	}//readTrajFile
 
 	std::ostream& operator<<(std::ostream& out, MyGestTraj& traj) {
-		out << "Traj name " << traj.name << "\t# src traj points : " << traj.srcTrajData.size() << "\n";
+		out << "Traj name " << traj.name << "\t# src traj points : " << traj.srcTrajData.size() << std::endl;
 		return out;
 	}
 }  // namespace gestureIKApp

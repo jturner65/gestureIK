@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
 	MyWindow window(std::make_shared<IKSolver>(biped));
 	window.setWorld(myWorld);
 
-	std::cout << "\nKey Commands:\n";
+	std::cout << "\nKey Commands:"<< std::endl;
 	std::cout << "\t` : reset camera loc" << std::endl;
 	std::cout << "\tc : screen capture 1 entire cycle of trajectory" << std::endl;
 	std::cout << "\td : debug mode on/off" << std::endl;
@@ -77,9 +77,13 @@ int main(int argc, char* argv[]) {
 	std::cout << "Sample Trajectories : " << std::endl;
 	std::cout << "\t1,2,3,4 : follow trajectory for sample objects : circle, triangle, square, star." << std::endl;
 	std::cout << "\tr : restart current sample object with randomization." << std::endl;
+	std::cout << "\tw : capture sample symbols Triangle/Square/Star to disk." << std::endl;
 	std::cout << "\ty : reset sample object endpoints to non-random locations." << std::endl;
-	std::cout << "\n";
+
+	std::cout << std::endl;
 	std::cout << "Letter Trajectories : " << std::endl;
+	std::cout << "\ta : capture letter symbols a-z to disk." << std::endl;
+	std::cout << "\tb : pause between rendering IK Frames for letters." << std::endl;
 	std::cout << "\tShift + <letter> : follow random human trajectory for <letter> " << std::endl;
 
 	glutInit(&argc, argv);

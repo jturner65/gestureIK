@@ -76,7 +76,7 @@ namespace gestureIKApp {
 	 //generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present - note this is total desired, so # to add is _totNumDesSymb - numFileSymbols
 	void MyGestLetter::buildRandomSymbolTrajs(int _totNumDesSymb) {
 		if (_totNumDesSymb <= numTotSymbols) {
-			std::cout << "Requested " << _totNumDesSymb << " random and file based symbols, but already have " << numTotSymbols << " made, so doing nothing.\n";
+			std::cout << "Requested " << _totNumDesSymb << " random and file based symbols, but already have " << numTotSymbols << " made, so doing nothing."<< std::endl;
 			return;
 		}
 		std::stringstream ss;
@@ -95,22 +95,17 @@ namespace gestureIKApp {
 				isDone = tmpPtr->buildRandomSymbol(symbols[randSymbolIDX], tmpPtr, isFast);
 			} while (!isDone);
 			symbols.push_back(tmpPtr);
-			////set shared ptr ref to self
-			//symbols[i]->setSolver(IKSolve);
-			//symbols[i]->buildRandomSymbol(symbols[randSymbolIDX], symbols[i], isFast);
 		}
 		numTotSymbols = _totNumDesSymb;
 		//build new distribution of potential symbols to draw from to find random symbol idx to ik to 
 		buildUniDist();
-	}
-
-
+	}//buildRandomSymbolTrajs
 
 	//solve IK on current letter - get current symbol, cycle through all trajectories until drawn
 	bool MyGestLetter::solve() {
 		bool finished = symbols[curSymbolIDX]->solve();
-		if (finished) {
-			std::cout << "Finished drawing letter : " << symbols[curSymbolIDX]->name << "\n";
+		if ((finished) && (flags[debugIDX])) {
+			std::cout << "Finished drawing letter : " << symbols[curSymbolIDX]->name << std::endl;
 		}
 		return finished;
 	}
@@ -120,7 +115,7 @@ namespace gestureIKApp {
 		curIDX = idx;
 		curSymbolIDX = (*uni)(mtrn_gen);
 		symbols[curSymbolIDX]->initSymbolIK();
-		std::cout << "Curr Rand symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << "\n";
+		std::cout << "Curr Rand symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << std::endl;
 	}
 
 	//sets specific index in symbol list for letter to draw - used to let myWindow control which symbols to draw (for train and test data)
@@ -128,7 +123,7 @@ namespace gestureIKApp {
 		curIDX = idx;
 		curSymbolIDX = symIdx;
 		symbols[curSymbolIDX]->initSymbolIK();
-		std::cout << "Specified symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << "\n";
+		std::cout << "Specified symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << std::endl;
 	}
 
 	//set reference to IK solver - set in all trajectories
@@ -149,8 +144,8 @@ namespace gestureIKApp {
 	}
 
 	std::ostream& operator<<(std::ostream& out, MyGestLetter& ltr) {
-		out << "Letter :" << ltr.ltrName << "\tfile name : " << ltr.fileName << "\n";
-		out << "\t# symbol files present : " << ltr.numFileSymbols << "\t total # symbols of this letter present : " << ltr.numTotSymbols << "\n";
+		out << "Letter :" << ltr.ltrName << "\tfile name : " << ltr.fileName << std::endl;
+		out << "\t# symbol files present : " << ltr.numFileSymbols << "\t total # symbols of this letter present : " << ltr.numTotSymbols << std::endl;
 		return out;
 	}
 

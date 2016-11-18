@@ -169,7 +169,7 @@ private:
 		double mu = 0;
 		for (int i = 0; i < 1000; ++i) {
 			auto rnd = IKSolve->getRandDbl(mu, .00001);
-			std::cout << "i : " << i << "\tgetRandDbl with mu : " << mu << " : " << rnd << "\n";
+			std::cout << "i : " << i << "\tgetRandDbl with mu : " << mu << " : " << rnd << std::endl;
 
 		}
 	}
@@ -216,9 +216,10 @@ private:
 		drawTrkMrkrsIDX = 4,					//yes/no to draw markers on skel
 		drawLtrTrajIDX = 5,						//draw all trajectory components of symbol or sample symbol
 		collectDataIDX = 6,						//turn on the training/testing data collection mechanism
-		doneTrajIDX = 7;						//finished current trajectory
+		doneTrajIDX = 7,						//finished current trajectory
+		pauseIKLtrIDX = 8;						//pause between IK frames
 
-	static const unsigned int numFlags = 8;
+	static const unsigned int numFlags = 9;
 };
 
 //calc total length of combined trajectories
@@ -247,7 +248,7 @@ eignVecVecTyp MyWindow::regenCorners(std::array<double, SIZE>const & arr, bool r
 		for (int i = 0; i < numCrnrs; ++i) {
 			eignVecTyp crnrVec(0);
 			int arrIdx = ((i%SIZE) + stCrnr) % SIZE;
-			if (flags[debugIDX]) { std::cout << "Obj size : " << SIZE << "\tRandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << "\n"; }
+			if (flags[debugIDX]) { std::cout << "Obj size : " << SIZE << "\tRandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << std::endl; }
 			randThet = IKSolve->getRandDbl(arr[arrIdx],  .3);
 			randRad = IKSolve->getRandDbl(rad, .2);
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawCrclCtr, randThet, randRad));
@@ -260,7 +261,7 @@ eignVecVecTyp MyWindow::regenCorners(std::array<double, SIZE>const & arr, bool r
 		for (int i = 0; i < numCrnrs; ++i) {
 			eignVecTyp crnrVec(0);
 			int arrIdx = ((i%SIZE) + stCrnr) % SIZE;
-			if (flags[debugIDX]) { std::cout << "Obj size : " << SIZE << "\tNonrandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << "\n"; }
+			if (flags[debugIDX]) { std::cout << "Obj size : " << SIZE << "\tNonrandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << std::endl; }
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawCrclCtr, arr[arrIdx], rad));
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawElbowCtr, arr[arrIdx], .25 * rad));
 			crnrs.push_back(std::move(crnrVec));

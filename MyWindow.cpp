@@ -50,7 +50,7 @@ using namespace dart::gui;
 static int screenCapCnt = 0, trainSymDatCnt = 0, trainLtrtCnt = 0, displayTmrCnt = 0, drawCnt = 0;
 
 MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_ikslvr), tVals(4), tBnds(4,1), tIncr(4,1), testOutFile(), trainOutFile(),
-	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curTrajStr(trajNames[0]), curClassName(trajNames[0]),
+	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curTrajStr(trajNames[0]), curClassName(trajNames[0]), curSymIDX(0),
 	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0),
 	flags(numFlags,false){
 
@@ -76,7 +76,7 @@ MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_i
 	for (int i = 1; i < 4; ++i) {
 		tIncr[i] = IKSolve->params->trajDesiredVel;// / (i + 2.0);//dividing by # of sides because interpolating between each pair of verts with a local t: 0->1, but treating all sets of edges as complete trajectory (i.e. glbl t 0->1)
 	}
-	std::cout << "Per Frame ptr distance travelled calculated : " << IKSolve->params->trajDesiredVel << "\n";
+	std::cout << "Per Frame ptr distance travelled calculated : " << IKSolve->params->trajDesiredVel << std::endl;
 
 	triCrnrs = regenCorners<3U>(triCrnrConsts, false, curStIdx[1]);
 	sqrCrnrs = regenCorners<4U>(sqCrnrConsts, false, curStIdx[2]);
@@ -111,7 +111,7 @@ void MyWindow::openIndexFile(bool isTrain, std::ofstream& strm, bool append) {
 	unsigned int mode = (append ? std::fstream::app : std::fstream::out);
 	strm.open(tmp.c_str(), mode);
 	if (!strm.is_open()) {
-		std::cout << tmp << " failed to open!\n";
+		std::cout << tmp << " failed to open!"<< std::endl;
 	}
 }//openIndexFile
 
@@ -135,7 +135,7 @@ std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
 //with and without random shifts in end points,  [and moving in clockwise or ccw direction (TODO)]
 void MyWindow::trainDatInitCol(bool isLtr) {
 	if ((flags[useLtrTrajIDX]) && ((!IKSolve->params->mkNonRandSeq()) && (!IKSolve->params->genRandLtrs()))) {
-			std::cout << "XML specifies to not save sequences of file based letters(IDX_mkNonRandSeq), and to not make any random letters(IDX_genRandLtrs), and so there's nothing to save.\n";
+			std::cout << "XML specifies to not save sequences of file based letters(IDX_mkNonRandSeq), and to not make any random letters(IDX_genRandLtrs), and so there's nothing to save."<< std::endl;
 			curSymIDX = 0;
 			curLtrIDX = 0;
 			flags[collectDataIDX] = false;
@@ -151,7 +151,7 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 	mShowMarkers = false;
 	
 	if (flags[useLtrTrajIDX]) {
-		std::cout << "Initializing random data collection for Letter Trajectories.\n";
+		std::cout << "Initializing random data collection for Letter Trajectories."<< std::endl;
 		bool append = !IKSolve->params->mkNonRandSeq();
 		openIndexFile(false, testOutFile, append);
 		openIndexFile(true, trainOutFile, append);
@@ -166,7 +166,7 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 	else {
 		openIndexFile(false, testOutFile, false);
 		openIndexFile(true, trainOutFile, false);
-		std::cout << "Initializing random data collection for Symbols.\n";
+		std::cout << "Initializing random data collection for Symbols."<< std::endl;
 		//initialize starting idxs, t values and counts of training and testing data for all symbol trajectories
 		for (int i = 0; i < 4; ++i) {
 			curStIdx[i] = 0;
@@ -185,7 +185,7 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 //manage the process of writing all training and testing data - call whenever a trajectory has been captured (from checkCapture() )
 //ONLY FOR SAMPLE SYMBOLS that consist of single trajectories!
 void MyWindow::trainSymDatManageCol() {
-	//if (flags[debugIDX]) { cout << "Start trainSymDatManageCol : " << trainSymDatCnt << "\n"; }
+	//if (flags[debugIDX]) { cout << "Start trainSymDatManageCol : " << trainSymDatCnt << std::endl; }
 	//call first time right after init
 	//flags[collectDataIDX] pre-empts flags[stCaptAtZeroIDX] so needs to set mCapture
 	//regerenate all endpoints - we start on non-random data - for current trajectory, make #verts trajectories starting on each vert without random, before using random trajectories
@@ -213,7 +213,7 @@ void MyWindow::trainSymDatManageCol() {
 		setDrawLtrOrSmpl(false, (curTraj + 1) % trajNames.size());		//iterate to next trajectory if we've capture sufficient samples
 		dataGenIters[curTraj] = 0;
 		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
-		std::cout << "Test/train data gen transition to sample " << trajNames[curTraj] << " trajectory\n";
+		std::cout << "Test/train data gen transition to sample " << trajNames[curTraj] << " trajectory"<< std::endl;
 	}
 	if (curTraj != 0) { mCapture = true; }		//repeat for next trajectory type
 	else {//at curTraj == 0 we have completed all data gen, and should stop - reset all important stuff to circle as if key 1 was pressed
@@ -222,9 +222,9 @@ void MyWindow::trainSymDatManageCol() {
 		trainOutFile.close();
 		setDrawLtrOrSmpl(false, 0);
 		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
-		std::cout << "Finished generating test/train data, reset to sample " << trajNames[curTraj] << " trajectory\n";
+		std::cout << "Finished generating test/train data, reset to sample " << trajNames[curTraj] << " trajectory"<< std::endl;
 	}	
-	//if (flags[debugIDX]) { cout << "End trainSymDatManageCol : " << trainSymDatCnt++ << "\n"; }
+	//if (flags[debugIDX]) { cout << "End trainSymDatManageCol : " << trainSymDatCnt++ << std::endl; }
 }
 
 //capture all letters
@@ -241,7 +241,7 @@ void MyWindow::trainLtrDatManageCol() {
 		return;
 	}
 
-	std::cout << "start trainLtrDatManageCol : " << trainLtrtCnt << "\tcurLtrIDX : " << curLtrIDX << "\tcurSymbIDX : " << curSymIDX << "\n";
+	std::cout << "start trainLtrDatManageCol : " << trainLtrtCnt << "\tcurLtrIDX : " << curLtrIDX << "\tcurSymbIDX : " << curSymIDX << std::endl;
 	//need to cycle through all letters 
 	setDrawLtrOrSmpl(true, curLtrIDX, false, curSymIDX);
 	curTrajDirName = getCurTrajFileDir(-1);
@@ -260,7 +260,7 @@ void MyWindow::trainLtrDatManageCol() {
 		stSymIdx = IKSolve->params->mkNonRandSeq() ? 0 : (curLtrIDX >= letters.size() ? 0 : letters[curLtrIDX]->numFileSymbols);		//either start at beginning or start saving only randomized letters
 		curSymIDX = stSymIdx;
 	}
-	std::cout << "End trainLtrDatManageCol : " << trainLtrtCnt++ << "\n";
+	std::cout << "End trainLtrDatManageCol : " << trainLtrtCnt++ << std::endl;
 
 }//trainLtrDatManageCol
 
@@ -268,7 +268,7 @@ void MyWindow::trainLtrDatManageCol() {
 void MyWindow::trainDatWriteIndexFile(std::ofstream& outFile, const std::string& fileDir, int cls) {
 	std::stringstream ss;
 	ss.str("");
-	ss << curClassName <<"/"<<fileDir << " " << cls << "\n";
+	ss << curClassName <<"/"<<fileDir << " " << cls << std::endl;
 	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
 	outFile << ss.str();
 }
@@ -282,23 +282,22 @@ void MyWindow::buildLetterList() {
 		letters.push_back(std::make_shared<MyGestLetter>(c));
 		letters[i]->setSolver(IKSolve);
 		GestIKParser::readGestLetterXML(letters[i]);
-		std::cout << "Made letter : " << (*letters[i]) << "\n";
+		std::cout << "Made letter : " << (*letters[i]) << std::endl;
 	}
 	//buildRandomSymbolTrajs
 	if (!IKSolve->params->genRandLtrs()) {
-		std::cout << "Not making random letters due to 'IDX_genRandLtrs' flag in config xml setting.  Set to true to make them.\n";
+		std::cout << "Not making random letters due to 'IDX_genRandLtrs' flag in config xml setting.  Set to true to make them."<< std::endl;
 	}
 	for (int i = 0; i < letters.size(); ++i) {
 		if (IKSolve->params->numTotSymPerLtr > letters[i]->symbols.size()) {
 			letters[i]->buildRandomSymbolTrajs(IKSolve->params->numTotSymPerLtr);
-			std::cout << "Made " << (IKSolve->params->numTotSymPerLtr - letters[i]->numFileSymbols) << " Random versions of letter : " << (*letters[i]) << "\n";
+			std::cout << "Made " << (IKSolve->params->numTotSymPerLtr - letters[i]->numFileSymbols) << " Random versions of letter : " << (*letters[i]) << std::endl;
 		}
 		else {
-			std::cout << "Insufficient letters specified " << IKSolve->params->numTotSymPerLtr << " so no random versions of letter : " << (*letters[i]) << " made.\n";
+			std::cout << "Insufficient letters specified " << IKSolve->params->numTotSymPerLtr << " so no random versions of letter : " << (*letters[i]) << " made."<< std::endl;
 		}
 	}
-
-}
+}//buildLetterList
 
 //build circular trajectory and write to csv file
 eignVecVecTyp MyWindow::buildTrajSeq(void (MyWindow::*trajFunc)(eignVecTyp&), int traj, double& t) {
@@ -316,6 +315,7 @@ eignVecVecTyp MyWindow::buildTrajSeq(void (MyWindow::*trajFunc)(eignVecTyp&), in
 	return _trajAraAra;
 }
 
+static int pauseCount = 0;
 void MyWindow::displayTimer(int _val){
 	if (flags[initTrnDatCapIDX]) {//initialize trajectories for training/testing data capture
 		flags[initTrnDatCapIDX] = false;
@@ -324,12 +324,25 @@ void MyWindow::displayTimer(int _val){
 	//if last time around we finished trajectory, reset values/recapture, etc, for next trajectory
 	if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }			//check at end of trajectory if attempting to save screen shots
 
-	//if (flags[debugIDX]) { cout << "displayTimer : IKSolve start\n"; }
+	//if (flags[debugIDX]) { cout << "displayTimer : IKSolve start"<< std::endl; }
 	if (flags[useLtrTrajIDX]) {
-		//cout << "TODO : IK on letter " << curLetter->ltrName << " symbol idx : "<< curLetter->curSymbol <<"\n";
+		if (flags[pauseIKLtrIDX]) {//wait for keypress between draw frames			
+			pauseCount = pauseCount + 1;
+			if (pauseCount % 20 != 0) {
+				if (pauseCount % 20 == 1) { std::cout << "Waiting in displayTimer before solving IK for current letter "<< std::endl; }
+				//exit without IK solving
+				glutPostRedisplay();
+				glutTimerFunc(mDisplayTimeout, refreshTimer, _val);
+				return;
+			} else {
+				pauseCount = 0;
+			}
+		}
+
+		//cout << "TODO : IK on letter " << curLetter->ltrName << " symbol idx : "<< curLetter->curSymbol << std::endl;
 		//setup trajectories and then solve 
 		flags[doneTrajIDX] = curLetter->solve();
-		//if (flags[debugIDX]) { cout << "displayTimer : letter solve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << "\n"; }
+		//if (flags[debugIDX]) { cout << "displayTimer : letter solve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << std::endl; }
 	}
 	else {
 		switch (curTraj) {
@@ -339,7 +352,7 @@ void MyWindow::displayTimer(int _val){
 		case 3: {		calcTrajPoints(mTrajPoints, starCrnrs, (curTraj + 2), tVals[curTraj]);		break;		}
 		}
 		IKSolve->solve(mTrajPoints);
-		//if (flags[debugIDX]) { cout << "displayTimer : IKSolve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << "\n"; }
+		//if (flags[debugIDX]) { cout << "displayTimer : IKSolve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << std::endl; }
 	}
 	glutPostRedisplay();
 	glutTimerFunc(mDisplayTimeout, refreshTimer, _val);
@@ -359,7 +372,7 @@ void MyWindow::drawCurTraj() {
 void MyWindow::draw() {
 	glDisable(GL_LIGHTING);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	//cout << "draw start : " << (drawCnt) << "\n";
+	//cout << "draw start : " << (drawCnt) << std::endl;
 
 	drawSkels();
 	//traw tracked markers
@@ -380,13 +393,13 @@ void MyWindow::draw() {
 		dart::gui::drawStringOnScreen(0.02f, 0.02f, getCurrLocAndQuat());
 	}
 	glEnable(GL_LIGHTING);
-	//cout << "draw end : " << (drawCnt++) << "\n";
+	//cout << "draw end : " << (drawCnt++) << std::endl;
 }
 
 std::string MyWindow::getCurrLocAndQuat() {
 	std::stringstream ss;
 	ss.str("");
-	ss << "Loc : " << buildStrFrmEigV3d(this->mTrans) << "\tZoom : "<<(this->mZoom)<<"\tQuat : w:" << this->mTrackBall.getCurrQuat().w() << " vec : (" << buildStrFrmEigV3d(this->mTrackBall.getCurrQuat().vec()) << ")\n";
+	ss << "Loc : " << buildStrFrmEigV3d(this->mTrans) << "\tZoom : "<<(this->mZoom)<<"\tQuat : w:" << this->mTrackBall.getCurrQuat().w() << " vec : (" << buildStrFrmEigV3d(this->mTrackBall.getCurrQuat().vec()) << ")"<< std::endl;
 	return ss.str();
 }
 
@@ -404,29 +417,31 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 	unsigned int keyVal = _key;
 	if ((keyVal >= 65) && (keyVal <= 90)) {		//draw letter trajectories if any capital letter is selected
 		int idx = keyVal - 65;
-		setDrawLtrOrSmpl(true, idx, true, -1);
+		//setDrawLtrOrSmpl(true, idx, true, -1);
+		setDrawLtrOrSmpl(true, idx, false, curSymIDX);
+		curSymIDX = (curSymIDX + 1) % curLetter->symbols.size();
 		return;
 	} 
 	switch (_key) {
 	case '1': {  // st trajectory to traj 1
 		setDrawLtrOrSmpl(false, 0);
 		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
-		std::cout << "sample "<< trajNames[curTraj] << " trajectory\n";
+		std::cout << "sample "<< trajNames[curTraj] << " trajectory"<< std::endl;
 		break; }
 	case '2': {  // st trajectory to traj 2 tTri, tSqr, tStar,
 		setDrawLtrOrSmpl(false, 1);
 		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
-		std::cout << "sample " << trajNames[curTraj] << " trajectory\n";
+		std::cout << "sample " << trajNames[curTraj] << " trajectory"<< std::endl;
 		break; }
 	case '3': {  // st trajectory to traj 3
 		setDrawLtrOrSmpl(false, 2);
 		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
-		std::cout << "sample " << trajNames[curTraj] << " trajectory\n";
+		std::cout << "sample " << trajNames[curTraj] << " trajectory"<< std::endl;
 		break; }
 	case '4': {  // st trajectory to traj 4
 		setDrawLtrOrSmpl(false, 3);
 		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
-		std::cout << "sample " << trajNames[curTraj] << " trajectory\n";
+		std::cout << "sample " << trajNames[curTraj] << " trajectory"<< std::endl;
 		break; }
 	case '`':          //reset trackball loc with origTrackBallQ and zoom with 1
 		mTrackBall.setQuaternion(origTrackBallQ);
@@ -437,10 +452,12 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 	case 'a': {  // screen capture all letters (train and test)
 		flags[initTrnDatCapIDX] = true;
 		flags[useLtrTrajIDX] = true;
-		//trainDatInitCol(true);				//capture letter trajectories
 		std::cout << "Capture all letters\n.";
 		break; }
-
+	case 'b': {  // screen capture all letters (train and test)
+		flags[pauseIKLtrIDX] = !flags[pauseIKLtrIDX];
+		std::cout << "Pause between IK frames : " << (flags[pauseIKLtrIDX] ? "True\n" : "False\n");
+		break; }
 	case 'c': {  // screen capture
 		flags[stCaptAtZeroIDX] = true;				//start capturing when trajectory gets to 0
 		std::cout << "start capturing when trajectory gets to t == 0\n.";
@@ -464,7 +481,6 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 	case 'w': {//generate test and train data on triangle, square, star
 		flags[initTrnDatCapIDX] = true;
 		flags[useLtrTrajIDX] = false;
-		//trainDatInitCol(false);
 		break; }
 	case 'y': {//un-randomize
 		regenerateSampleData(false);
@@ -500,18 +516,18 @@ std::string MyWindow::getScreenCapDirFileName() {
 	nError = mkdir(tmp.c_str(), 0733); // can be used on non-Windows
 #endif
 	if ((nError != 0) && (nError != -1)) {//-1 is exists already
-		std::cout << "Error attempting to create path : " << tmp << "\terror : "<<nError<<"\n";
+		std::cout << "Error attempting to create path : " << tmp << "\terror : "<<nError<< std::endl;
 	}
 
 	ss.str("");
 	char buf[5];
-	sprintf(buf, "%.4d", (flags[useLtrTrajIDX] ? curLetter->getCurSymbolFrame() : captCount[curTraj]++));
+	sprintf(buf, "%.4d", (flags[useLtrTrajIDX] ? (curLetter->getCurSymbolFrame()-1) : captCount[curTraj]++));
 	ss << tmp <<"/"<< curTrajDirName<<"."<< buf << ".png";
 	return ss.str();
 }
 
 bool MyWindow::screenshot() {
-	//cout << "Screen cap start : " << screenCapCnt << " for draw iter : "<< (drawCnt-1)<<"\n";
+	//cout << "Screen cap start : " << screenCapCnt << " for draw iter : "<< (drawCnt-1)<< std::endl;
 	const std::string tmp = getScreenCapDirFileName();
 	const char* fileName = tmp.c_str();
 
@@ -537,7 +553,7 @@ bool MyWindow::screenshot() {
 	}
 	else {
 		std::cout << "wrote screenshot " << fileName //<< "\t screenCapCnt : " << screenCapCnt++ 
-			<< "\n";
+			<< std::endl;
 
 		return true;
 	}
@@ -624,7 +640,7 @@ void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajA
 	ss.str("");
 	ss << csvFilePath << _fname << "Traj.csv";
 	std::ofstream outFile;
-	if (flags[debugIDX]) { std::cout << "Fully Qualified File name : " << ss.str() << "\tnumRows : " << numRows << "\tnumCols : " << numCols << "\n"; }
+	if (flags[debugIDX]) { std::cout << "Fully Qualified File name : " << ss.str() << "\tnumRows : " << numRows << "\tnumCols : " << numCols << std::endl; }
 	outFile.open(ss.str());
 	//output column marker names and whether fixed or not - 3 cols per value (x,y,z)
 	ss.str("");
@@ -636,7 +652,7 @@ void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajA
 	for (int col = 1; col < numCols; ++col) {
 		for (int i = 0; i < 3; ++i) { ss << "," << trkedMrkrNames[col] << dims[i]; }
 	}
-	ss << "\n";
+	ss << std::endl;
 	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
 	outFile << ss.str();
 
@@ -648,7 +664,7 @@ void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajA
 		isFixed = ((*IKSolve->trkMarkers)[trkedMrkrNames[col]]->IsFixed() ? "true" : "false");
 		ss << "," << isFixed << "," << isFixed << "," << isFixed;
 	}
-	ss << "\n";
+	ss << std::endl;
 	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
 	outFile << ss.str();
 
@@ -666,7 +682,7 @@ void MyWindow::writeTrajCSVFileRow(std::ofstream& outFile, eignVecTyp& _trajAra)
 	ss.str("");
 	ss << buildStrFrmEigV3d(_trajAra[0], numSigDigs);
 	for (int col = 1; col < numCols; ++col) { ss << "," << buildStrFrmEigV3d(_trajAra[col], numSigDigs); }
-	ss << "\n";
+	ss << std::endl;
 	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
 	outFile << ss.str();
 }
