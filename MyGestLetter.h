@@ -86,9 +86,11 @@ namespace gestureIKApp {
 		//set solver for this trajectory
 		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
 		//set symbol to draw to be random entry in symbols list
-		void setRandSymbolIdx(int idx);
+		void setRandSymbolIdx(int idx, bool disp);
+		//turn on/off testing of letter quality
+		void setTestLtrQual(bool val) {	setSymbolFlags(testLtrQualIDX, val);	}
 		//set symbol and letter idx
-		void setSymbolIdx(int idx, int symIdx);
+		void setSymbolIdx(int idx, int symIdx, bool disp);
 		//set flags of all subordinate symbols
 		void setSymbolFlags(int idx, bool val);
 
@@ -121,7 +123,8 @@ namespace gestureIKApp {
 
 		std::vector<bool> flags;					//state flags of trajectory
 		static const unsigned int debugIDX = 0,		//debug mode
-			recordLtrIDX = 1;						//draw the connecting trajectories between two data trajectories	
+			testLtrQualIDX = 1;						//test all symbols to make sure no abberrant trajectories
+
 		static const unsigned int numFlags = 2;
 
 

@@ -123,13 +123,14 @@ namespace gestureIKApp {
 
 		std::vector<bool> flags;					//state flags of symbol
 		static const unsigned int
-			debugIDX = 0,			//debug mode
-			diffClrIDX = 1,			//use different colors for each component trajectory of this symbol
-			drawConnTrajIDX = 2,	//draw the connecting trajectories between two data trajectories	
-			randCircleIDX = 3,		//if true, randomize the center, radius and plane normal of the bounding circle of this letter
-			isFastDrawnIDX = 4,		//this symbol is drawn quickly - flip orientation of elbow plane normal, 1.5x base drawing speed
-			isDoneDrawingIDX = 5;	//finished drawing this symbol
-		static const unsigned int numFlags = 6;
+			debugIDX = 0,						//debug mode
+			testLtrQualIDX = 1,					//test all symbols to make sure no abberrant trajectories
+			diffClrIDX = 2,						//use different colors for each component trajectory of this symbol
+			drawConnTrajIDX = 3,				//draw the connecting trajectories between two data trajectories	
+			randCircleIDX = 4,					//if true, randomize the center, radius and plane normal of the bounding circle of this letter
+			isFastDrawnIDX = 5,					//this symbol is drawn quickly - flip orientation of elbow plane normal, 1.5x base drawing speed
+			isDoneDrawingIDX = 6;				//finished drawing this symbol
+		static const unsigned int numFlags = 7;
 
 		Eigen::Vector3d avgLoc;													//average location of symbol data in matlab space
 

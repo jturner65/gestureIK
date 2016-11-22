@@ -111,19 +111,19 @@ namespace gestureIKApp {
 	}
 
 	//sets random index in symbol list for letter to draw
-	void MyGestLetter::setRandSymbolIdx(int idx) {
+	void MyGestLetter::setRandSymbolIdx(int idx, bool disp) {
 		curIDX = idx;
 		curSymbolIDX = (*uni)(mtrn_gen);
 		symbols[curSymbolIDX]->initSymbolIK();
-		std::cout << "Curr Rand symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << std::endl;
+		if (disp) { std::cout << "Curr Rand symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << std::endl; }
 	}
 
 	//sets specific index in symbol list for letter to draw - used to let myWindow control which symbols to draw (for train and test data)
-	void MyGestLetter::setSymbolIdx(int idx, int symIdx) {
+	void MyGestLetter::setSymbolIdx(int idx, int symIdx, bool disp) {
 		curIDX = idx;
 		curSymbolIDX = symIdx;
 		symbols[curSymbolIDX]->initSymbolIK();
-		std::cout << "Specified symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << std::endl;
+		if (disp) { std::cout << "Specified symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << std::endl; }
 	}
 
 	//set reference to IK solver - set in all trajectories

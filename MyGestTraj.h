@@ -66,7 +66,7 @@ namespace gestureIKApp {
 		//load this trajectory's csv trajectory file
 		void readTrajFile();
 		//set tracked marker trajectory points used by solver
-		void setTrkMrkrAndSolve(double lenFromStTraj);
+		bool setTrkMrkrAndSolve(double lenFromStTraj);
 		//build IK trajectory from matalb data
 		void buildTrajFromData(bool init, eignVecTyp& _Initpts);
 
@@ -138,14 +138,16 @@ namespace gestureIKApp {
 		std::vector<double> srtTrajTiming, trajPtDistFromSt;		//timing of source trajectory, dists to each point from start of arc
 
 		std::vector<bool> flags;					//state flags of trajectory
-		static const unsigned int debugIDX = 0,		//debug mode
-			loadedIDX = 1,			//trajectory data is loaded or not (srcTrajData will not grow)
-			builtIDX = 2,			//trajectory targets data for all tracked markers has been derived
-			useTrajIDX = 3,			//whether or not to use this trajectory component - if size is very small but not 0 might mean this trajectory is something separate and noisy
-			closeTrajIDX = 4,		//whether trajectory is closed or not
-			connTrajIDX = 5;		//this is a connecting trajectory (generated between two sourced actual trajectories)
+		static const unsigned int 
+			debugIDX = 0,				//debug mode
+			testLtrQualIDX = 1,			//test all symbols to make sure no abberrant trajectories
+			loadedIDX = 2,				//trajectory data is loaded or not (srcTrajData will not grow)
+			builtIDX = 3,				//trajectory targets data for all tracked markers has been derived
+			useTrajIDX = 4,				//whether or not to use this trajectory component - if size is very small but not 0 might mean this trajectory is something separate and noisy
+			closeTrajIDX = 5,			//whether trajectory is closed or not
+			connTrajIDX = 6;			//this is a connecting trajectory (generated between two sourced actual trajectories)
 
-		static const unsigned int numFlags = 6;
+		static const unsigned int numFlags = 7;
 
 	};	
 } //namespace

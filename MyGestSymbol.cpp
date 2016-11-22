@@ -89,19 +89,49 @@ namespace gestureIKApp {
 			if (trajectories[i]->useTraj()) { tmpTraj.push_back(trajectories[i]); }
 		}
 		trajectories = tmpTraj;
+		tmpTraj.clear();
+		//get rid of single point trajectories that are close to previous/next trajectory end/start points
+		for (int i = 0; i < trajectories.size(); ++i) {
+			if (trajectories[i]->trajTargets.size() != 1) {		tmpTraj.push_back(trajectories[i]);		}//more than 1 point
+			else {//only 1 point, make sure further than delta from previous traj end point or next traj start point
+				//either first point-traj in list and further than epsilon from 2nd traj, or last point-traj in list and further than epsilon from end of prev traj, or
+				//in-middle-of-list point-traj and further than epsilon from both surrounding trajs
+				if (((i == trajectories.size() - 1) && (trajectories[i - 1]->getLastFrame()[0] - trajectories[i]->getFirstFrame()[0]).norm() > DART_EPSILON)		//last point traj in list, further than eps from prev end
+					|| ((i == 0) && (trajectories[i]->getLastFrame()[0] - trajectories[i + 1]->getFirstFrame()[0]).norm() > DART_EPSILON)							//first point traj in list, further than eps from next traj st
+					|| (((i>0) && (trajectories[i - 1]->getLastFrame()[0] - trajectories[i]->getFirstFrame()[0]).norm() > DART_EPSILON) &&
+					((i < trajectories.size()-1) && (trajectories[i]->getLastFrame()[0] - trajectories[i+1]->getFirstFrame()[0]).norm() > DART_EPSILON))) {			//middle of list, further than eps from both prev and next
+					tmpTraj.push_back(trajectories[i]);			//in middle of list of trajectories and further than epsilon from other trajs in list
+					//std::cout << "Keeping 1-point traj :" << trajectories[i]->name << " since not redundant" << std::endl;
+				}
+				else {
+					std::cout << "Tossing traj :" << trajectories[i]->name << " due to having only 1 redundant point" << std::endl;
+				}
+			}
+		}
+		trajectories = tmpTraj;
+		tmpTraj.clear();
+
+
+		//if (name.compare("b_12") == 0) {
+		//	std::cout << "letter b_12 about to check trajectories.size() : "<< trajectories.size() << std::endl;
+		//}
 
 		if (trajectories.size() > 1) {
 			bool unusedTraj = false;
 			//TODO for all trajectories link endpoints with virtual trajectories
 			eignVecTyp stFrame, endFrame;
 			tmpTraj.clear();
+			//if (name.compare("b_12") == 0) {
+			//	std::cout << "letter b_12 about to build intermediate trajs" << std::endl;
+			//}
 			//since we've gotten rid of all unused trajs by here, only potential trajectories we don't want are single-point trajs where the point overlaps a previous or next traj's end/start point
+			int stIdx = 0, endIdx = 1;
 			for (int i = 1; i < trajectories.size(); ++i) {
-				if (!trajectories[i - 1]->useTraj()) { continue; }
+				//if (!trajectories[i - 1]->useTraj()) { continue; }
 				stFrame = trajectories[i - 1]->getLastFrame();
 				tmpTraj.push_back(trajectories[i - 1]);
 				endFrame = trajectories[i]->getFirstFrame();
-				if ((stFrame[0] - endFrame[0]).squaredNorm() < .00000001) {//don't need a connecting trajectory if they match endpoints
+				if ((stFrame[0] - endFrame[0]).norm() < DART_EPSILON) {//don't need a connecting trajectory if they match endpoints
 					if (trajectories[i]->trajTargets.size() == 1) {			//don't need this trajectory if it only has 1 point
 						trajectories[i]->flags[MyGestTraj::useTrajIDX] = false;
 						unusedTraj = true;
@@ -124,9 +154,22 @@ namespace gestureIKApp {
 	//calculate total length of trajectories, component lengths of each trajectory, and 
 	void MyGestSymbol::calcAllTrajsLen() {
 		allTrajsLen = 0;
+		eignVecTyp stFrame, endFrame;
 		for (int i = 0; i < trajectories.size(); ++i) {
 			if (trajectories[i]->useTraj()) {
 				allTrajsLen += trajectories[i]->trajLen;
+			}
+			else {
+				std::cout<<"Nonused trajectory  for " << name << " idx : "<<i <<" of len "<< trajectories[i]->trajLen << std::endl;
+			}
+			if (i < trajectories.size()-1) {//add distance between endpoints
+				stFrame = trajectories[i]->getLastFrame();
+				endFrame = trajectories[i+1]->getFirstFrame();
+				double d = (stFrame[0] - endFrame[0]).norm();
+				if (d > DART_EPSILON) {
+					//std::cout<<"Non-zero inter-traj dist for " << name << " trajectories : "<<i<<" and "<<(i+1)<<" = "<<d<< std::endl;
+					allTrajsLen += d;
+				}
 			}
 			trajLens.push_back(allTrajsLen);
 		}
@@ -139,22 +182,26 @@ namespace gestureIKApp {
 		trajFrameIncrs.clear();
 		double trajAvgMult = (flags[isFastDrawnIDX] ? IKSolve->params->IK_fastTrajMult : 1.0);
 		double trajIncrAmt = (trajAvgMult * IKSolve->params->trajDesiredVel);
-		int numTrajSegs = (int)(allTrajsLen / trajIncrAmt);
-		if (numTrajSegs < 16) {
-			numTrajSegs = 16;
+		int numTrajFrames = (int)(allTrajsLen / trajIncrAmt);
+		if (numTrajFrames < 16) {
+			numTrajFrames = 16;
 		}
-		//add one to have extra element in array
-		trajIncrAmt = .00000001 + allTrajsLen / numTrajSegs;
-		++numTrajSegs;
+		//clip to nearest mult of 8
+		int numSegMult = (int)((numTrajFrames +7) / 8);
+		numTrajFrames = numSegMult * 8;
+		trajIncrAmt =  allTrajsLen / (numTrajFrames -1);
+		
 		//TODO build avg increments based on desired trajectory velocity profile
 		//scale amount by curavature? (slower at angles, faster at straights) scale by gravity? (faster going down, slower going up)
-		for (int i = 0; i < numTrajSegs; ++i) {
+		//add one to have extra element in array
+		for (int i = 0; i < numTrajFrames+1; ++i) {
 			trajFrameIncrs.push_back(trajIncrAmt);
 		}
 		//if (flags[isFastDrawnIDX]) {
 			//double trajLen = 0;
-			//for (int i = 0; i < numTrajSegs; ++i) {
-			//	std::cout<<"\ttraj incr "<<i<<" for fast rand symbol "<<name<<" based on src idx "<< srcSymbolIDX << ": "<< trajFrameIncrs[i]<<" len by here : "<< trajLen <<"\ttotal len : "<< allTrajsLen << std::endl;
+			//std::cout << "numTrajFrames : " << numTrajFrames << std::endl;
+			//for (int i = 0; i < numTrajFrames; ++i) {
+			//	std::cout<<"\ttraj incr "<<i<<" for symbol "<<name<<" based on src idx "<< srcSymbolIDX << ": "<< trajFrameIncrs[i]<<" len by here : "<< trajLen <<"\ttotal len : "<< allTrajsLen << std::endl;
 			//	trajLen += trajFrameIncrs[i];
 			//}
 		//}
@@ -178,20 +225,33 @@ namespace gestureIKApp {
 		if (flags[isDoneDrawingIDX]) {//perform here so that we cover final point and don't change curFrame until after image is rendered
 			initSymbolIK();
 		}
-		
-		//double trajStartLoc = (curTraj > 0) ? trajLens[curTraj - 1] : 0;
+
 		double trajStartLoc = (curTraj > 0) ? trajLens[curTraj - 1] : 0;
 		//std::cout << "Cur Traj Dist for " << name << " in solve : " << curTrajDist << " and start length : " << trajStartLoc << " and end length of this traj : " << trajLens[curTraj] << std::endl;
-		trajectories[curTraj]->setTrkMrkrAndSolve(curTrajDist - trajStartLoc);
+		bool finishedCurTraj = trajectories[curTraj]->setTrkMrkrAndSolve(curTrajDist - trajStartLoc);
 		//std::cout << "Frame : " << curFrame << " Name : "<<name<<" CurTrajDist : " << curTrajDist << " for traj of length : " << allTrajsLen << "\tdiff : "<< (curTrajDist - trajStartLoc) <<std::endl;
 		++curFrame;
-		if (curTrajDist >= allTrajsLen) { 
+		if (flags[debugIDX]) {
+			if (finishedCurTraj) { std::cout << "finishedCurTraj is true for " << name << " #trajs : " << trajLens.size() << " curTraj : "<< curTraj <<" curTrajDist : allTrajsLen : trajStartLoc " << curTrajDist << " : " << allTrajsLen << " : " << trajStartLoc<< std::endl; }
+		}
+		if (curTrajDist >= allTrajsLen) {
+			if (flags[debugIDX]) {
+				std::cout << std::endl;
+				if (!finishedCurTraj) {
+					std::cout << "!!!finishedCurTraj is false for " << name << " #trajs : " << trajLens.size() << " when ending - frame count : " << curFrame << std::endl;
+				}
+				//std::cout << "Return from solve for " << name << " made " << curFrame << " frames.  finishedCurTraj : " << finishedCurTraj << std::endl;
+				if (curFrame % 8 != 0) {
+					std::cout << "!!!! Non-mult of 8 frame count for symbol : " << name << " count : " << curFrame << std::endl;
+				}
+				std::cout << std::endl;
+			}
 			flags[isDoneDrawingIDX] = true;
 			return true;
 		}	//traversed entire length of trajectory
 
 		curTrajDist += trajFrameIncrs[curFrame];		//desired displacement per frame
-		if (curTrajDist > allTrajsLen) {				//check if past bounds, clip to final bound, just to make sure we get last marker
+		if (curTrajDist - allTrajsLen > -DART_EPSILON) {				//check if past or very close to bounds, clip to final bound, just to make sure we get last marker but get it only 1 time
 			curTrajDist = allTrajsLen;
 		}
 		if (curTrajDist > trajLens[curTraj]) {//last trajLens element should be length of entire trajectory (allTrajsLen) - won't ever increment curTraj for last frame
@@ -321,8 +381,11 @@ namespace gestureIKApp {
 		flags[idx] = val;
 		switch (idx) {
 		case debugIDX: {
-			for (int i = 0; i < trajectories.size(); ++i) { trajectories[i]->flags[0] = val; }//turn on debug for all trajectories
+			for (int i = 0; i < trajectories.size(); ++i) { trajectories[i]->flags[debugIDX] = val; }//turn on debug for all trajectories
 			break; }		//debug mode
+		case testLtrQualIDX: {//test all symbols to make sure no abberrant trajectories
+			for (int i = 0; i < trajectories.size(); ++i) { trajectories[i]->flags[testLtrQualIDX] = val; }//turn on testing of trajs for all trajectories
+			break;		}
 		case diffClrIDX: {
 			break; }		//use different colors for each component trajectory of this symbol
 		case drawConnTrajIDX: {

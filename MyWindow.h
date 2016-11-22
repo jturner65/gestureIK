@@ -128,8 +128,8 @@ public:
 		if (drawLtr) {
 			curLtrIDX = idx;
 			curLetter = letters[idx];
-			if (useRandSym) {	curLetter->setRandSymbolIdx(idx);	}			//set random symbol among list of symbols for this letter			
-			else {				curLetter->setSymbolIdx(idx, symIdx);}
+			if (useRandSym) {	curLetter->setRandSymbolIdx(idx, flags[debugIDX]);	}			//set random symbol among list of symbols for this letter			
+			else {				curLetter->setSymbolIdx(idx, symIdx, flags[debugIDX]);}
 			curSymIDX = curLetter->curSymbolIDX;
 			curTrajStr = curLetter->getCurSymbolName();							//build name of current symbol trajectory for screen cap purposes
 			curClassName = std::string(curLetter->ltrName);			//class name for test/train index file - use letter name not symbol name
@@ -217,9 +217,10 @@ private:
 		drawLtrTrajIDX = 5,						//draw all trajectory components of symbol or sample symbol
 		collectDataIDX = 6,						//turn on the training/testing data collection mechanism
 		doneTrajIDX = 7,						//finished current trajectory
-		pauseIKLtrIDX = 8;						//pause between IK frames
+		pauseIKLtrIDX = 8,						//pause between IK frames
+		testLtrQualIDX = 9;						//iterate through all letters without screen cap to test traj quality
 
-	static const unsigned int numFlags = 9;
+	static const unsigned int numFlags = 10;
 };
 
 //calc total length of combined trajectories

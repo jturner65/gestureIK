@@ -57,28 +57,72 @@ namespace gestureIKApp {
 	MyGestTraj::~MyGestTraj() {}
 
 	//set tracked marker trajectory target positions - perform this every frame, update the IKsolver's trackedMarkers to have the current frame's appropriate locations/trajectories
-	//returns true if finished
-	void MyGestTraj::setTrkMrkrAndSolve(double lenFromStTraj) {
-		int frame1 = 0, frame2;
-		double curFrmStDist = 0;
-		for (int i = 1; i < trajPtDistFromSt.size(); ++i) {
-			if((lenFromStTraj > trajPtDistFromSt[i-1])&&(lenFromStTraj <= trajPtDistFromSt[i])){
-				frame1 = i - 1;
-				break;
+	//returns true if using last points in trajectory and interpolant is exactly 1
+	bool MyGestTraj::setTrkMrkrAndSolve(double lenFromStTraj) {
+		bool finCurTraj = false;
+		if (1 == trajPtDistFromSt.size()) {//only 1 point in this trajectory
+			finCurTraj = true;
+			//if (flags[debugIDX]) { std::cout << "Single Point Traj : " << name << " finCurTraj : " << (finCurTraj ? "True " : "False ") << "\tt : " << 1 << "\tlenFromStTraj : " << lenFromStTraj << "\t# trajPtDistFromSt " << trajPtDistFromSt.size() << "\ttrajPtDistFromSt[" << 0 << "] = "<< trajPtDistFromSt[0] << std::endl; }
+			//set targets for IK
+			for (int i = 0; i < trkedMrkrNames.size(); ++i) {
+				Eigen::Vector3d vec = trajTargets[0][i];
+				(*IKSolve->trkMarkers)[trkedMrkrNames[i]]->setTarPos(vec);
+			}
+		} else {
+			int frame1 = -1, frame2 = -1;
+			double curFrmStDist = 0, t = 0;
+			//clip len from st traj to be limited to max len of this traj if this is not closed
+			if (lenFromStTraj > trajPtDistFromSt[trajPtDistFromSt.size() - 1]) {
+				if (flags[closeTrajIDX]) {
+					std::cout << "Closed traj : " << name << std::endl;
+					frame1 = trajPtDistFromSt.size() - 1;
+					frame2 = 0;
+					t = (lenFromStTraj - trajPtDistFromSt[frame1]) / (trajPtDistFromSt[frame2] - trajPtDistFromSt[frame1]);
+					finCurTraj = abs(t - 1.0) < DART_EPSILON;
+				}
+				else {	//clip to end length
+					t = 1;
+					finCurTraj = true;
+					frame1 = trajPtDistFromSt.size() - 2;
+					frame2 = trajPtDistFromSt.size() - 1;
+					lenFromStTraj = trajPtDistFromSt[trajPtDistFromSt.size() - 1];
+				}
+			}
+			else {
+				if (lenFromStTraj == 0) {
+					t = 0;
+					frame1 = 0;
+					frame2 = 1;
+					finCurTraj = false;
+				}
+				else {
+					for (int i = 1; i < trajPtDistFromSt.size(); ++i) {
+						if ((lenFromStTraj > trajPtDistFromSt[i - 1]) && (lenFromStTraj <= trajPtDistFromSt[i])) {
+							frame1 = i - 1;
+							frame2 = i;
+							break;
+						}
+					}
+					t = (lenFromStTraj - trajPtDistFromSt[frame1]) / (trajPtDistFromSt[frame2] - trajPtDistFromSt[frame1]);
+					finCurTraj = (!flags[closeTrajIDX]) && (frame1 == trajPtDistFromSt.size() - 2) && (frame2 == trajPtDistFromSt.size() - 1) &&( abs(t - 1.0) < DART_EPSILON);
+				}
+			}
+
+			//if ((flags[debugIDX]) && (t == 1)){ std::cout << "Traj : " << name << " finCurTraj : " << (finCurTraj ? "True " : "False ") << "\tt : " << t << "\tlenFromStTraj : " << lenFromStTraj << "\t# trajPtDistFromSt " << trajPtDistFromSt.size() << "\ttrajPtDistFromSt[" << frame1 << "] = " << trajPtDistFromSt[frame1] << "\ttrajPtDistFromSt[" << frame2 << "] = " << trajPtDistFromSt[frame2] << std::endl; }
+			if (t > 1) {
+				std::cout << "\n!!!!!!Traj : " << name << " t greater than 1 for t : " << t << "\tlenFromStTraj : " << lenFromStTraj << "\t# trajPtDistFromSt " << trajPtDistFromSt.size() << "\ttrajPtDistFromSt[" << frame1 << "] = " << trajPtDistFromSt[frame1] << "\ttrajPtDistFromSt[" << frame2 << "] = " << trajPtDistFromSt[frame2] << "\n" << std::endl;
+				t = 1;
+			}
+			//set targets for IK
+			for (int i = 0; i < trkedMrkrNames.size(); ++i) {
+				Eigen::Vector3d vec = interpVec(trajTargets[frame1][i], trajTargets[frame2][i], t);
+				(*IKSolve->trkMarkers)[trkedMrkrNames[i]]->setTarPos(vec);
 			}
 		}
-		if ((flags[closeTrajIDX]) && (lenFromStTraj > trajPtDistFromSt[trajPtDistFromSt.size() -1])) {
-			frame1 = trajPtDistFromSt.size()-1;
+		if (!flags[testLtrQualIDX]) {
+			IKSolve->solve();
 		}
-		frame2 = ((frame1 + 1 ) % trajPtDistFromSt.size());
-		double t = (lenFromStTraj - trajPtDistFromSt[frame1]) / (trajPtDistFromSt[frame2] - trajPtDistFromSt[frame1]);
-		if (t > 1) { t = 1; }
-		//set targets for IK
-		for (int i = 0; i < trkedMrkrNames.size(); ++i) {
-			Eigen::Vector3d vec = interpVec(trajTargets[frame1][i], trajTargets[frame2][i], t);
-			(*IKSolve->trkMarkers)[trkedMrkrNames[i]]->setTarPos(vec);
-		}
-		IKSolve->solve();
+		return finCurTraj;
 	}//setTrkMrkrAndSolve
 
 	void MyGestTraj::calcSrcTrajDispVecs(const Eigen::Ref<const Eigen::Vector3d>& _avgLoc) {

@@ -151,15 +151,24 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 	mShowMarkers = false;
 	
 	if (flags[useLtrTrajIDX]) {
-		std::cout << "Initializing random data collection for Letter Trajectories."<< std::endl;
-		bool append = !IKSolve->params->mkNonRandSeq();
-		openIndexFile(false, testOutFile, append);
-		openIndexFile(true, trainOutFile, append);
-		//1st time initialize letter collection - init curLtrIDX, curSymIDX
-		curLtrIDX = IKSolve->params->ltrIdxStSave;		//either start at beginning or start at a specific letter
-		stSymIdx = append ? letters[curLtrIDX]->numFileSymbols : 0;		//either start at beginning or start saving only randomized letters
-		curSymIDX = stSymIdx;
-
+		if (flags[testLtrQualIDX]){
+			std::cout << "Testing letter trajectories." << std::endl;
+			curLtrIDX = IKSolve->params->ltrIdxStSave;		//either start at beginning or start at a specific letter
+			stSymIdx = 0;									//test starting from beginning
+			curSymIDX = stSymIdx;
+			flags[drawTrkMrkrsIDX] = true;
+			flags[drawLtrTrajIDX] = true;
+		}
+		else {
+			std::cout << "Initializing random data collection for Letter Trajectories." << std::endl;
+			bool append = !IKSolve->params->mkNonRandSeq();
+			openIndexFile(false, testOutFile, append);
+			openIndexFile(true, trainOutFile, append);
+			//1st time initialize letter collection - init curLtrIDX, curSymIDX
+			curLtrIDX = IKSolve->params->ltrIdxStSave;		//either start at beginning or start at a specific letter
+			stSymIdx = append ? letters[curLtrIDX]->numFileSymbols : 0;		//either start at beginning or start saving only randomized letters
+			curSymIDX = stSymIdx;
+		}
 		//start capture
 		trainLtrDatManageCol();
 	}
@@ -233,26 +242,32 @@ void MyWindow::trainLtrDatManageCol() {
 		curLtrIDX = 0;
 		stSymIdx = IKSolve->params->mkNonRandSeq() ? 0 : letters[curLtrIDX]->numFileSymbols;		//either start at beginning or start saving only randomized letters
 		curSymIDX = stSymIdx;
-		testOutFile.close();
-		trainOutFile.close();
+		if (!flags[testLtrQualIDX]) {
+			testOutFile.close();
+			trainOutFile.close();
+		}
+		flags[testLtrQualIDX] = false;
 		flags[collectDataIDX] = false;
 		mCapture = false;
 		setDrawLtrOrSmpl(false, 0);
 		return;
 	}
-
-	std::cout << "start trainLtrDatManageCol : " << trainLtrtCnt << "\tcurLtrIDX : " << curLtrIDX << "\tcurSymbIDX : " << curSymIDX << std::endl;
+	if (!flags[testLtrQualIDX]) {
+		std::cout << "start trainLtrDatManageCol : " << trainLtrtCnt << "\tcurLtrIDX : " << curLtrIDX << "\tcurSymbIDX : " << curSymIDX << std::endl;
+	}
 	//need to cycle through all letters 
 	setDrawLtrOrSmpl(true, curLtrIDX, false, curSymIDX);
 	curTrajDirName = getCurTrajFileDir(-1);
 	//need to write entry into either testing or training file - if dataGenIters > some threshold make train file, else make test file
-	if (curSymIDX < IKSolve->params->dataCapTestTrainThresh*curLetter->symbols.size()) {
-		trainDatWriteIndexFile(trainOutFile, curTrajDirName, curLtrIDX);
+	if (!flags[testLtrQualIDX]) {
+		if (curSymIDX < IKSolve->params->dataCapTestTrainThresh*curLetter->symbols.size()) {
+			trainDatWriteIndexFile(trainOutFile, curTrajDirName, curLtrIDX);
+		}
+		else {
+			trainDatWriteIndexFile(testOutFile, curTrajDirName, curLtrIDX);
+		}
+		mCapture = true;
 	}
-	else {
-		trainDatWriteIndexFile(testOutFile, curTrajDirName, curLtrIDX);
-	}
-	mCapture = true;
 	//for next iteration
 	curSymIDX += 1;
 	if (curSymIDX >= curLetter->symbols.size()){
@@ -260,8 +275,9 @@ void MyWindow::trainLtrDatManageCol() {
 		stSymIdx = IKSolve->params->mkNonRandSeq() ? 0 : (curLtrIDX >= letters.size() ? 0 : letters[curLtrIDX]->numFileSymbols);		//either start at beginning or start saving only randomized letters
 		curSymIDX = stSymIdx;
 	}
-	std::cout << "End trainLtrDatManageCol : " << trainLtrtCnt++ << std::endl;
-
+	if (!flags[testLtrQualIDX]) {
+		std::cout << "End trainLtrDatManageCol : " << trainLtrtCnt++ << std::endl;
+	}
 }//trainLtrDatManageCol
 
 //write line in index/label text file for each example
@@ -329,7 +345,6 @@ void MyWindow::displayTimer(int _val){
 		if (flags[pauseIKLtrIDX]) {//wait for keypress between draw frames			
 			pauseCount = pauseCount + 1;
 			if (pauseCount % 20 != 0) {
-				if (pauseCount % 20 == 1) { std::cout << "Waiting in displayTimer before solving IK for current letter "<< std::endl; }
 				//exit without IK solving
 				glutPostRedisplay();
 				glutTimerFunc(mDisplayTimeout, refreshTimer, _val);
@@ -443,18 +458,20 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
 		std::cout << "sample " << trajNames[curTraj] << " trajectory"<< std::endl;
 		break; }
-	case '`':          //reset trackball loc with origTrackBallQ and zoom with 1
+	case '`': {         //reset trackball loc with origTrackBallQ and zoom with 1
 		mTrackBall.setQuaternion(origTrackBallQ);
 		mZoom = IKSolve->params->origZoom;
 		mTrans = origMTrans;
-		break;
-
+		break; }
 	case 'a': {  // screen capture all letters (train and test)
 		flags[initTrnDatCapIDX] = true;
 		flags[useLtrTrajIDX] = true;
+		//turn off any tests that may have been initiated
+		flags[testLtrQualIDX] = false;
+		for (int i = 0; i < letters.size(); ++i) { letters[i]->setTestLtrQual(flags[testLtrQualIDX]); }
 		std::cout << "Capture all letters\n.";
 		break; }
-	case 'b': {  // screen capture all letters (train and test)
+	case 'b': {  // pause between IK frames for debugging
 		flags[pauseIKLtrIDX] = !flags[pauseIKLtrIDX];
 		std::cout << "Pause between IK frames : " << (flags[pauseIKLtrIDX] ? "True\n" : "False\n");
 		break; }
@@ -466,6 +483,14 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		flags[debugIDX] = !flags[debugIDX];
 		for (int i = 0; i < letters.size(); ++i) {		letters[i]->setSymbolFlags(debugIDX, flags[debugIDX]);		}	//debugIDX is 0 in every class
 		break; }
+	case 'f': { //test all letters - same as screen cap except no IK and no file save
+		flags[testLtrQualIDX] = !flags[testLtrQualIDX];
+		if (flags[testLtrQualIDX]) {//turning on
+			flags[initTrnDatCapIDX] = true;
+			flags[useLtrTrajIDX] = true;
+		}
+		for (int i = 0; i < letters.size(); ++i) { letters[i]->setTestLtrQual(flags[testLtrQualIDX]); }
+		break;}
 	case 'r': {//randomize
 		regenerateSampleData(true);
 		break; }

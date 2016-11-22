@@ -82,7 +82,7 @@
 	</parameter>
 	<parameter>
 		<name>numTotSymPerLtr</name>
-		<val>100</val> 
+		<val>20</val> 
 	</parameter>
 	<parameter>
 		<name>ltrIdxStSave</name>
