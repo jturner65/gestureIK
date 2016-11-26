@@ -30,7 +30,7 @@
 	</parameter>
 	<parameter>
 		<name>dataCapTestTrainThresh</name>
-		<val>.5</val>   
+		<val>0.5</val>   
 	</parameter>
 	<parameter>
 		<name>dataCapNumExamples</name>
@@ -82,7 +82,7 @@
 	</parameter>
 	<parameter>
 		<name>numTotSymPerLtr</name>
-		<val>20</val> 
+		<val>200</val> 
 	</parameter>
 	<parameter>
 		<name>ltrIdxStSave</name>
@@ -103,6 +103,10 @@
 	<parameter>
 		<name>bkgA</name>
 		<val>1.0</val> 
+	</parameter>
+	<parameter>
+		<name>fixedClipLen</name>
+		<val>16</val>
 	</parameter>
 	<parameter>
 		<name>IDX_useLeftHand</name>

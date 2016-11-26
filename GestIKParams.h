@@ -114,8 +114,10 @@ namespace gestureIKApp {
 		int numLetters;
 		//# of total symbols of a particular letter we're generating - if < # of file-based examples, is ignored, if > then we generate random versions of the file based letters to make up diff
 		int numTotSymPerLtr;
-		//ltr idx to begin saving (>25 forced to 25)
+		//ltr idx to begin saving (a==0, b==1, etc) (>25 forced to 25)
 		int ltrIdxStSave;
+		//size of window for LSTM in training - make clips fixed to multples of this length to prevent image paddings
+		int fixedClipLen;
 		//initial zoom
 		float origZoom;
 		//background colors

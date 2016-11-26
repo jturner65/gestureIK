@@ -82,7 +82,7 @@ namespace gestureIKApp {
 		//build the symbols that are built from file descriptions
 		void buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames);
 		//generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present (# randomized * # from files, probably)
-		void buildRandomSymbolTrajs(int _totNumDesSymb);
+		void buildRandomSymbolTrajs(int _totNumDesSymb, int partitionForTest);
 		//set solver for this trajectory
 		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
 		//set symbol to draw to be random entry in symbols list
@@ -94,12 +94,15 @@ namespace gestureIKApp {
 		//set flags of all subordinate symbols
 		void setSymbolFlags(int idx, bool val);
 
-
 		//draw all components of trajectory of current symbol
 		void drawLetter(dart::renderer::RenderInterface* mRI);
 
 		std::string getCurSymbolName() { return symbols[curSymbolIDX]->name; }
 		int getCurSymbolFrame() { return symbols[curSymbolIDX]->curFrame; }
+		//limit training data to 16 frame-long complete clips
+		inline void limitTrainTo16(bool val) {
+			for (int i = 0; i < symbols.size(); ++i) { symbols[i]->limitTrainTo16(val); }
+		}
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestLetter& ltr);
 

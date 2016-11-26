@@ -119,9 +119,9 @@ namespace gestureIKApp {
 				(*IKSolve->trkMarkers)[trkedMrkrNames[i]]->setTarPos(vec);
 			}
 		}
-		if (!flags[testLtrQualIDX]) {
-			IKSolve->solve();
-		}
+		//if (!flags[testLtrQualIDX]) {
+		IKSolve->solve();
+		//}
 		return finCurTraj;
 	}//setTrkMrkrAndSolve
 

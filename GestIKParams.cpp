@@ -40,7 +40,7 @@ namespace gestureIKApp {
 
 	GestIKParams::GestIKParams() : defaultVals(), dataCapNumExamples(100), dataCapTestTrainThresh(.5),
 		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), IK_elbowScale(0.36), IK_fastTrajMult(1.5), trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1),
-		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26), numTotSymPerLtr(0), ltrIdxStSave(0),origZoom(.65f),
+		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26), numTotSymPerLtr(0), ltrIdxStSave(0), fixedClipLen(16), origZoom(.65f),
 		bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0),
 		flags(numFlags, false)
 	{
@@ -80,6 +80,7 @@ namespace gestureIKApp {
 		if (_name.compare("numLetters") == 0) { numLetters = stoi(s);			return; }
 		if (_name.compare("numTotSymPerLtr") == 0) { numTotSymPerLtr = stoi(s);			return; }
 		if (_name.compare("ltrIdxStSave") == 0) { ltrIdxStSave = stoi(s);	if (ltrIdxStSave >= numLetters) { ltrIdxStSave  = numLetters-1;} 		return; }
+		if(_name.compare("fixedClipLen") == 0) { fixedClipLen = stoi(s);			return; }
 		//floats
 		if (_name.compare("origZoom") == 0) { origZoom = stof(s);			return; }
 		//strings
@@ -117,6 +118,7 @@ namespace gestureIKApp {
 		numLetters = 26;
 		numTotSymPerLtr = 40;
 		ltrIdxStSave = 0;
+		fixedClipLen = 16;
 		origZoom = .65f;
 		bkgR = 1.0;
 		bkgG = 1.0;
@@ -155,6 +157,7 @@ namespace gestureIKApp {
 		res.push_back(numLetters);
 		res.push_back(numTotSymPerLtr);
 		res.push_back(ltrIdxStSave);
+		res.push_back(fixedClipLen);
 		res.push_back(origZoom);
 		res.push_back(bkgR);
 		res.push_back(bkgG);
@@ -191,6 +194,7 @@ namespace gestureIKApp {
 		numLetters = (int)floor(vals[idx++] + .5);
 		numTotSymPerLtr = (int)floor(vals[idx++] + .5);
 		ltrIdxStSave = (int)floor(vals[idx++] + .5);
+		fixedClipLen = (int)floor(vals[idx++] + .5);
 		origZoom = vals[idx++];
 		bkgR = vals[idx++];
 		bkgG = vals[idx++];

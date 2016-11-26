@@ -118,7 +118,23 @@ namespace gestureIKApp {
 	//colors to use for trajectory rendering
 	static std::array<Eigen::Vector3d, 7> const trajColors{ Eigen::Vector3d(0.1,0.1,0.1), Eigen::Vector3d(0.8,0.1,0.1), Eigen::Vector3d(0.1,0.8,0.1),Eigen::Vector3d(0.1,0.1,0.8),Eigen::Vector3d(0.1,0.8,0.8), Eigen::Vector3d(0.8,0.8,0.1),Eigen::Vector3d(0.8,0.1,0.8) };
 
-	//float , double, eigen vector3d to string utilities
+	//int, float , double, eigen vector3d to string utilities
+	static inline std::string buildStrFromInt(int val, int numDigs=5) {
+		std::stringstream ss;
+		if (val == 0) {
+			for (int i = numDigs; i > 1; --i) { ss << "0"; }
+		}
+		else {
+			float comp = pow(10, numDigs - 1);
+			for (int i = numDigs; i > 0; --i) {
+				if (val < comp) { ss << "0"; comp /= 10; }
+				else { break; }
+			}
+		}
+		ss << val;
+		//std::cout << "val : " << val << "\tstr:-" << ss.str() << "-"<<std::endl;				
+		return ss.str();// label = ss.str();
+	}//buildLabel
 	static inline std::string buildStrFromFloat(float val, const char* fmt = "%.4f") {
 		char buf[256];
 		std::stringstream ss;
@@ -126,7 +142,6 @@ namespace gestureIKApp {
 		ss << buf;
 		return ss.str();// label = ss.str();
 	}//buildLabel
-
 	static inline std::string buildStrFromDbl(double val, const char* fmt = "%.4f") {
 		char buf[256];
 		std::stringstream ss;

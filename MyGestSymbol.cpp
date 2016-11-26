@@ -180,20 +180,26 @@ namespace gestureIKApp {
 		//else { std::cout << "Total Traj len for : " << name << " : " << allTrajsLen << " from " << trajectories.size() << " trajectories."<< std::endl; }
 		//set up per-frame increments, limiting size by # of frames required for LSTM window
 		trajFrameIncrs.clear();
-		double trajAvgMult = (flags[isFastDrawnIDX] ? IKSolve->params->IK_fastTrajMult : 1.0);
-		double trajIncrAmt = (trajAvgMult * IKSolve->params->trajDesiredVel);
-		int numTrajFrames = (int)(allTrajsLen / trajIncrAmt);
-		if (numTrajFrames < 16) {
+		int numTrajFrames;
+		double trajIncrAmt;
+		if (flags[isTrainDatIDX]) { //TODO add && flags[limitTrainTo16IDX] here
 			numTrajFrames = 16;
 		}
-		//clip to nearest mult of 8
-		int numSegMult = (int)((numTrajFrames +7) / 8);
-		numTrajFrames = numSegMult * 8;
-		trajIncrAmt =  allTrajsLen / (numTrajFrames -1);
-		
+		else {//calc variable length multiple of 16 clips
+			double trajAvgMult = (flags[isFastDrawnIDX] ? IKSolve->params->IK_fastTrajMult : 1.0);		//TODO randomize speed more
+			trajIncrAmt = (trajAvgMult * IKSolve->params->trajDesiredVel);
+			numTrajFrames = (int)(allTrajsLen / trajIncrAmt);
+			if (numTrajFrames < 16) {
+				numTrajFrames = 16;
+			}
+			//clip to nearest mult of IKSolve->params->fixedClipLen
+			int numSegMult = (int)((numTrajFrames + (IKSolve->params->fixedClipLen - 1)) / IKSolve->params->fixedClipLen);
+			numTrajFrames = numSegMult * IKSolve->params->fixedClipLen;
+		}
+		trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
 		//TODO build avg increments based on desired trajectory velocity profile
 		//scale amount by curavature? (slower at angles, faster at straights) scale by gravity? (faster going down, slower going up)
-		//add one to have extra element in array
+		//add one to have extra element in array for edge cases
 		for (int i = 0; i < numTrajFrames+1; ++i) {
 			trajFrameIncrs.push_back(trajIncrAmt);
 		}
@@ -232,7 +238,7 @@ namespace gestureIKApp {
 		//std::cout << "Frame : " << curFrame << " Name : "<<name<<" CurTrajDist : " << curTrajDist << " for traj of length : " << allTrajsLen << "\tdiff : "<< (curTrajDist - trajStartLoc) <<std::endl;
 		++curFrame;
 		if (flags[debugIDX]) {
-			if (finishedCurTraj) { std::cout << "finishedCurTraj is true for " << name << " #trajs : " << trajLens.size() << " curTraj : "<< curTraj <<" curTrajDist : allTrajsLen : trajStartLoc " << curTrajDist << " : " << allTrajsLen << " : " << trajStartLoc<< std::endl; }
+			if (finishedCurTraj) { std::cout << "finishedCurTraj is true for " << name << " #trajs : " << trajLens.size() << " curTraj : " << curTraj << " curTrajDist : allTrajsLen : trajStartLoc " << curTrajDist << " : " << allTrajsLen << " : " << trajStartLoc << "\t frame count : " << curFrame << std::endl; }
 		}
 		if (curTrajDist >= allTrajsLen) {
 			if (flags[debugIDX]) {
@@ -241,8 +247,8 @@ namespace gestureIKApp {
 					std::cout << "!!!finishedCurTraj is false for " << name << " #trajs : " << trajLens.size() << " when ending - frame count : " << curFrame << std::endl;
 				}
 				//std::cout << "Return from solve for " << name << " made " << curFrame << " frames.  finishedCurTraj : " << finishedCurTraj << std::endl;
-				if (curFrame % 8 != 0) {
-					std::cout << "!!!! Non-mult of 8 frame count for symbol : " << name << " count : " << curFrame << std::endl;
+				if (curFrame % IKSolve->params->fixedClipLen != 0) {
+					std::cout << "!!!! Non-mult of specified fixed clip length " << IKSolve->params->fixedClipLen <<" : Frame count for symbol : " << name << " count : " << curFrame << std::endl;
 				}
 				std::cout << std::endl;
 			}
@@ -276,6 +282,7 @@ namespace gestureIKApp {
 		ptrCtrPt << IKSolve->getRandVec(_src->ptrCtrPt, IKSolve->params->trajRandCtrStd);				//
 		setSymbolCenters(ptrCtrPt);				//need to set this before interacting with trajectories
 		trajectories.clear();
+		if(_src->trajectories.size() > 6){std::cout<<"Too many trajectories in symbol ("<< _src->trajectories.size()<<") so not using to generate random traj."<< std::endl; return false; }
 		for (int i = 0; i < _src->trajectories.size(); ++i) {
 			if (!_src->trajectories[i]->useTraj()) { std::cout << "Unused traj in trajectories for ltr : " << _src->name << " : symbol idx " << i << " so not using this symbol."<< std::endl; return false; }
 			trajectories.push_back(std::make_shared<MyGestTraj>("not_from_file", _self, i));

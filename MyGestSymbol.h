@@ -84,6 +84,9 @@ namespace gestureIKApp {
 		//set solver for this trajectory
 		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
 
+		//set boolean flag to limit training to 16 frames for a complete letter
+		void limitTrainTo16(bool val) { flags[limitTrainTo16IDX] = val; }
+
 		//buld a randomized version of the passed symbol
 		bool buildRandomSymbol(std::shared_ptr<MyGestSymbol> _base, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast);
 		//load this symbol's raw trajectories and build MyGestTrajs for each trajectory - build at symbol level, not trajectory level
@@ -102,6 +105,9 @@ namespace gestureIKApp {
 		std::shared_ptr<MyGestTraj> genConnectTraj(const Eigen::Ref<const Eigen::Vector3d>& ctPt, const Eigen::Ref<const Eigen::Vector3d>& traj1End, const Eigen::Ref<const Eigen::Vector3d>& traj2St);
 		std::shared_ptr<MyGestTraj> genInterSymbolTraj(const Eigen::Ref<const Eigen::Vector3d>& ctPt, const Eigen::Ref<const Eigen::Vector3d>& sym1End, const Eigen::Ref<const Eigen::Vector3d>& midpt, const Eigen::Ref<const Eigen::Vector3d>& sym2St);
 		
+		//is this symbol a training data symbol or a test data symbol
+		bool isTrainDat() { return flags[isTrainDatIDX]; }
+
 		friend std::ostream& operator<<(std::ostream& out, MyGestSymbol& sym);
 
 	public :	//variables
@@ -129,8 +135,10 @@ namespace gestureIKApp {
 			drawConnTrajIDX = 3,				//draw the connecting trajectories between two data trajectories	
 			randCircleIDX = 4,					//if true, randomize the center, radius and plane normal of the bounding circle of this letter
 			isFastDrawnIDX = 5,					//this symbol is drawn quickly - flip orientation of elbow plane normal, 1.5x base drawing speed
-			isDoneDrawingIDX = 6;				//finished drawing this symbol
-		static const unsigned int numFlags = 7;
+			isDoneDrawingIDX = 6,				//finished drawing this symbol
+			isTrainDatIDX = 7,
+			limitTrainTo16IDX = 8;				//limit training data size to 16 frames
+		static const unsigned int numFlags = 9;
 
 		Eigen::Vector3d avgLoc;													//average location of symbol data in matlab space
 
