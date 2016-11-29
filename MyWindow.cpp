@@ -89,8 +89,8 @@ MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_i
 	//auto trajSeq = buildTrajSeq(trajFunc, curTraj, tVals[curTraj]);
 	//writeTrajCSVFile(trajNames[curTraj], trajSeq);
 
-	//read all letter files and build trajectories
-	buildLetterList();
+	////read all letter files and build trajectories
+	//buildLetterList();
 	
 	curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
 	//set refresh function
@@ -306,13 +306,15 @@ void MyWindow::buildLetterList() {
 	if (!IKSolve->params->genRandLtrs()) {
 		std::cout << "Not making random letters due to 'IDX_genRandLtrs' flag in config xml setting.  Set to true to make them."<< std::endl;
 	}
-	for (int i = 0; i < letters.size(); ++i) {
-		if (IKSolve->params->numTotSymPerLtr > letters[i]->symbols.size()) {
-			letters[i]->buildRandomSymbolTrajs(IKSolve->params->numTotSymPerLtr, IKSolve->params->dataCapTestTrainThresh* IKSolve->params->numTotSymPerLtr);
-			std::cout << "Made " << (IKSolve->params->numTotSymPerLtr - letters[i]->numFileSymbols) << " Random versions of letter : " << (*letters[i]) << std::endl;
-		}
-		else {
-			std::cout << "Insufficient letters specified " << IKSolve->params->numTotSymPerLtr << " so no random versions of letter : " << (*letters[i]) << " made."<< std::endl;
+	else {
+		for (int i = 0; i < letters.size(); ++i) {
+			if (IKSolve->params->numTotSymPerLtr > letters[i]->symbols.size()) {
+				letters[i]->buildRandomSymbolTrajs(IKSolve->params->numTotSymPerLtr, IKSolve->params->dataCapTestTrainThresh* IKSolve->params->numTotSymPerLtr);
+				std::cout << "Made " << (IKSolve->params->numTotSymPerLtr - letters[i]->numFileSymbols) << " Random versions of letter : " << (*letters[i]) << std::endl;
+			}
+			else {
+				std::cout << "Insufficient letters specified " << IKSolve->params->numTotSymPerLtr << " so no random versions of letter : " << (*letters[i]) << " made." << std::endl;
+			}
 		}
 	}
 }//buildLetterList
@@ -398,7 +400,12 @@ void MyWindow::draw() {
 	}
 	if (flags[drawLtrTrajIDX]) {
 		if ((flags[useLtrTrajIDX]) && (nullptr != curLetter)) {
-			curLetter->drawLetter(mRI);
+			if (flags[debugIDX]) {
+				curLetter->drawAllSymbols(mRI);
+			}
+			else {
+				curLetter->drawLetter(mRI);
+			}
 		}
 		else {
 			drawCurTraj();
@@ -434,6 +441,10 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 	unsigned int keyVal = _key;
 	if ((keyVal >= 65) && (keyVal <= 90)) {		//draw letter trajectories if any capital letter is selected
 		int idx = keyVal - 65;
+		if (letters.size() <= idx) {
+			std::cout << "Insufficient letters loaded (" << letters.size() << ") to handle letter : "<< static_cast<char>(keyVal) <<" at idx : "<<idx<< std::endl;
+			return;
+		}
 		//setDrawLtrOrSmpl(true, idx, true, -1);
 		setDrawLtrOrSmpl(true, idx, false, curSymIDX);
 		curSymIDX = (curSymIDX + 1) % curLetter->symbols.size();
@@ -466,6 +477,10 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		mTrans = origMTrans;
 		break; }
 	case 'a': {  // screen capture all letters (train and test)
+		if (letters.size() == 0) {
+			std::cout << "No letters loaded, so aborting screen capture save"<< std::endl;
+			return;
+		}
 		flags[initTrnDatCapIDX] = true;
 		flags[useLtrTrajIDX] = true;
 		//turn off any tests that may have been initiated
@@ -473,9 +488,11 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		for (int i = 0; i < letters.size(); ++i) { letters[i]->setTestLtrQual(flags[testLtrQualIDX]); }
 		std::cout << "Capture all letters with Train data restricted to 16 frames : " << (flags[limitTrainTo16IDX] ? "True" : "False") << std::endl;
 		break; }
-	case 'b': {  // pause between IK frames for debugging
-		flags[pauseIKLtrIDX] = !flags[pauseIKLtrIDX];
-		std::cout << "Pause between IK frames : " << (flags[pauseIKLtrIDX] ? "True" : "False")<<std::endl;
+	case 'b': { // build lists of letters and random letters
+		//reload params from xml 
+		IKSolve->loadIKParams();
+		//read all letter files and build trajectories
+		buildLetterList();
 		break; }
 	case 'c': {  // screen capture
 		flags[stCaptAtZeroIDX] = true;				//start capturing when trajectory gets to 0
@@ -487,6 +504,10 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		for (int i = 0; i < letters.size(); ++i) {		letters[i]->setSymbolFlags(debugIDX, flags[debugIDX]);		}	//debugIDX is 0 in every class
 		break; }
 	case 'f': { //test all letters - same as screen cap except no IK and no file save
+		if (letters.size() == 0) {
+			std::cout << "No letters loaded, so aborting letter test" << std::endl;
+			return;
+		}
 		flags[testLtrQualIDX] = !flags[testLtrQualIDX];
 		std::cout<<"Test letter process : " << (flags[testLtrQualIDX] ? "True" : "False") << std::endl;
 		if (flags[testLtrQualIDX]) {//turning on
@@ -499,6 +520,10 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		flags[limitTrainTo16IDX] = !flags[limitTrainTo16IDX];
 		for (int i = 0; i < letters.size(); ++i) { letters[i]->limitTrainTo16(flags[limitTrainTo16IDX]); }
 		std::cout << "Capture all letters with Train data restricted to 16 frames : " << (flags[limitTrainTo16IDX] ? "True" : "False") << std::endl;
+		break; }
+	case 'p' : {  // pause between IK frames for debugging
+		flags[pauseIKLtrIDX] = !flags[pauseIKLtrIDX];
+		std::cout << "Pause between IK frames : " << (flags[pauseIKLtrIDX] ? "True" : "False") << std::endl;
 		break; }
 	case 'r': {//randomize symbols
 		regenerateSampleData(true);

@@ -33,6 +33,7 @@
 *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *   POSSIBILITY OF SUCH DAMAGE.
 */
+
 #ifndef APPS_GESTURE_MYGESTSYMBOL_H_
 #define APPS_GESTURE_MYGESTSYMBOL_H_
 
@@ -49,18 +50,6 @@ namespace dart {
 	}  // namespace renderer
 } // namespace dart
 
-	/* 
-		this class represents an instance of a letter.  it will consist of a collection of trajectories
-		it is responsible for determining which component traj should be used and for linking components together 
-		which may include making new non-specified trajectories to link existing components whose endpoints don't meet in space
-
-		omniglot is collected turk data
-		symbols in BPL omniglot data have x,y data and time in milliseconds, individually recorded for each component trajectory
-		alphabet is #22, latin, in dataset
-		
-		each symbol will be recorded in xml file with # of component trajectories, names of each trajectory file.
-		each trajectory file will be csv file of location of primary trajectory x,y points and velocities
-	*/
 namespace gestureIKApp {
 	class IKSolver;
 	class MyGestTraj;
@@ -85,12 +74,14 @@ namespace gestureIKApp {
 		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
 
 		//set boolean flag to limit training to 16 frames for a complete letter
-		void limitTrainTo16(bool val) { flags[limitTrainTo16IDX] = val; }
+		void limitTrainTo16(bool val) { setFlags(limitTrainTo16IDX, val); }
 
 		//buld a randomized version of the passed symbol
 		bool buildRandomSymbol(std::shared_ptr<MyGestSymbol> _base, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast);
 		//load this symbol's raw trajectories and build MyGestTrajs for each trajectory - build at symbol level, not trajectory level
 		void buildTrajsFromFile(std::vector<std::string>& trajFileNames, std::shared_ptr<MyGestSymbol> _this);
+		//set the per-frame trajectory change list
+		void buildTrajFrameIncrs();
 		//find average x-y location of trajectory points in component trajectories of this symbol, and closest and furthest points from average. - these will be used to map to "drawing plane" in ik sim world frame 
 		void calcTransformPts();
 		//find length of all trajectories
@@ -110,12 +101,14 @@ namespace gestureIKApp {
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestSymbol& sym);
 
-	public :	//variables
+	private :	//variables
 		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver
+	public:	//variables
 		std::shared_ptr<MyGestSymbol> _self;									//ref to shared ptr to self, to be handed off to trajectories
 
 		unsigned int// curTraj,													//idx of current trajectory being processed
 			curFrame,															//current frame of this letter being processed
+			numTrajFrames,														//# of frames this symbol has
 			srcSymbolIDX;														//idx in owning letter symbols vector of source symbol for this symbol, or it's own idx if from a file
 
 		double allTrajsLen,													//length of all trajectories of this letter
@@ -138,6 +131,7 @@ namespace gestureIKApp {
 			isDoneDrawingIDX = 6,				//finished drawing this symbol
 			isTrainDatIDX = 7,
 			limitTrainTo16IDX = 8;				//limit training data size to 16 frames
+
 		static const unsigned int numFlags = 9;
 
 		Eigen::Vector3d avgLoc;													//average location of symbol data in matlab space

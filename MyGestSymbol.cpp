@@ -45,7 +45,7 @@
 
 namespace gestureIKApp {
 
-	MyGestSymbol::MyGestSymbol(const std::string& _name, int _srcIDX) : IKSolve(nullptr), _self(nullptr), curTraj(0), curFrame(0), srcSymbolIDX(_srcIDX), allTrajsLen(0), //trajVel(.03), 
+	MyGestSymbol::MyGestSymbol(const std::string& _name, int _srcIDX) : IKSolve(nullptr), _self(nullptr), curTraj(0), curFrame(0), numTrajFrames(0), srcSymbolIDX(_srcIDX), allTrajsLen(0), //trajVel(.03), 
 		sclAmt(1.0), curTrajDist(0), trajectories(0), trajLens(0), trajFrameIncrs(0), name(_name), flags(numFlags,false),
 		avgLoc(0,0,0),// maxLoc(0,0,0), 
 		ptrCtrPt(0,0,0), elbowCtrPt(0,0,0), ptrPlaneNorm(-1,0,0), elbowPlaneNorm(0,0,0), circleRad(0)
@@ -178,40 +178,53 @@ namespace gestureIKApp {
 			allTrajsLen = 0;
 		}
 		//else { std::cout << "Total Traj len for : " << name << " : " << allTrajsLen << " from " << trajectories.size() << " trajectories."<< std::endl; }
-		//set up per-frame increments, limiting size by # of frames required for LSTM window
+		buildTrajFrameIncrs();
+	}//calcAllTrajsLen
+
+	//set up list holding per-frame distances allowed per trajectory
+	void  MyGestSymbol::buildTrajFrameIncrs() {
 		trajFrameIncrs.clear();
-		int numTrajFrames;
-		double trajIncrAmt;
-		if (flags[isTrainDatIDX]) { //TODO add && flags[limitTrainTo16IDX] here
-			numTrajFrames = 16;
-		}
-		else {//calc variable length multiple of 16 clips
-			double trajAvgMult = (flags[isFastDrawnIDX] ? IKSolve->params->IK_fastTrajMult : 1.0);		//TODO randomize speed more
-			trajIncrAmt = (trajAvgMult * IKSolve->params->trajDesiredVel);
+		numTrajFrames = 0 ;
+		double trajIncrAmt = IKSolve->params->trajDesiredVel;
+		//if scale to bounds
+		if (IKSolve->params->useFixedGlblVel()) {//make all trajectories fixed per-frame velocity
+			trajIncrAmt = IKSolve->params->trajDesiredVel;
 			numTrajFrames = (int)(allTrajsLen / trajIncrAmt);
-			if (numTrajFrames < 16) {
+		}
+		else {
+			//if scale to bounds
+			if (flags[isTrainDatIDX]) { //TODO add && flags[limitTrainTo16IDX] here
 				numTrajFrames = 16;
 			}
-			//clip to nearest mult of IKSolve->params->fixedClipLen
-			int numSegMult = (int)((numTrajFrames + (IKSolve->params->fixedClipLen - 1)) / IKSolve->params->fixedClipLen);
-			numTrajFrames = numSegMult * IKSolve->params->fixedClipLen;
+			else {//calc variable length multiple of 16 clips
+				double trajAvgMult = (flags[isFastDrawnIDX] ? IKSolve->params->IK_fastTrajMult : 1.0);		//alternate between slow and fast trajs
+				trajIncrAmt = (trajAvgMult * IKSolve->params->trajDesiredVel);
+				numTrajFrames = (int)(allTrajsLen / trajIncrAmt);
+				if (numTrajFrames < 16) {
+					numTrajFrames = 16;
+				}
+				//clip to nearest mult of IKSolve->params->fixedClipLen
+				int numSegMult = (int)((numTrajFrames + (IKSolve->params->fixedClipLen - 1)) / IKSolve->params->fixedClipLen);
+				numTrajFrames = numSegMult * IKSolve->params->fixedClipLen;
+			}
+			trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
 		}
-		trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
 		//TODO build avg increments based on desired trajectory velocity profile
 		//scale amount by curavature? (slower at angles, faster at straights) scale by gravity? (faster going down, slower going up)
 		//add one to have extra element in array for edge cases
-		for (int i = 0; i < numTrajFrames+1; ++i) {
+		for (int i = 0; i < numTrajFrames + 1; ++i) {
 			trajFrameIncrs.push_back(trajIncrAmt);
 		}
 		//if (flags[isFastDrawnIDX]) {
-			//double trajLen = 0;
-			//std::cout << "numTrajFrames : " << numTrajFrames << std::endl;
-			//for (int i = 0; i < numTrajFrames; ++i) {
-			//	std::cout<<"\ttraj incr "<<i<<" for symbol "<<name<<" based on src idx "<< srcSymbolIDX << ": "<< trajFrameIncrs[i]<<" len by here : "<< trajLen <<"\ttotal len : "<< allTrajsLen << std::endl;
-			//	trajLen += trajFrameIncrs[i];
-			//}
+		//double trajLen = 0;
+		//std::cout << "numTrajFrames : " << numTrajFrames << std::endl;
+		//for (int i = 0; i < numTrajFrames; ++i) {
+		//	std::cout<<"\ttraj incr "<<i<<" for symbol "<<name<<" based on src idx "<< srcSymbolIDX << ": "<< trajFrameIncrs[i]<<" len by here : "<< trajLen <<"\ttotal len : "<< allTrajsLen << std::endl;
+		//	trajLen += trajFrameIncrs[i];
 		//}
-	}//calcAllTrajsLen
+		//}
+	}
+
 
 	 //set up all variables for initial IK'ing of this symbol's trajectories
 	void MyGestSymbol::initSymbolIK() {
@@ -279,7 +292,8 @@ namespace gestureIKApp {
 		//if (isFast) {
 		//	trajVel *= IKSolve->params->IK_fastTrajMult;
 		//}
-		ptrCtrPt << IKSolve->getRandVec(_src->ptrCtrPt, IKSolve->params->trajRandCtrStd);				//
+		Eigen::Vector3d stdVec(IKSolve->params->trajRandCtrStdScale_X*IKSolve->params->trajRandCtrStd, IKSolve->params->trajRandCtrStdScale_Y*IKSolve->params->trajRandCtrStd, IKSolve->params->trajRandCtrStdScale_Z*IKSolve->params->trajRandCtrStd);
+		ptrCtrPt << IKSolve->getRandVec(_src->ptrCtrPt, stdVec);				//
 		setSymbolCenters(ptrCtrPt);				//need to set this before interacting with trajectories
 		trajectories.clear();
 		if(_src->trajectories.size() > 6){std::cout<<"Too many trajectories in symbol ("<< _src->trajectories.size()<<") so not using to generate random traj."<< std::endl; return false; }
@@ -331,16 +345,17 @@ namespace gestureIKApp {
 		sclAmt = circleRad / maxDist;
 	}//calcTransformPts
 
+
 	//draw all trajectory points of this letter
 	void MyGestSymbol::drawTrajs(dart::renderer::RenderInterface* mRI) {
 		mRI->pushMatrix();
-		Eigen::Vector3d penClr = Eigen::Vector3d(.1, .1, .1);
+		Eigen::Vector3d penClr = Eigen::Vector3d(.9, .9, .9);
 		for (int i = 0; i < trajectories.size(); ++i) {
 			if (((!flags[drawConnTrajIDX]) && (trajectories[i]->isConnTraj())) || (!trajectories[i]->useTraj())) { continue; }		//don't draw connecting trajs unless we want to display them, or trajs that we arent using
 			if (flags[diffClrIDX]) {
 				penClr = trajColors[(i % trajColors.size())];
 			}
-			trajectories[i]->drawTraj(mRI, penClr);
+			trajectories[i]->drawDebugTraj(mRI, penClr);
 		}
 		mRI->popMatrix();
 	}//drawTrajs
@@ -354,6 +369,7 @@ namespace gestureIKApp {
 		elbowCtrPt << IKSolve->drawElbowCtr;
 		elbowPlaneNorm << IKSolve->elbowShldrNormal;
 	//	trajVel = IKSolve->params->trajDesiredVel;
+		flags[diffClrIDX] = IKSolve->params->chgTrajClrs();
 
 		for (int i = 0; i<trajectories.size(); ++i) { trajectories[i]->setSolver(IKSolve); }
 	}
@@ -397,6 +413,8 @@ namespace gestureIKApp {
 			break; }		//use different colors for each component trajectory of this symbol
 		case drawConnTrajIDX: {
 			break; } //draw the inter-trajectory connecting generated trajectories
+		case limitTrainTo16IDX: {
+			break; }
 		}
 	}//setFlags
 

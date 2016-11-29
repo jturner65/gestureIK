@@ -54,7 +54,7 @@ namespace gestureIKApp {
 	class GestIKParser {
 	public:
 		//read configuration for general IK solve and trajectory building
-		static void readGestIKXML(const std::string& _filename, std::shared_ptr<GestIKParams>& params);
+		static void readGestIKXML(const std::string& _filename, std::shared_ptr<GestIKParams> params);
 		//read specific letter file and populate MyGestLetter object
 		static void readGestLetterXML(std::shared_ptr<MyGestLetter> _ltr);
 		//read symbol trajectory files

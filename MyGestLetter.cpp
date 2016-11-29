@@ -45,7 +45,9 @@
 
 namespace gestureIKApp {
 
-	MyGestLetter::MyGestLetter(const std::string& _ltrName):IKSolve(nullptr), curSymbolIDX(0), numFileSymbols(0), numTotSymbols(0), symbols(0), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags){
+	MyGestLetter::MyGestLetter(const std::string& _ltrName):IKSolve(nullptr), curDrawSymIDX(0),
+		curSymbolIDX(0), numFileSymbols(0), numTotSymbols(0), symbols(0), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags)
+	{
 		std::stringstream ss;
 		ss.str("");
 		ss << lettersPath << "ltr_" << ltrName<<"/ltr_"<<ltrName<<".xml";
@@ -61,7 +63,7 @@ namespace gestureIKApp {
 		std::stringstream ss;
 		for (int i = 0; i < numFileSymbols; ++i) {
 			ss.str("");
-			ss << ltrName << "_" << buildStrFromInt(i)<< "_train";
+			ss << ltrName << "_" << buildStrFromInt(IKSolve->params->clipCountOffset + i)<< "_train";
 			symbols.push_back(std::make_shared<MyGestSymbol>(ss.str(),i));
 			//set shared ptr ref to self
 			symbols[i]->setSolver(IKSolve);
@@ -88,7 +90,7 @@ namespace gestureIKApp {
 			do {
 				randSymbolIDX = (*uni)(mtrn_gen);						//random idx of source symbol
 				ss.str("");
-				ss << ltrName << "_" << buildStrFromInt(i) << ((i < partitionForTest) ? "_train" : "_test");
+				ss << ltrName << "_" << buildStrFromInt(IKSolve->params->clipCountOffset + i) << ((i < partitionForTest) ? "_train" : "_test");
 				tmpPtr = std::make_shared<MyGestSymbol>(ss.str(), randSymbolIDX);
 				tmpPtr->setSolver(IKSolve);
 				if (i < partitionForTest) {
@@ -126,7 +128,7 @@ namespace gestureIKApp {
 		curIDX = idx;
 		curSymbolIDX = symIdx;
 		symbols[curSymbolIDX]->initSymbolIK();
-		if (disp) { std::cout << "Specified symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << std::endl; }
+		if (disp) { std::cout << "Specified symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX <<"\t with : "<< symbols[curSymbolIDX]->numTrajFrames <<" frames "<< std::endl; }
 	}
 
 	//set reference to IK solver - set in all trajectories
@@ -138,11 +140,13 @@ namespace gestureIKApp {
 	//set flag values for all symbols of this letter
 	void MyGestLetter::setSymbolFlags(int idx, bool val) {
 		for (int i = 0; i < symbols.size(); ++i) { symbols[i]->setFlags(idx, val); }
-
 	} 
-
-
-		//draw all trajectory components of current symbol being used for IK
+	//draw all trajectory components of current symbol being used for IK
+	void MyGestLetter::drawAllSymbols(dart::renderer::RenderInterface* mRI) {
+		for (int i = 0; i < symbols.size(); ++i) {		symbols[i]->drawTrajs(mRI);		}
+	}
+	
+	//draw all trajectory components of current symbol being used for IK
 	void MyGestLetter::drawLetter(dart::renderer::RenderInterface* mRI) {
 		symbols[curSymbolIDX]->drawTrajs(mRI);
 	}

@@ -105,7 +105,7 @@ namespace gestureIKApp {
 		inline bool isConnTraj() { return flags[connTrajIDX]; }
 
 		//draw this trajectory
-		void drawTraj(dart::renderer::RenderInterface* mRI, const Eigen::Ref<const Eigen::Vector3d>& clr);
+		void drawDebugTraj(dart::renderer::RenderInterface* mRI, const Eigen::Ref<const Eigen::Vector3d>& clr);
 
 		//set solver for this trajectory
 		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv) {		IKSolve = _slv;		} 

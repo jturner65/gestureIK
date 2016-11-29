@@ -99,6 +99,9 @@ namespace gestureIKApp {
 		IKSolver(dart::dynamics::SkeletonPtr _skel);
 		virtual ~IKSolver();
 
+		//load/reload all xml-based sim parameters
+		void loadIKParams();
+		
 		//set tracked marker positions - call this or something like it before solve
 		void setTrkMrkrs(eignVecTyp& _tarPos);
 
@@ -120,10 +123,12 @@ namespace gestureIKApp {
 
 
 		//get random double with mean mu and std = std - put here so that accessible in all classes
-		inline Eigen::Vector3d getRandVec(const Eigen::Ref<const Eigen::Vector3d>& mu, double std = 1.0) {
+		inline Eigen::Vector3d getRandVec(const Eigen::Ref<const Eigen::Vector3d>& mu, const Eigen::Ref<const Eigen::Vector3d>& stdVec) {
 			Eigen::Vector3d val(0, 0, 0);
 			val<< (*normDist)(mtrn_gen), (*normDist)(mtrn_gen), (*normDist)(mtrn_gen);
-			val *= (std * std);
+			val(0) *= (stdVec(0) * stdVec(0));//vector to shape distribution
+			val(1) *= (stdVec(1) * stdVec(1));
+			val(2) *= (stdVec(2) * stdVec(2));
 			val += mu;
 			return val;
 		}

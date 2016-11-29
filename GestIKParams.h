@@ -66,6 +66,10 @@ namespace gestureIKApp {
 		inline bool genRandLtrs() { return flags[IDX_genRandLtrs]; }
 		//whether or not to make img sequences of the non-random-generated (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
 		inline bool mkNonRandSeq() { return flags[IDX_mkNonRandSeq]; }
+		//whether or not to change colors of trajectories for debug display
+		inline bool chgTrajClrs() { return flags[IDX_chgTrajDbgClrs]; }
+		//whether or not to use fixed global velocity for all trajectories
+		inline bool useFixedGlblVel() { return flags[IDX_useFixedGlblVel]; }
 		void resetValues();
 
 		friend std::ostream& operator<<(std::ostream& out, GestIKParams& GestIK);
@@ -94,10 +98,17 @@ namespace gestureIKApp {
 		double IK_elbowScale;
 		//multiplier to velocity for "fast" symbols (determined randomly)
 		double IK_fastTrajMult;
+		//how much to bring center down in y direction (needs to be negative)
+		double IK_ctrYOffset;
+
 		//min allowed traj length for multi-point trajectories
 		double trajLenThresh;
 		//std of randomized trajectory scales
 		double trajRandCtrStd;
+		//X,Y,Z scaling amounts for std dev
+		double trajRandCtrStdScale_X, trajRandCtrStdScale_Y, trajRandCtrStdScale_Z;
+
+
 		//std of randomized trajectory center
 		double trajRandSclStd;
 		//# of iterations of tuck/untuck/subdivide for trajectory smoothing
@@ -108,18 +119,24 @@ namespace gestureIKApp {
 		double trajDesiredVel;
 		//amount of overshoot to use for 4-pt neville (for building connecting trajs)
 		double trajNev4OvPct;
+
 		//int width/height of windows
 		int win_Width, win_Height;
+
 		//# of letters in alphabet to process (first n) - 26 for whole alphabet, 1 for just a, etc
 		int numLetters;
 		//# of total symbols of a particular letter we're generating - if < # of file-based examples, is ignored, if > then we generate random versions of the file based letters to make up diff
 		int numTotSymPerLtr;
+
 		//ltr idx to begin saving (a==0, b==1, etc) (>25 forced to 25)
 		int ltrIdxStSave;
 		//size of window for LSTM in training - make clips fixed to multples of this length to prevent image paddings
 		int fixedClipLen;
+		//offset in naming so that multiple sets can be generated.
+		int clipCountOffset;
 		//initial zoom
 		float origZoom;
+
 		//background colors
 		double bkgR, bkgG, bkgB, bkgA;
 
@@ -131,10 +148,13 @@ namespace gestureIKApp {
 			//whether or not to generate randomized versions of loaded letters - note numTotSymPerLtr still needs to be specified to be greater than # of file-based samples to get any random samples
 			IDX_genRandLtrs = 1,
 			//whether or not to make img sequences of the non-random-generated (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
-			IDX_mkNonRandSeq = 2;
+			IDX_mkNonRandSeq = 2,
+			//whether or not to change colors per trajectory for debug display
+			IDX_chgTrajDbgClrs = 3,
+			//whether or not to use fixed global velocity for all trajectories
+			IDX_useFixedGlblVel = 4;
 
-
-		static const int numFlags = 3;
+		static const int numFlags = 5;
 	};
 
 }//namespace gestureIKApp 

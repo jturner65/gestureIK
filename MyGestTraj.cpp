@@ -208,7 +208,7 @@ namespace gestureIKApp {
 		//this is backwards projection onto elbow plane (for fast trajectories?)
 		//Eigen::Vector3d yVec(0, 1, 0);
 		Eigen::Vector3d yVec(0, -1, 0);
-		if (parentSymbol->flags[parentSymbol->isFastDrawnIDX]) { yVec *= -1; }
+		//if (parentSymbol->flags[parentSymbol->isFastDrawnIDX]) { yVec *= -1; }		//reverses elbow directions for fast trajectories - "wagging arm"
 		//use ptrPlaneNorm since wll never be colinear with 0,-1,0 (no drawing on ground)
 		//Eigen::Vector3d R = parentSymbol->ptrPlaneNorm.cross(yVec).normalized(), S = parentSymbol->elbowPlaneNorm.cross(R).normalized();
 		Eigen::Vector3d R = parentSymbol->elbowPlaneNorm.cross(yVec).normalized(), S = parentSymbol->elbowPlaneNorm.cross(R).normalized();
@@ -399,8 +399,9 @@ namespace gestureIKApp {
 		return _pts[0];
 	}//at	
 
-	void MyGestTraj::drawTraj(dart::renderer::RenderInterface* mRI, const Eigen::Ref<const Eigen::Vector3d>& clr) {
-		Eigen::Vector3d ballSz(0.005, 0.005, 0.005);
+
+	void MyGestTraj::drawDebugTraj(dart::renderer::RenderInterface* mRI, const Eigen::Ref<const Eigen::Vector3d>& clr) {
+		Eigen::Vector3d ballSz(0.004, 0.004, 0.004);
 		if (flags[connTrajIDX]) {
 			mRI->setPenColor(Eigen::Vector3d(.1,.1,.9));
 			ballSz << 0.002, 0.002, 0.002;
@@ -413,16 +414,20 @@ namespace gestureIKApp {
 			mRI->translate(trajTargets[i][0]);				//ptr finger trajectory location
 			mRI->drawEllipsoid(ballSz);
 			mRI->popMatrix();
-			mRI->pushMatrix();
-			mRI->translate(trajTargets[i][1]);				//elbow
-			mRI->drawEllipsoid(ballSz);
-			mRI->popMatrix();
+		}
+		if (!flags[debugIDX]) {								//don't draw this if not debugging from main window (i.e. don't draw when drawing all symbol trajs for letter
+			for (int i = 0; i < trajTargets.size(); ++i) {
+				mRI->pushMatrix();
+				mRI->translate(trajTargets[i][1]);				//elbow
+				mRI->drawEllipsoid(ballSz);
+				mRI->popMatrix();
+			}
 		}
 		//draw center
 		mRI->setPenColor(Eigen::Vector3d(.9, .1, .9));
 		mRI->pushMatrix();
 		mRI->translate(ctrPoint);				//ptr finger trajectory location
-		mRI->drawEllipsoid(2 * ballSz);
+		mRI->drawEllipsoid(1.5 * ballSz);
 		mRI->popMatrix();
 
 		//mRI->pushMatrix();
@@ -441,7 +446,8 @@ namespace gestureIKApp {
 		//	mRI->popMatrix();
 		//}
 		//mRI->popMatrix();
-	}//drawTraj
+	}//drawDebugTraj
+
 
 	 //trajectory file expected to have 1 column for every tracked marker, 1 row for every sample.  needs to be resampled for frames/playback speed (?)
 	 //srcTrajData holds x,y,timing data mapped to z,y and separate timing ara.

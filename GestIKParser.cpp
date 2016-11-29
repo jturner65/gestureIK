@@ -39,7 +39,7 @@
 using namespace dart::utils;
 namespace gestureIKApp {
 	//read info from filename, set params value controlling IK sim and data collection variables
-	void GestIKParser::readGestIKXML(const std::string& _filename, std::shared_ptr<GestIKParams>& params) {
+	void GestIKParser::readGestIKXML(const std::string& _filename, std::shared_ptr<GestIKParams> params) {
 		//_filename includes path
 		std::cout << "Read params from file name : " << _filename << std::endl;
 		// Load xml and create Document

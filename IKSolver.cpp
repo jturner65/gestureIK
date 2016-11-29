@@ -55,12 +55,7 @@ namespace gestureIKApp {
 		//load sim parameters from default file
 		//build params file from xml
 		params = std::make_shared<gestureIKApp::GestIKParams>();
-		//read parameters in from xml file  "dflt_gestik_params.xml"
-		std::stringstream ss;
-		ss.str("");
-		ss << appFilePath << "dflt_gestik_params.xml";
-		GestIKParser::readGestIKXML(ss.str(), params);
-		std::cout << "Loaded params : " << *params << std::endl;
+		loadIKParams();
 
 		// Create markers
 		createMarkers();
@@ -103,14 +98,25 @@ namespace gestureIKApp {
 		normDist = std::make_shared<std::normal_distribution<double> >(0, 1.0);
 
 	}
-
 	IKSolver::~IKSolver(){}
+
+	//load/reload all params values from xml
+	void IKSolver::loadIKParams() {
+		//read parameters in from xml file  "dflt_gestik_params.xml"
+		std::stringstream ss;
+		ss.str("");
+		ss << appFilePath << "dflt_gestik_params.xml";
+		GestIKParser::readGestIKXML(ss.str(), params);
+		std::cout << "Loaded params : " << *params << std::endl;
+	}
+	
 	//set default values for pointer finger avg loc and elbow avg loc, and plane normals for ptr finger inscribed circle and elbow inscribed circle
 	void IKSolver::setSampleCenters() {
 		//build pointer center and guess at elbow center
 		drawCrclCtr = skelPtr->getMarker("right_scapula")->getWorldPosition();
 		//move forward (in x dir) by reachPct
 		drawCrclCtr(0) += (params->IK_reachPct * reach);
+		drawCrclCtr(1) += (params->IK_ctrYOffset);
 		//instead of winging it for elbow, IK to draw center and update elbow location - use this estimate as start loc
 		drawElbowCtr = drawCrclCtr;
 		drawElbowCtr(0) *= .5;

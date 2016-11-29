@@ -29,8 +29,12 @@
 		<val>1.4</val>   
 	</parameter>
 	<parameter>
+		<name>IK_ctrYOffset</name>
+		<val>-0.05</val>   
+	</parameter>
+	<parameter>
 		<name>dataCapTestTrainThresh</name>
-		<val>0.5</val>   
+		<val>1.0</val>   
 	</parameter>
 	<parameter>
 		<name>dataCapNumExamples</name>
@@ -54,8 +58,21 @@
 	</parameter>
 	<parameter>
 		<name>trajRandCtrStd</name>
-		<val>.2</val>   
+		<val>.125</val>   
 	</parameter>
+	<parameter>
+		<name>trajRandCtrStdScale_X</name>
+		<val>.1</val>   
+	</parameter>
+	<parameter>
+		<name>trajRandCtrStdScale_Y</name>
+		<val>1.0</val>   
+	</parameter>
+	<parameter>
+		<name>trajRandCtrStdScale_Z</name>
+		<val>1.5</val>   
+	</parameter>
+	
 	<parameter>
 		<name>trajRandSclStd</name>
 		<val>.01</val>   
@@ -82,10 +99,14 @@
 	</parameter>
 	<parameter>
 		<name>numTotSymPerLtr</name>
-		<val>200</val> 
+		<val>30</val> 
 	</parameter>
 	<parameter>
 		<name>ltrIdxStSave</name>
+		<val>0</val> 
+	</parameter>
+	<parameter>
+		<name>clipCountOffset</name>
 		<val>0</val> 
 	</parameter>
 	<parameter>
@@ -119,6 +140,14 @@
 	<parameter>
 		<name>IDX_genRandLtrs</name>
 		<val>TRUE</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_chgTrajDbgClrs</name>
+		<val>FALSE</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_useFixedGlblVel</name>
+		<val>FALSE</val> 
 	</parameter>
 </GestIKParams>
 <!-- Template to build gesture IK xml configuration file to store params -- all file names relative to dart data path -->

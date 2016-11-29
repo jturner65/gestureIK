@@ -93,7 +93,8 @@ namespace gestureIKApp {
 		void setSymbolIdx(int idx, int symIdx, bool disp);
 		//set flags of all subordinate symbols
 		void setSymbolFlags(int idx, bool val);
-
+		//draw all letters to test range of values from randomization
+		void drawAllSymbols(dart::renderer::RenderInterface* mRI);
 		//draw all components of trajectory of current symbol
 		void drawLetter(dart::renderer::RenderInterface* mRI);
 
@@ -111,6 +112,8 @@ namespace gestureIKApp {
 		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver
 		//idx in letters array (0 == a, 1 == b etc)
 		unsigned int curIDX;
+		//current symbol index for debug drawing all letters
+		unsigned int curDrawSymIDX;
 		//current symbol idx used
 		unsigned int curSymbolIDX;
 		//# of examples of this letter from files
