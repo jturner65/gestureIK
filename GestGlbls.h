@@ -70,6 +70,13 @@ namespace gestureIKApp {
 	//map keyed by name of trajectories, holding shared ptrs of trajectories
 	typedef std::map<std::string, std::shared_ptr<MyGestTraj>> trajMap;
 
+	//data being generated - variation to explore the LSTM's capabilities and quirks - the LSTM's window is 16 frames long
+	//const_vel uses the same per-frame displacement for all trajectories of all letters - duration can be any value
+	//train_16 uses training data that is restricted to 16 frames, and multiple of 8 (but no less than 16) frame testing data
+	//mult_8 uses multiple of 8 (but no less than 16) frame training and testing data
+	enum DataType { CONST_VEL, TRAIN_16, MULT_8};
+	static const char* DataType2str[] = { "Constant Velocity", "16-frame Train, Mult-8 Test", "Mult-8 Train, Mult-8 Test" };
+
 	//////////////////////////
 	//for randomization stuff
 	/////////////////////////////

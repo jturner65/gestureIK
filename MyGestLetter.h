@@ -33,6 +33,7 @@
 *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *   POSSIBILITY OF SUCH DAMAGE.
 */
+
 #ifndef APPS_GESTURE_MYGESTLETTER_H_
 #define APPS_GESTURE_MYGESTLETTER_H_
 
@@ -100,9 +101,9 @@ namespace gestureIKApp {
 
 		std::string getCurSymbolName() { return symbols[curSymbolIDX]->name; }
 		int getCurSymbolFrame() { return symbols[curSymbolIDX]->curFrame; }
-		//limit training data to 16 frame-long complete clips
-		inline void limitTrainTo16(bool val) {
-			for (int i = 0; i < symbols.size(); ++i) { symbols[i]->limitTrainTo16(val); }
+		//set flags to show all letter trajectories
+		inline void setShowAllTrajs(bool val) {
+			for (int i = 0; i < symbols.size(); ++i) { symbols[i]->setShowAllTrajs(val); }
 		}
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestLetter& ltr);

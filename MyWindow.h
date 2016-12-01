@@ -219,7 +219,7 @@ private:
 		doneTrajIDX = 7,						//finished current trajectory
 		pauseIKLtrIDX = 8,						//pause between IK frames
 		testLtrQualIDX = 9,						//iterate through all letters without screen cap to test traj quality
-		limitTrainTo16IDX = 10;					//limit training data to 16 frames per example (speed up example)
+		showAllTrajsIDX = 10;					//show all trajectories of letters, to show distribution results
 
 	static const unsigned int numFlags = 11;
 };

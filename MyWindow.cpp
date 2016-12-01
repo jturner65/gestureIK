@@ -134,8 +134,8 @@ std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
 //this will entail building trajectories for triangle, square and star, starting at each vertex,
 //with and without random shifts in end points,  [and moving in clockwise or ccw direction (TODO)]
 void MyWindow::trainDatInitCol(bool isLtr) {
-	if ((flags[useLtrTrajIDX]) && ((!IKSolve->params->mkNonRandSeq()) && (!IKSolve->params->genRandLtrs()))) {
-			std::cout << "XML specifies to not save sequences of file based letters(IDX_mkNonRandSeq), and to not make any random letters(IDX_genRandLtrs), and so there's nothing to save."<< std::endl;
+	if ((flags[useLtrTrajIDX]) && ((!IKSolve->params->regenNotAppend()) && (!IKSolve->params->genRandLtrs()))) {
+			std::cout << "XML specifies to not save sequences of file based letters(IDX_regenNotAppend), and to not make any random letters(IDX_genRandLtrs), and so there's nothing to save."<< std::endl;
 			curSymIDX = 0;
 			curLtrIDX = 0;
 			flags[collectDataIDX] = false;
@@ -161,7 +161,7 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 		}
 		else {
 			std::cout << "Initializing random data collection for Letter Trajectories." << std::endl;
-			bool append = !IKSolve->params->mkNonRandSeq();
+			bool append = !IKSolve->params->regenNotAppend();
 			openIndexFile(false, testOutFile, append);
 			openIndexFile(true, trainOutFile, append);
 			//1st time initialize letter collection - init curLtrIDX, curSymIDX
@@ -240,7 +240,7 @@ void MyWindow::trainSymDatManageCol() {
 void MyWindow::trainLtrDatManageCol() {
 	if (curLtrIDX >= letters.size()) {//done every letter
 		curLtrIDX = 0;
-		stSymIdx = IKSolve->params->mkNonRandSeq() ? 0 : letters[curLtrIDX]->numFileSymbols;		//either start at beginning or start saving only randomized letters
+		stSymIdx = IKSolve->params->regenNotAppend() ? 0 : letters[curLtrIDX]->numFileSymbols;		//either start at beginning or start saving only randomized letters
 		curSymIDX = stSymIdx;
 		if (!flags[testLtrQualIDX]) {
 			testOutFile.close();
@@ -273,7 +273,7 @@ void MyWindow::trainLtrDatManageCol() {
 	curSymIDX += 1;
 	if (curSymIDX >= curLetter->symbols.size()){
 		curLtrIDX += 1;
-		stSymIdx = IKSolve->params->mkNonRandSeq() ? 0 : (curLtrIDX >= letters.size() ? 0 : letters[curLtrIDX]->numFileSymbols);		//either start at beginning or start saving only randomized letters
+		stSymIdx = IKSolve->params->regenNotAppend() ? 0 : (curLtrIDX >= letters.size() ? 0 : letters[curLtrIDX]->numFileSymbols);		//either start at beginning or start saving only randomized letters
 		curSymIDX = stSymIdx;
 	}
 	if (!flags[testLtrQualIDX]) {
@@ -398,14 +398,11 @@ void MyWindow::draw() {
 	if (flags[drawTrkMrkrsIDX]) {
 		IKSolve->drawTrkMrkrs(mRI, true);
 	}
-	if (flags[drawLtrTrajIDX]) {
-		if ((flags[useLtrTrajIDX]) && (nullptr != curLetter)) {
-			if (flags[debugIDX]) {
-				curLetter->drawAllSymbols(mRI);
-			}
-			else {
-				curLetter->drawLetter(mRI);
-			}
+	if (flags[showAllTrajsIDX] && flags[useLtrTrajIDX] && (nullptr != curLetter)) {//if show all trajs and showing letters and a current letter exists
+			curLetter->drawAllSymbols(mRI);
+	} else if (flags[drawLtrTrajIDX]) {
+		if (flags[useLtrTrajIDX] && (nullptr != curLetter)) {
+			curLetter->drawLetter(mRI);			
 		}
 		else {
 			drawCurTraj();
@@ -486,7 +483,7 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		//turn off any tests that may have been initiated
 		flags[testLtrQualIDX] = false;
 		for (int i = 0; i < letters.size(); ++i) { letters[i]->setTestLtrQual(flags[testLtrQualIDX]); }
-		std::cout << "Capture all letters with Train data restricted to 16 frames : " << (flags[limitTrainTo16IDX] ? "True" : "False") << std::endl;
+		std::cout << "Capture all letters with data type : "<< DataType2str[IKSolve->params->dataType] << std::endl;
 		break; }
 	case 'b': { // build lists of letters and random letters
 		//reload params from xml 
@@ -501,7 +498,12 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 	case 'd': { // debug mode
 		flags[debugIDX] = !flags[debugIDX];
 		std::cout << "Debug Mode : " << (flags[debugIDX] ? "True" : "False") << std::endl;
-		for (int i = 0; i < letters.size(); ++i) {		letters[i]->setSymbolFlags(debugIDX, flags[debugIDX]);		}	//debugIDX is 0 in every class
+		for (int i = 0; i < letters.size(); ++i) { letters[i]->setSymbolFlags(debugIDX, flags[debugIDX]); }	//debugIDX is 0 in every class
+		break; }
+	case 'e': { // show all letter trajectories
+		flags[showAllTrajsIDX] = !flags[showAllTrajsIDX];
+		std::cout << "Show all letter trajectories : " << (flags[showAllTrajsIDX] ? "True" : "False") << std::endl;
+		for (int i = 0; i < letters.size(); ++i) { letters[i]->setShowAllTrajs( flags[showAllTrajsIDX]); }	//debugIDX is 0 in every class
 		break; }
 	case 'f': { //test all letters - same as screen cap except no IK and no file save
 		if (letters.size() == 0) {
@@ -516,11 +518,6 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		}
 		for (int i = 0; i < letters.size(); ++i) { letters[i]->setTestLtrQual(flags[testLtrQualIDX]); }
 		break;}
-	case 'g': {//toggle between limiting to 16 frames for each entire training example or splitting regular-duration training up into windows of 16 frames TODO		
-		flags[limitTrainTo16IDX] = !flags[limitTrainTo16IDX];
-		for (int i = 0; i < letters.size(); ++i) { letters[i]->limitTrainTo16(flags[limitTrainTo16IDX]); }
-		std::cout << "Capture all letters with Train data restricted to 16 frames : " << (flags[limitTrainTo16IDX] ? "True" : "False") << std::endl;
-		break; }
 	case 'p' : {  // pause between IK frames for debugging
 		flags[pauseIKLtrIDX] = !flags[pauseIKLtrIDX];
 		std::cout << "Pause between IK frames : " << (flags[pauseIKLtrIDX] ? "True" : "False") << std::endl;

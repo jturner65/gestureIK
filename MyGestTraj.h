@@ -33,6 +33,7 @@
 *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *   POSSIBILITY OF SUCH DAMAGE.
 */
+
 #ifndef APPS_GESTURE_MYGESTTRAJ_H_
 #define APPS_GESTURE_MYGESTTRAJ_H_
 
@@ -43,6 +44,7 @@
 #include "apps/gestureIK/MyGestSymbol.h"
 
 #include "dart/dart.h"
+
 namespace dart {
 	namespace renderer {
 		class RenderInterface;
@@ -104,6 +106,9 @@ namespace gestureIKApp {
 		//whether or not this trajectory is a connecting trajectory
 		inline bool isConnTraj() { return flags[connTrajIDX]; }
 
+		//set flags to show all letter trajectories (for debug display of traj distribution)
+		inline void setShowAllTrajs(bool val) { flags[showAllTrajsIDX] = val; }
+
 		//draw this trajectory
 		void drawDebugTraj(dart::renderer::RenderInterface* mRI, const Eigen::Ref<const Eigen::Vector3d>& clr);
 
@@ -138,16 +143,17 @@ namespace gestureIKApp {
 		std::vector<double> srtTrajTiming, trajPtDistFromSt;		//timing of source trajectory, dists to each point from start of arc
 
 		std::vector<bool> flags;					//state flags of trajectory
-		static const unsigned int 
+		static const unsigned int
 			debugIDX = 0,				//debug mode
 			testLtrQualIDX = 1,			//test all symbols to make sure no abberrant trajectories
 			loadedIDX = 2,				//trajectory data is loaded or not (srcTrajData will not grow)
 			builtIDX = 3,				//trajectory targets data for all tracked markers has been derived
 			useTrajIDX = 4,				//whether or not to use this trajectory component - if size is very small but not 0 might mean this trajectory is something separate and noisy
 			closeTrajIDX = 5,			//whether trajectory is closed or not
-			connTrajIDX = 6;			//this is a connecting trajectory (generated between two sourced actual trajectories)
+			connTrajIDX = 6,			//this is a connecting trajectory (generated between two sourced actual trajectories)
+			showAllTrajsIDX = 7;
 
-		static const unsigned int numFlags = 7;
+		static const unsigned int numFlags = 8;
 
 	};	
 } //namespace

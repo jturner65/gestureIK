@@ -44,6 +44,7 @@
 #include "apps/gestureIK/MyGestTraj.h"
 
 #include "dart/dart.h"
+
 namespace dart {
 	namespace renderer {
 		class RenderInterface;
@@ -73,8 +74,8 @@ namespace gestureIKApp {
 		//set solver for this trajectory
 		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
 
-		//set boolean flag to limit training to 16 frames for a complete letter
-		void limitTrainTo16(bool val) { setFlags(limitTrainTo16IDX, val); }
+		//set flags to show all letter trajectories
+		inline void setShowAllTrajs(bool val) { setFlags(showAllTrajsIDX, val); }
 
 		//buld a randomized version of the passed symbol
 		bool buildRandomSymbol(std::shared_ptr<MyGestSymbol> _base, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast);
@@ -101,9 +102,8 @@ namespace gestureIKApp {
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestSymbol& sym);
 
-	private :	//variables
-		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver
 	public:	//variables
+		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver
 		std::shared_ptr<MyGestSymbol> _self;									//ref to shared ptr to self, to be handed off to trajectories
 
 		unsigned int// curTraj,													//idx of current trajectory being processed
@@ -124,15 +124,14 @@ namespace gestureIKApp {
 		static const unsigned int
 			debugIDX = 0,						//debug mode
 			testLtrQualIDX = 1,					//test all symbols to make sure no abberrant trajectories
-			diffClrIDX = 2,						//use different colors for each component trajectory of this symbol
-			drawConnTrajIDX = 3,				//draw the connecting trajectories between two data trajectories	
-			randCircleIDX = 4,					//if true, randomize the center, radius and plane normal of the bounding circle of this letter
-			isFastDrawnIDX = 5,					//this symbol is drawn quickly - flip orientation of elbow plane normal, 1.5x base drawing speed
-			isDoneDrawingIDX = 6,				//finished drawing this symbol
-			isTrainDatIDX = 7,
-			limitTrainTo16IDX = 8;				//limit training data size to 16 frames
+			drawConnTrajIDX = 2,				//draw the connecting trajectories between two data trajectories	
+			randCircleIDX = 3,					//if true, randomize the center, radius and plane normal of the bounding circle of this letter
+			isFastDrawnIDX = 4,					//this symbol is drawn quickly - flip orientation of elbow plane normal, 1.5x base drawing speed
+			isDoneDrawingIDX = 5,				//finished drawing this symbol
+			isTrainDatIDX = 6,
+			showAllTrajsIDX = 7;				//show all letter trajectories
 
-		static const unsigned int numFlags = 9;
+		static const unsigned int numFlags = 8;
 
 		Eigen::Vector3d avgLoc;													//average location of symbol data in matlab space
 
@@ -148,5 +147,4 @@ namespace gestureIKApp {
 
 	};
 } // namespace gestureIKApp
-
 #endif // #ifndef APPS_GESTURE_MYGESTSYMBOL_H_

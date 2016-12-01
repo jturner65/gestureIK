@@ -51,7 +51,6 @@ namespace gestureIKApp {
 		ptrCtrPt(0,0,0), elbowCtrPt(0,0,0), ptrPlaneNorm(-1,0,0), elbowPlaneNorm(0,0,0), circleRad(0)
 
 	{
-		flags[diffClrIDX] = true;
 		//show connecting trajectories
 		flags[drawConnTrajIDX] = true;
 	}
@@ -189,11 +188,11 @@ namespace gestureIKApp {
 		//if scale to bounds
 		if (IKSolve->params->useFixedGlblVel()) {//make all trajectories fixed per-frame velocity
 			trajIncrAmt = IKSolve->params->trajDesiredVel;
-			numTrajFrames = (int)(allTrajsLen / trajIncrAmt);
+			numTrajFrames = (int)(allTrajsLen / trajIncrAmt)+1;
 		}
-		else {
+		else {//currently setting fixed frame count durations here
 			//if scale to bounds
-			if (flags[isTrainDatIDX]) { //TODO add && flags[limitTrainTo16IDX] here
+			if ((flags[isTrainDatIDX]) && IKSolve->params->limitTrainTo16()){
 				numTrajFrames = 16;
 			}
 			else {//calc variable length multiple of 16 clips
@@ -244,7 +243,6 @@ namespace gestureIKApp {
 		if (flags[isDoneDrawingIDX]) {//perform here so that we cover final point and don't change curFrame until after image is rendered
 			initSymbolIK();
 		}
-
 		double trajStartLoc = (curTraj > 0) ? trajLens[curTraj - 1] : 0;
 		//std::cout << "Cur Traj Dist for " << name << " in solve : " << curTrajDist << " and start length : " << trajStartLoc << " and end length of this traj : " << trajLens[curTraj] << std::endl;
 		bool finishedCurTraj = trajectories[curTraj]->setTrkMrkrAndSolve(curTrajDist - trajStartLoc);
@@ -260,7 +258,7 @@ namespace gestureIKApp {
 					std::cout << "!!!finishedCurTraj is false for " << name << " #trajs : " << trajLens.size() << " when ending - frame count : " << curFrame << std::endl;
 				}
 				//std::cout << "Return from solve for " << name << " made " << curFrame << " frames.  finishedCurTraj : " << finishedCurTraj << std::endl;
-				if (curFrame % IKSolve->params->fixedClipLen != 0) {
+				if ((!IKSolve->params->useFixedGlblVel()) && (curFrame % IKSolve->params->fixedClipLen != 0)) {//don't check if not setting to be multiple of 16
 					std::cout << "!!!! Non-mult of specified fixed clip length " << IKSolve->params->fixedClipLen <<" : Frame count for symbol : " << name << " count : " << curFrame << std::endl;
 				}
 				std::cout << std::endl;
@@ -352,7 +350,7 @@ namespace gestureIKApp {
 		Eigen::Vector3d penClr = Eigen::Vector3d(.9, .9, .9);
 		for (int i = 0; i < trajectories.size(); ++i) {
 			if (((!flags[drawConnTrajIDX]) && (trajectories[i]->isConnTraj())) || (!trajectories[i]->useTraj())) { continue; }		//don't draw connecting trajs unless we want to display them, or trajs that we arent using
-			if (flags[diffClrIDX]) {
+			if (IKSolve->params->chgTrajClrs()) {
 				penClr = trajColors[(i % trajColors.size())];
 			}
 			trajectories[i]->drawDebugTraj(mRI, penClr);
@@ -369,7 +367,6 @@ namespace gestureIKApp {
 		elbowCtrPt << IKSolve->drawElbowCtr;
 		elbowPlaneNorm << IKSolve->elbowShldrNormal;
 	//	trajVel = IKSolve->params->trajDesiredVel;
-		flags[diffClrIDX] = IKSolve->params->chgTrajClrs();
 
 		for (int i = 0; i<trajectories.size(); ++i) { trajectories[i]->setSolver(IKSolve); }
 	}
@@ -409,12 +406,11 @@ namespace gestureIKApp {
 		case testLtrQualIDX: {//test all symbols to make sure no abberrant trajectories
 			for (int i = 0; i < trajectories.size(); ++i) { trajectories[i]->flags[testLtrQualIDX] = val; }//turn on testing of trajs for all trajectories
 			break;		}
-		case diffClrIDX: {
-			break; }		//use different colors for each component trajectory of this symbol
 		case drawConnTrajIDX: {
 			break; } //draw the inter-trajectory connecting generated trajectories
-		case limitTrainTo16IDX: {
-			break; }
+		case showAllTrajsIDX: {
+			for (int i = 0; i < trajectories.size(); ++i) { trajectories[i]->setShowAllTrajs( val); }//turn on debug for all trajectories
+			break;}
 		}
 	}//setFlags
 

@@ -41,11 +41,12 @@
 #include <string>
 
 #include <iostream>
-
+#include "apps/gestureIK/GestGlbls.h"
 #include <Eigen/Dense>
 #include <tinyxml2.h>
 #include "dart/utils/Parser.h"
 #include <boost/algorithm/string.hpp>
+
 
 namespace gestureIKApp {
 	//any necessary hyperparams needed to be loaded from XML file
@@ -65,11 +66,13 @@ namespace gestureIKApp {
 		//whether or not to generate randomized versions of loaded letters - note numTotSymPerLtr still needs to be specified to be greater than # of file-based samples to get any random samples
 		inline bool genRandLtrs() { return flags[IDX_genRandLtrs]; }
 		//whether or not to make img sequences of the non-random-generated (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
-		inline bool mkNonRandSeq() { return flags[IDX_mkNonRandSeq]; }
+		inline bool regenNotAppend() { return flags[IDX_regenNotAppend]; }
 		//whether or not to change colors of trajectories for debug display
 		inline bool chgTrajClrs() { return flags[IDX_chgTrajDbgClrs]; }
+		//whether or not to force training data to be 16 frames long
+		inline bool limitTrainTo16() { return (dataType == TRAIN_16); }
 		//whether or not to use fixed global velocity for all trajectories
-		inline bool useFixedGlblVel() { return flags[IDX_useFixedGlblVel]; }
+		inline bool useFixedGlblVel() { return (dataType == CONST_VEL); }
 		void resetValues();
 
 		friend std::ostream& operator<<(std::ostream& out, GestIKParams& GestIK);
@@ -108,7 +111,6 @@ namespace gestureIKApp {
 		//X,Y,Z scaling amounts for std dev
 		double trajRandCtrStdScale_X, trajRandCtrStdScale_Y, trajRandCtrStdScale_Z;
 
-
 		//std of randomized trajectory center
 		double trajRandSclStd;
 		//# of iterations of tuck/untuck/subdivide for trajectory smoothing
@@ -136,6 +138,8 @@ namespace gestureIKApp {
 		int clipCountOffset;
 		//initial zoom
 		float origZoom;
+		//letter type to be generated - either constant velocity, 16-frame long train/mult8 test, or mult8 train/mult8 test
+		DataType dataType;
 
 		//background colors
 		double bkgR, bkgG, bkgB, bkgA;
@@ -147,14 +151,12 @@ namespace gestureIKApp {
 			IDX_useLeftHand = 0,
 			//whether or not to generate randomized versions of loaded letters - note numTotSymPerLtr still needs to be specified to be greater than # of file-based samples to get any random samples
 			IDX_genRandLtrs = 1,
-			//whether or not to make img sequences of the non-random-generated (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
-			IDX_mkNonRandSeq = 2,
+			//whether or not to regenerate the original non-randomized (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
+			IDX_regenNotAppend = 2,
 			//whether or not to change colors per trajectory for debug display
-			IDX_chgTrajDbgClrs = 3,
-			//whether or not to use fixed global velocity for all trajectories
-			IDX_useFixedGlblVel = 4;
+			IDX_chgTrajDbgClrs = 3;
 
-		static const int numFlags = 5;
+		static const int numFlags = 4;
 	};
 
 }//namespace gestureIKApp 

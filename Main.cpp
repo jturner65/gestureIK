@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "\td : debug mode on/off" << std::endl;
 	std::cout << "\tv : markers on/off" << std::endl;
 	std::cout << "\ts : turn current symbol trajectory display on/off." << std::endl;
-	std::cout << "\tb : build letter list." << std::endl;
+	std::cout << "\tb : load letters and build letter list." << std::endl;
 
 	std::cout << "Left click: rotate camera" << std::endl;
 	std::cout << "Right click: pan camera" << std::endl;
@@ -84,6 +84,7 @@ int main(int argc, char* argv[]) {
 	std::cout << std::endl;
 	std::cout << "Letter Trajectories : " << std::endl;
 	std::cout << "\ta : capture letter symbols a-z to disk." << std::endl;
+	std::cout << "\tf : test letter symbols a-z following screen cap protocol without saving." << std::endl;
 	std::cout << "\tp : pause between rendering IK Frames for letters." << std::endl;
 	std::cout << "\tShift + <letter> : follow random human trajectory for <letter> " << std::endl;
 

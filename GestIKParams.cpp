@@ -42,7 +42,7 @@ namespace gestureIKApp {
 		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), IK_elbowScale(0.36), IK_fastTrajMult(1.5), IK_ctrYOffset(0),
 		trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1), trajRandCtrStdScale_X(1), trajRandCtrStdScale_Y(1), trajRandCtrStdScale_Z(1),
 		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26), numTotSymPerLtr(0), ltrIdxStSave(0), fixedClipLen(16), origZoom(.65f),
-		clipCountOffset(0),
+		clipCountOffset(0), dataType(MULT_8),
 		bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0),
 		flags(numFlags, false)
 	{
@@ -89,6 +89,9 @@ namespace gestureIKApp {
 		if (_name.compare("ltrIdxStSave") == 0) { ltrIdxStSave = stoi(s);	if (ltrIdxStSave >= numLetters) { ltrIdxStSave  = numLetters-1;} 		return; }
 		if (_name.compare("fixedClipLen") == 0) { fixedClipLen = stoi(s);			return; }
 		if (_name.compare("clipCountOffset") == 0) { clipCountOffset = stoi(s); return; }
+		//enum
+		if (_name.compare("dataType") == 0) {	dataType = static_cast<DataType>(stoi(s)); return;	}
+
 		//floats 
 		if (_name.compare("origZoom") == 0) { origZoom = stof(s);			return; }
 		//strings
@@ -98,9 +101,8 @@ namespace gestureIKApp {
 		//std::transform(s.begin(), s.end(), sDest.begin(), toupper);
 		if (_name.compare("IDX_useLeftHand") == 0) { flags[IDX_useLeftHand] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_genRandLtrs") == 0) { flags[IDX_genRandLtrs] = (s.compare("TRUE") == 0 ? true : false);        return; }
-		if (_name.compare("IDX_mkNonRandSeq") == 0) { flags[IDX_mkNonRandSeq] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_regenNotAppend") == 0) { flags[IDX_regenNotAppend] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_chgTrajDbgClrs") == 0) { flags[IDX_chgTrajDbgClrs] = (s.compare("TRUE") == 0 ? true : false);        return; }
-		if (_name.compare("IDX_useFixedGlblVel") == 0) { flags[IDX_useFixedGlblVel] = (s.compare("TRUE") == 0 ? true : false);        return; }
 
 	}	//setParamValFromXMLStr
 
@@ -143,16 +145,17 @@ namespace gestureIKApp {
 		fixedClipLen = 16;
 		origZoom = .65f;
 		clipCountOffset = 0;
+		
+		dataType = MULT_8;
 
 		bkgR = 1.0;
 		bkgG = 1.0;
 		bkgB = 1.0;
 		bkgA = 1.0;
 		flags[IDX_useLeftHand] = false;
-		flags[IDX_mkNonRandSeq] = true;
+		flags[IDX_regenNotAppend] = true;
 		flags[IDX_genRandLtrs] = true;
 		flags[IDX_chgTrajDbgClrs] = false;
-		flags[IDX_useFixedGlblVel] = false;
 		defaultVals = accumulateVals();			//set default values as current param vals
 	}//setDefaultVals
 	//allow current values from UI to be set as defaults 
@@ -197,6 +200,7 @@ namespace gestureIKApp {
 		res.push_back(fixedClipLen);
 		res.push_back(origZoom);
 		res.push_back(clipCountOffset);
+		res.push_back(dataType);
 
 		res.push_back(bkgR);
 		res.push_back(bkgG);
@@ -247,7 +251,7 @@ namespace gestureIKApp {
 		fixedClipLen = (int)floor(vals[idx++] + .5);
 		origZoom = vals[idx++];
 		clipCountOffset = (int)floor(vals[idx++] + .5);
-
+		dataType = static_cast<DataType>(((int)floor(vals[idx++] + .5) % 3));
 		bkgR = vals[idx++];
 		bkgG = vals[idx++];
 		bkgB = vals[idx++];
@@ -261,12 +265,12 @@ namespace gestureIKApp {
 
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
 		out << "GestIK Params values : "<< std::endl;
-		out << "dataCapNumExamples : " << p.dataCapNumExamples << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
+		out << "letter data type : "<< DataType2str[p.dataType]<< "\tdataCapNumExamples : " << p.dataCapNumExamples << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
 		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| IK_fastTrajMult  : " << p.IK_fastTrajMult << "\t| IK_ctrYOffset  : " << p.IK_ctrYOffset << std::endl;
 		out << "trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult  << "\ttrajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << std::endl;
 		out << "clipCountOffset : " << p.clipCountOffset << "\t#letters (out of 26) to load : "<<p.numLetters <<"\t| traj rand scale x,y,z ("   << p.trajRandCtrStdScale_X<<", "<<p.trajRandCtrStdScale_Y << ", " << p.trajRandCtrStdScale_Z <<")\t| bkg clr (rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")"<< std::endl;
-		out << "Generate left hand data : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False") << "\tGenerate Random Letters : " << (p.flags[p.IDX_genRandLtrs] ? "True" : "False") << "\tSave Non-random (File-based) letter IK (set to false to ignore these to add more random sequences): " << (p.flags[p.IDX_mkNonRandSeq] ? "True" : "False") << std::endl;
-		out << "Display trajectories with different colors : " << (p.flags[p.IDX_chgTrajDbgClrs] ? "True" : "False") << "\tUse fixed global velocity for all trajectories : " << (p.flags[p.IDX_chgTrajDbgClrs] ? "True" : "False") << std::endl;
+		out << "Generate left hand data : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False") << "\tGenerate Random Letters : " << (p.flags[p.IDX_genRandLtrs] ? "True" : "False") << "\tSave Non-random (File-based) letter IK (set to false to ignore these to add more random sequences): " << (p.flags[p.IDX_regenNotAppend] ? "True" : "False") << std::endl;
+		out << "Display trajectories with different colors : " << (p.flags[p.IDX_chgTrajDbgClrs] ? "True" : "False")  << std::endl;
 		return out;
 	}
 

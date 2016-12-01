@@ -119,9 +119,7 @@ namespace gestureIKApp {
 				(*IKSolve->trkMarkers)[trkedMrkrNames[i]]->setTarPos(vec);
 			}
 		}
-		//if (!flags[testLtrQualIDX]) {
 		IKSolve->solve();
-		//}
 		return finCurTraj;
 	}//setTrkMrkrAndSolve
 
@@ -415,7 +413,7 @@ namespace gestureIKApp {
 			mRI->drawEllipsoid(ballSz);
 			mRI->popMatrix();
 		}
-		if (!flags[debugIDX]) {								//don't draw this if not debugging from main window (i.e. don't draw when drawing all symbol trajs for letter
+		if (!flags[showAllTrajsIDX]) {								//don't draw this if displaying all trajs
 			for (int i = 0; i < trajTargets.size(); ++i) {
 				mRI->pushMatrix();
 				mRI->translate(trajTargets[i][1]);				//elbow
