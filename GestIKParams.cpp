@@ -34,6 +34,7 @@
 *   POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <chrono>
 #include "apps/gestureIK/GestIKParams.h"
 
 namespace gestureIKApp {
@@ -43,7 +44,7 @@ namespace gestureIKApp {
 		trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1), trajRandCtrStdScale_X(1), trajRandCtrStdScale_Y(1), trajRandCtrStdScale_Z(1),
 		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26), numTotSymPerLtr(0), ltrIdxStSave(0), fixedClipLen(16), origZoom(.65f),
 		clipCountOffset(0), dataType(MULT_8),
-		bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0),
+		bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""),
 		flags(numFlags, false)
 	{
 		std::cout << "GestIK params ctor"<<std::endl;
@@ -152,12 +153,24 @@ namespace gestureIKApp {
 		bkgG = 1.0;
 		bkgB = 1.0;
 		bkgA = 1.0;
+
 		flags[IDX_useLeftHand] = false;
 		flags[IDX_regenNotAppend] = true;
 		flags[IDX_genRandLtrs] = true;
 		flags[IDX_chgTrajDbgClrs] = false;
 		defaultVals = accumulateVals();			//set default values as current param vals
 	}//setDefaultVals
+	//set current date as file name offset to keep files unique
+	void GestIKParams::setDateFNameOffset() {
+		std::stringstream ss;
+		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+		std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+		ss << std::put_time(std::localtime(&now_c), "%y%m%d%H");
+		dateFNameOffset = ss.str();
+		std::cout << "dateFNameOffset : " << dateFNameOffset << std::endl;
+	}
+
+
 	//allow current values from UI to be set as defaults 
 	void GestIKParams::setCurrentValsAsDefault() {
 		defaultVals = accumulateVals();
@@ -259,13 +272,13 @@ namespace gestureIKApp {
 		//represent boolean flags as vals
 		for (int i = 0; i < numFlags; ++i) {flags[i] = (vals[idx++] == 1.0);}
 	}//distributeVals
-	void GestIKParams::resetValues() {//set some reasonable defaults in here that we can return to them if not loaded from file
+	void GestIKParams::resetValues() {//set some reasonable defaults in here that we can return to them if not loaded from file 
 		distributeVals(defaultVals);
 	}
 
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
-		out << "GestIK Params values : "<< std::endl;
-		out << "letter data type : "<< DataType2str[p.dataType]<< "\tdataCapNumExamples : " << p.dataCapNumExamples << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
+		out << "GestIK Params values : "<<"\tdateFNameOffset : "<< p.dateFNameOffset<< std::endl;
+		out << "Letter data type : "<< DataType2str[p.dataType]<< "\tdataCapNumExamples : " << p.dataCapNumExamples << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
 		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| IK_fastTrajMult  : " << p.IK_fastTrajMult << "\t| IK_ctrYOffset  : " << p.IK_ctrYOffset << std::endl;
 		out << "trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult  << "\ttrajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << std::endl;
 		out << "clipCountOffset : " << p.clipCountOffset << "\t#letters (out of 26) to load : "<<p.numLetters <<"\t| traj rand scale x,y,z ("   << p.trajRandCtrStdScale_X<<", "<<p.trajRandCtrStdScale_Y << ", " << p.trajRandCtrStdScale_Z <<")\t| bkg clr (rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")"<< std::endl;

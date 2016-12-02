@@ -40,6 +40,7 @@
 #include <iostream>
 #include <fstream>
 
+
 #include "apps/gestureIK/MyGestLetter.h"
 #include "apps/gestureIK/IKSolver.h"
 
@@ -56,15 +57,28 @@ namespace gestureIKApp {
 	}	
 	MyGestLetter::~MyGestLetter() {	}
 	
+	//build file name used by screen capture
+	std::string MyGestLetter::getSymbolFileName() {
+		std::stringstream ss;
+		ss << IKSolve->params->dateFNameOffset << "_"<< symbols[curSymbolIDX]->name << "_" << DataType2strAbbrev[IKSolve->params->dataType];
+		return ss.str();
+	}
+
+	std::string MyGestLetter::buildSymbolName(int count) {
+		std::stringstream ss;
+		ss << ltrName << "_" << buildStrFromInt(IKSolve->params->clipCountOffset + count) ;
+		return ss.str();
+	}// buildSymbolName
 	//symbol file describing the trajectories that make up this symbol - called from xml parser
 	//per symbol list of trajectory file names
 	void MyGestLetter::buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames){
 		symbols.clear();
-		std::stringstream ss;
+		//std::stringstream ss;
 		for (int i = 0; i < numFileSymbols; ++i) {
-			ss.str("");
-			ss << ltrName << "_" << buildStrFromInt(IKSolve->params->clipCountOffset + i)<< "_train";
-			symbols.push_back(std::make_shared<MyGestSymbol>(ss.str(),i));
+			//ss.str("");
+			//ss << ltrName << "_" << buildStrFromInt(IKSolve->params->clipCountOffset + i)<< "_train";
+			const std::string name = buildSymbolName(i);
+			symbols.push_back(std::make_shared<MyGestSymbol>(name,i));
 			//set shared ptr ref to self
 			symbols[i]->setSolver(IKSolve);
 			symbols[i]->flags[symbols[i]->isTrainDatIDX] = true;
@@ -81,7 +95,7 @@ namespace gestureIKApp {
 			std::cout << "Requested " << _totNumDesSymb << " random and file based symbols, but already have " << numTotSymbols << " made, so doing nothing."<< std::endl;
 			return;
 		}
-		std::stringstream ss;
+		//std::stringstream ss;
 		int randSymbolIDX;
 		std::shared_ptr<gestureIKApp::MyGestSymbol> tmpPtr;
 		for (int i = numTotSymbols; i < _totNumDesSymb; ++i) {		//adding symbols
@@ -89,9 +103,10 @@ namespace gestureIKApp {
 			bool isFast = (2 * (*uni)(mtrn_gen)) > numTotSymbols;
 			do {
 				randSymbolIDX = (*uni)(mtrn_gen);						//random idx of source symbol
-				ss.str("");
-				ss << ltrName << "_" << buildStrFromInt(IKSolve->params->clipCountOffset + i) << ((i < partitionForTest) ? "_train" : "_test");
-				tmpPtr = std::make_shared<MyGestSymbol>(ss.str(), randSymbolIDX);
+				//ss.str("");
+				//ss << ltrName << "_" << buildStrFromInt(IKSolve->params->clipCountOffset + i) << ((i < partitionForTest) ? "_train" : "_test");
+				const std::string name = buildSymbolName(i);
+				tmpPtr = std::make_shared<MyGestSymbol>(name, randSymbolIDX);
 				tmpPtr->setSolver(IKSolve);
 				if (i < partitionForTest) {
 					tmpPtr->flags[tmpPtr->isTrainDatIDX] = true;

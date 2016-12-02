@@ -74,6 +74,10 @@ namespace gestureIKApp {
 		//whether or not to use fixed global velocity for all trajectories
 		inline bool useFixedGlblVel() { return (dataType == CONST_VEL); }
 		void resetValues();
+		//set current date as date-based file name offset
+		void setDateFNameOffset();
+		//get the string that will be used to offset a particular generation of letters - this will add some date-based string to each generated dataset
+		std::string getGenOffsetStr() { return dateFNameOffset; }
 
 		friend std::ostream& operator<<(std::ostream& out, GestIKParams& GestIK);
 
@@ -143,6 +147,9 @@ namespace gestureIKApp {
 
 		//background colors
 		double bkgR, bkgG, bkgB, bkgA;
+
+		//not saved as default or read from file : string to hold some value that denotes current date.   used to add to generated file names to make unique
+		std::string dateFNameOffset;
 
 	private :
 		std::vector<bool> flags;									//various boolean flags used to drive GestIK

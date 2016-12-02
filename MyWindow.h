@@ -142,10 +142,14 @@ public:
 		}
 	}
 
+	bool makeDirectory(const std::string& tmp);
+
 	//return string of full path to where the screen cap files will be written
 	inline std::string getFullBasePath() {
 		std::stringstream ss;
-		ss << framesFilePath << (flags[useLtrTrajIDX] ? "letters/" : "samples/" );
+		ss << framesFilePath;
+		if (flags[useLtrTrajIDX]) {	ss << "letters_" << DataType2strAbbrev[IKSolve->params->dataType] <<"_"<< IKSolve->params->dateFNameOffset << "/";}
+		else {		ss <<"samples/";	}		
 		return ss.str();
 	}
 

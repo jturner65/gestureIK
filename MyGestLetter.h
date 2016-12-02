@@ -98,6 +98,10 @@ namespace gestureIKApp {
 		void drawAllSymbols(dart::renderer::RenderInterface* mRI);
 		//draw all components of trajectory of current symbol
 		void drawLetter(dart::renderer::RenderInterface* mRI);
+		//build name of current symbol
+		std::string buildSymbolName(int count);
+		//file name for symbol - includes date as prefix and datatype as suffix
+		std::string getSymbolFileName();
 
 		std::string getCurSymbolName() { return symbols[curSymbolIDX]->name; }
 		int getCurSymbolFrame() { return symbols[curSymbolIDX]->curFrame; }

@@ -40,7 +40,7 @@
 #include <iostream>
 #include <math.h>       /* fmod */
 #include <direct.h>
-
+ 
 #include <fstream>
 
 
@@ -120,7 +120,7 @@ void MyWindow::openIndexFile(bool isTrain, std::ofstream& strm, bool append) {
 //or current symbol name if using letters
 std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
 	if (flags[useLtrTrajIDX]) {
-		return curLetter->getCurSymbolName();
+		return curLetter->getSymbolFileName();
 	}
 	else {
 		std::stringstream ss("");
@@ -480,6 +480,17 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		}
 		flags[initTrnDatCapIDX] = true;
 		flags[useLtrTrajIDX] = true;
+		std::stringstream ss;
+		ss << getFullBasePath();
+		const std::string tmp = ss.str();
+		bool made = makeDirectory(tmp);
+		if (!made) {
+			std::cout << "Failed to make base letter directory : " << tmp << std::endl;
+			return;
+		}
+		else {
+			std::cout << "Made base letter directory : " << tmp << std::endl;
+		}
 		//turn off any tests that may have been initiated
 		flags[testLtrQualIDX] = false;
 		for (int i = 0; i < letters.size(); ++i) { letters[i]->setTestLtrQual(flags[testLtrQualIDX]); }
@@ -559,12 +570,7 @@ void MyWindow::regenerateSampleData(bool rand) {
 	}//idx 0 corresponds to circle but not used.
 }
 
-//get file name for screen shot based on current trajectory name and count of frames
-std::string MyWindow::getScreenCapDirFileName() {
-	std::stringstream ss;
-	ss << getFullBasePath() << curTrajDirName;
-	const std::string tmp = ss.str();
-
+bool MyWindow::makeDirectory(const std::string& tmp) {
 	int nError = 0;
 #if defined(_WIN32)
 	nError = _mkdir(tmp.c_str()); // can be used on Windows
@@ -572,8 +578,28 @@ std::string MyWindow::getScreenCapDirFileName() {
 	nError = mkdir(tmp.c_str(), 0733); // can be used on non-Windows
 #endif
 	if ((nError != 0) && (nError != -1)) {//-1 is exists already
-		std::cout << "Error attempting to create path : " << tmp << "\terror : "<<nError<< std::endl;
+		std::cout << "Error attempting to create path : " << tmp << "\terror : " << nError << std::endl;
+		return false;
 	}
+	return true;
+}
+
+//get file name for screen shot based on current trajectory name and count of frames
+std::string MyWindow::getScreenCapDirFileName() {
+	std::stringstream ss;
+	ss << getFullBasePath() << curTrajDirName;
+	const std::string tmp = ss.str();
+
+//	int nError = 0;
+//#if defined(_WIN32)
+//	nError = _mkdir(tmp.c_str()); // can be used on Windows
+//#else 
+//	nError = mkdir(tmp.c_str(), 0733); // can be used on non-Windows
+//#endif
+//	if ((nError != 0) && (nError != -1)) {//-1 is exists already
+//		std::cout << "Error attempting to create path : " << tmp << "\terror : "<<nError<< std::endl;
+//	}
+	bool made = makeDirectory(tmp);
 
 	ss.str("");
 	char buf[5];

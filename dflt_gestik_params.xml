@@ -34,7 +34,7 @@
 	</parameter>
 	<parameter>
 		<name>dataCapTestTrainThresh</name>
-		<val>0.5</val>   
+		<val>.5</val>   
 	</parameter>
 	<parameter>
 		<name>dataCapNumExamples</name>
@@ -99,7 +99,7 @@
 	</parameter>
 	<parameter>
 		<name>numTotSymPerLtr</name>
-		<val>100</val> 
+		<val>30</val> 
 	</parameter>
 	<parameter>
 		<name>ltrIdxStSave</name>
@@ -109,9 +109,10 @@
 		<name>clipCountOffset</name>
 		<val>0</val> 
 	</parameter>
+<!--Set dataType 0 == const vel for all ltrs, 1 == 16 train, 2 == mult8 train/test -->
 	<parameter>
 		<name>dataType</name>
-		<val>2</val> 
+		<val>1</val> 
 	</parameter>
 	<parameter>
 		<name>bkgR</name>

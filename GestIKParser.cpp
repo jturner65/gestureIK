@@ -62,6 +62,7 @@ namespace gestureIKApp {
 			}
 			params->setCurrentValsAsDefault();			//initializes important values and sets defaults
 		}
+		params->setDateFNameOffset();
 	}//readGestIKXML
 
 	//take file name from _ltr and read in all information pertaining to representative symbols and component trajectories
