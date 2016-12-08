@@ -101,7 +101,10 @@ namespace gestureIKApp {
 		for (int i = numTotSymbols; i < _totNumDesSymb; ++i) {		//adding symbols
 			bool isDone = false;
 			bool isFast = (2 * (*uni)(mtrn_gen)) > numTotSymbols;
+			//uncomment to equally represent each source symbol
+			//randSymbolIDX = i % numFileSymbols;						//just move ahead 1 symbol - this will have each letter equally represented (except those that have too many trajectories or otherwise fail in mySymbol::buildRandomSymbol
 			do {
+				//comment out if we want to equally represent each source symbol
 				randSymbolIDX = (*uni)(mtrn_gen);						//random idx of source symbol
 				//ss.str("");
 				//ss << ltrName << "_" << buildStrFromInt(IKSolve->params->clipCountOffset + i) << ((i < partitionForTest) ? "_train" : "_test");
@@ -113,6 +116,8 @@ namespace gestureIKApp {
 				}
 				//isDone returns false if there are non-
 				isDone = tmpPtr->buildRandomSymbol(symbols[randSymbolIDX], tmpPtr, isFast);
+				//uncomment to equally represent each source symbol
+				//randSymbolIDX = (randSymbolIDX + 1) % numFileSymbols;
 			} while (!isDone);
 			symbols.push_back(tmpPtr);
 		}
