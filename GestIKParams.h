@@ -70,7 +70,7 @@ namespace gestureIKApp {
 		//whether or not to change colors of trajectories for debug display
 		inline bool chgTrajClrs() { return flags[IDX_chgTrajDbgClrs]; }
 		//whether or not to force training data to be 16 frames long
-		inline bool limitTrainTo16() { return (dataType == TRAIN_16); }
+		inline bool limitTo16Frames() { return (dataType == FIXED_16); }
 		//whether or not to use fixed global velocity for all trajectories
 		inline bool useFixedGlblVel() { return (dataType == CONST_VEL); }
 		void resetValues();

@@ -185,17 +185,16 @@ namespace gestureIKApp {
 		trajFrameIncrs.clear();
 		numTrajFrames = 0 ;
 		double trajIncrAmt = IKSolve->params->trajDesiredVel;
-		//if scale to bounds
+
 		if (IKSolve->params->useFixedGlblVel()) {//make all trajectories fixed per-frame velocity
 			trajIncrAmt = IKSolve->params->trajDesiredVel;
 			numTrajFrames = (int)(allTrajsLen / trajIncrAmt)+1;
 		}
-		else {//currently setting fixed frame count durations here
-			//if scale to bounds
-			if ((flags[isTrainDatIDX]) && IKSolve->params->limitTrainTo16()){
+		else if (IKSolve->params->limitTo16Frames()){
 				numTrajFrames = 16;
-			}
-			else {//calc variable length multiple of 16 clips
+				trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
+		}
+		else {//calc variable length multiple of 8, greater than 16 frame clips
 				double trajAvgMult = (flags[isFastDrawnIDX] ? IKSolve->params->IK_fastTrajMult : 1.0);		//alternate between slow and fast trajs
 				trajIncrAmt = (trajAvgMult * IKSolve->params->trajDesiredVel);
 				numTrajFrames = (int)(allTrajsLen / trajIncrAmt);
@@ -205,8 +204,7 @@ namespace gestureIKApp {
 				//clip to nearest mult of IKSolve->params->fixedClipLen
 				int numSegMult = (int)((numTrajFrames + (IKSolve->params->fixedClipLen - 1)) / IKSolve->params->fixedClipLen);
 				numTrajFrames = numSegMult * IKSolve->params->fixedClipLen;
-			}
-			trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
+				trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
 		}
 		//TODO build avg increments based on desired trajectory velocity profile
 		//scale amount by curavature? (slower at angles, faster at straights) scale by gravity? (faster going down, slower going up)

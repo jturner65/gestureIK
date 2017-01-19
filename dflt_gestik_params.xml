@@ -34,7 +34,7 @@
 	</parameter>
 	<parameter>
 		<name>dataCapTestTrainThresh</name>
-		<val>.5</val>   
+		<val>1.0</val>   
 	</parameter>
 	<parameter>
 		<name>dataCapNumExamples</name>
@@ -72,7 +72,6 @@
 		<name>trajRandCtrStdScale_Z</name>
 		<val>1.5</val>   
 	</parameter>
-	
 	<parameter>
 		<name>trajRandSclStd</name>
 		<val>.01</val>   
@@ -99,7 +98,7 @@
 	</parameter>
 	<parameter>
 		<name>numTotSymPerLtr</name>
-		<val>40</val> 
+		<val>1020</val> 
 	</parameter>
 	<parameter>
 		<name>ltrIdxStSave</name>
@@ -109,10 +108,10 @@
 		<name>clipCountOffset</name>
 		<val>0</val> 
 	</parameter>
-<!--Set dataType 0 == const vel for all ltrs, 1 == 16 train, 2 == mult8 train/test -->
+<!--Set dataType 0 == const vel for all ltrs, 1 == fixed 16, 2 == mult8 train/test -->
 	<parameter>
 		<name>dataType</name>
-		<val>0</val> 
+		<val>1</val> 
 	</parameter>
 	<parameter>
 		<name>bkgR</name>

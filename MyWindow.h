@@ -211,6 +211,10 @@ private:
 	//current letter in list of shrd ptrs of ltrs, current symbol in list of symbols in letter, start idx of symbols - either 0 or the # of file-loaded symbols for a letter (if specified to regen only random and not file-built sequences)
 	int curLtrIDX, curSymIDX, stSymIdx;
 
+	//hold a copy of the last screen shot for difference screens
+	std::vector<unsigned char> mScreenshotTemp3;
+
+
 	//state flags 
 	std::vector<bool> flags;				
 	static const unsigned int debugIDX = 0,				//debug mode

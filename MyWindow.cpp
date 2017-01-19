@@ -621,6 +621,14 @@ bool MyWindow::screenshot() {
 
 	// reverse temp2 temp1
 	int tw4 = tw * 4;
+
+	//if saving difference image, save it here
+	//for (int row = 0; row < th; row++) {
+	//	memcpy(&mScreenshotTemp3[row * tw4], &mScreenshotTemp2[row * tw4], tw4);		//old copy of screenshot
+	//}
+	//calc and save 
+
+
 	for (int row = 0; row < th; row++) {
 		memcpy(&mScreenshotTemp2[row * tw4], &mScreenshotTemp[(th - row - 1) * tw4], tw4);
 	}
