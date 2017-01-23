@@ -42,6 +42,7 @@
 #include "apps/gestureIK/MyWindow.h"
 
 int main(int argc, char* argv[]) {
+	glutInit(&argc, argv);
 	// create and initialize the world
 	//dart::simulation::WorldPtr myWorld = dart::utils::SkelParser::readWorld(DART_DATA_PATH"skel/fullbody1.skel");
 	dart::simulation::WorldPtr myWorld = dart::utils::SkelParser::readWorld(DART_ROOT_PATH"apps/gestureIK/fullbody1.skel");
@@ -89,7 +90,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "\tp : pause between rendering IK Frames for letters." << std::endl;
 	std::cout << "\tShift + <letter> : follow random human trajectory for <letter> " << std::endl;
 
-	glutInit(&argc, argv);
+	
 	//window.initWindow(320, 240, "Gesture IK");
 	//window.initWindow(800, 800, "Gesture IK");
 	window.initCustWindow("Gesture IK");
