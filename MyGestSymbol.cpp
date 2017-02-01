@@ -45,10 +45,10 @@
 
 namespace gestureIKApp {
 
-	MyGestSymbol::MyGestSymbol(const std::string& _name, int _srcIDX) : IKSolve(nullptr), _self(nullptr), curTraj(0), curFrame(0), numTrajFrames(0), srcSymbolIDX(_srcIDX), allTrajsLen(0), //trajVel(.03), 
+	MyGestSymbol::MyGestSymbol(const std::string& _name, int _srcIDX) : IKSolve(nullptr), _self(nullptr), cameraRot(0.5*sqrt(2), 0, -0.5*sqrt(2), 0), curFrame(0), numTrajFrames(0), srcSymbolIDX(_srcIDX), allTrajsLen(0), //trajVel(.03), 
 		sclAmt(1.0), curTrajDist(0), trajectories(0), trajLens(0), trajFrameIncrs(0), name(_name), flags(numFlags,false),
 		avgLoc(0,0,0),// maxLoc(0,0,0), 
-		ptrCtrPt(0,0,0), elbowCtrPt(0,0,0), ptrPlaneNorm(-1,0,0), elbowPlaneNorm(0,0,0), circleRad(0)
+		ptrCtrPt(0,0,0), elbowCtrPt(0,0,0), ptrPlaneNorm(-1,0,0), elbowPlaneNorm(0,0,0), circleRad(0), curTraj(0)
 
 	{
 		//show connecting trajectories
@@ -273,6 +273,23 @@ namespace gestureIKApp {
 		return false;
 	}//solve
 
+	//build random camera orientation
+	void MyGestSymbol::setRandCameraOrient() {
+		//first pick random rot axis in y/z plane and normalize
+		double phi = IKSolve->getUniRandDbl(0, 6.2832);
+		Eigen::Vector3d rotVec(0, sin(phi), cos(phi));
+		rotVec.normalize();//should be 1 already, but just in case
+		//next find x direction deviation (default camera is in positive x looking toward negative x, so this should be small) - set as rotvec
+		rotVec(0) = IKSolve->getRandDbl(0, .001);
+		rotVec.normalize();
+		//then find rotational amount thet around this axis (+/- Pi/4), build quat as w == cos(thet/2); v == sin(thet/2) * rotvec'
+		double thet = IKSolve->getUniRandDbl(-.789,.789);
+		thet *= .5;
+		cameraRot.w() = cos(thet);
+		cameraRot.vec() = sin(thet) * rotVec;
+		cameraRot.normalize();
+	}
+
 	//make this symbol a randomized version of the passed symbol - 
 	bool MyGestSymbol::buildRandomSymbol(std::shared_ptr<MyGestSymbol> _src, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast) {
 		_self = _thisSP;
@@ -283,6 +300,8 @@ namespace gestureIKApp {
 		} while (sclAmt <= 0);
 		//trajVel = IKSolve->params->trajDesiredVel;
 		flags[isFastDrawnIDX] = isFast;
+		//build random camera orientation
+		setRandCameraOrient();
 		//if (isFast) {
 		//	trajVel *= IKSolve->params->IK_fastTrajMult;
 		//}

@@ -60,7 +60,7 @@
 	</parameter>
 	<parameter>
 		<name>trajRandCtrStd</name>
-		<val>.125</val>   
+		<val>.0157</val>   
 	</parameter>
 	<parameter>
 		<name>trajRandCtrStdScale_X</name>
@@ -76,7 +76,7 @@
 	</parameter>
 	<parameter>
 		<name>trajRandSclStd</name>
-		<val>.01</val>   
+		<val>.0001</val>   
 	</parameter>
 	<parameter>
 		<name>trajNev4OvPct</name>
@@ -142,7 +142,7 @@
 	<!-- setting this to true will include the original omniglot trajectories -->
 	<parameter>
 		<name>IDX_regenNotAppend</name>
-		<val>TRUE</val> 
+		<val>FALSE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_genRandLtrs</name>

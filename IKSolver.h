@@ -113,22 +113,29 @@ namespace gestureIKApp {
 		//set sample trajectory pointer and elbow centers and normal vectors of planes drawn on (also used for defaults)
 		void setSampleCenters();
 
-		//get random double with mean mu and std = std - put here so that accessible in all classes
+		//get gauss random double with mean mu and std = std - put here so that accessible in all classes
 		inline double getRandDbl(double mu, double std = 1.0) {
 			double val = (*normDist)(mtrn_gen);
-			val *= (std * std);
+			val *= std;// (std * std); //transform val (1 stdev, 0 mean) to new variable with std stdev and mu mean using general theory of probability
 			val += mu;
 			return val;
 		}
+		//get uniform random double between min and max - put here so that accessible in all classes
+		inline double getUniRandDbl(double min, double max) {
+			if (min > max) {double t = min; min = max; max = t;	}//if wrong order, swap
+			double val = (*uniDist)(mtrn_gen);//0-1
+			val *= (max - min);		//0-(max-min)
+			val += min;				//min-max
+			return val;
+		}
 
-
-		//get random double with mean mu and std = std - put here so that accessible in all classes
+		//get gauss random double with mean mu and std = std - put here so that accessible in all classes
 		inline Eigen::Vector3d getRandVec(const Eigen::Ref<const Eigen::Vector3d>& mu, const Eigen::Ref<const Eigen::Vector3d>& stdVec) {
 			Eigen::Vector3d val(0, 0, 0);
 			val<< (*normDist)(mtrn_gen), (*normDist)(mtrn_gen), (*normDist)(mtrn_gen);
-			val(0) *= (stdVec(0) * stdVec(0));//vector to shape distribution
-			val(1) *= (stdVec(1) * stdVec(1));
-			val(2) *= (stdVec(2) * stdVec(2));
+			val(0) *= stdVec(0);//(stdVec(0) * stdVec(0));//vector to shape distribution
+			val(1) *= stdVec(1);//(stdVec(1) * stdVec(1));
+			val(2) *= stdVec(2);//(stdVec(2) * stdVec(2));
 			val += mu;
 			return val;
 		}
@@ -171,7 +178,8 @@ namespace gestureIKApp {
 
 		unsigned int numDofs;// , numCnstrnts;
 		std::shared_ptr<std::normal_distribution<double> > normDist;
-	
+		std::shared_ptr<std::uniform_real_distribution<double> > uniDist; //set to 0-1
+
 		Eigen::VectorXd initPose, newPose, lastNewPose, grads, mC;
 		Eigen::MatrixXd mJ;
 	};

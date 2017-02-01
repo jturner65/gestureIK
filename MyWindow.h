@@ -171,6 +171,7 @@ public:
 
 private:
 	inline std::string getCurrLocAndQuat();
+	inline std::string getCurrQuatAsRot(int row);
 
 	//test the results of the random # generator
 	inline void testRandom() {
@@ -196,7 +197,6 @@ private:
 	//ticks for sample traj drawing
 	std::vector<double> tVals, tBnds, tIncr;
 	//file stream for test and train index files - remove distinction, have python script handle partition
-	//std::ofstream testOutFile, trainOutFile;
 	std::ofstream trainDataFileStrm;
 	//strings for file names and directories
 	//name of directory of current trajectory
@@ -224,10 +224,6 @@ private:
 	std::shared_ptr<MyGestLetter> curLetter;
 	//current letter in list of shrd ptrs of ltrs, current symbol in list of symbols in letter, start idx of symbols - either 0 or the # of file-loaded symbols for a letter (if specified to regen only random and not file-built sequences)
 	int curLtrIDX, curSymIDX;
-
-	//hold a copy of the last screen shot for difference screens
-	std::vector<unsigned char> mScreenshotTemp3;
-
 
 	//state flags 
 	std::vector<bool> flags;				
@@ -273,8 +269,8 @@ eignVecVecTyp MyWindow::regenCorners(std::array<double, SIZE>const & arr, bool r
 			eignVecTyp crnrVec(0);
 			int arrIdx = ((i%SIZE) + stCrnr) % SIZE;
 			if (flags[debugIDX]) { std::cout << "Obj size : " << SIZE << "\tRandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << std::endl; }
-			randThet = IKSolve->getRandDbl(arr[arrIdx],  .3);
-			randRad = IKSolve->getRandDbl(rad, .2);
+			randThet = IKSolve->getRandDbl(arr[arrIdx],  .09);
+			randRad = IKSolve->getRandDbl(rad, .04);
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawCrclCtr, randThet, randRad));
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawElbowCtr, randThet, .25 * randRad));
 			crnrs.push_back(std::move(crnrVec));

@@ -55,7 +55,7 @@ using namespace dart::gui;
 
 static int screenCapCnt = 0, trainSymDatCnt = 0, trainLtrtCnt = 0, displayTmrCnt = 0, drawCnt = 0;
 
-MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_ikslvr), tVals(4), tBnds(4,1), tIncr(4,1), trainDataFileStrm(), //testOutFile(), trainOutFile(),
+MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_ikslvr), tVals(4), tBnds(4,1), tIncr(4,1), trainDataFileStrm(), 
 	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curTrajStr(trajNames[0]), curClassName(trajNames[0]), curSymIDX(0),
 	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0),
 	flags(numFlags,false){
@@ -99,7 +99,6 @@ MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_i
 
 	////read all letter files and build trajectories
 	//buildLetterList();
-	
 	
 	curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
 	//set refresh function
@@ -167,8 +166,6 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 		else {
 			std::cout << "Initializing random data collection for Letter Trajectories." << std::endl;
 			bool append = !IKSolve->params->regenNotAppend();
-			//openIndexFile(false, testOutFile, append);
-			//openIndexFile(true, trainOutFile, append);
 			openIndexFile(trainDataFileStrm, append);
 			//1st time initialize letter collection - init curLtrIDX, curSymIDX
 			curLtrIDX = IKSolve->params->ltrIdxStSave;		//either start at beginning or start at a specific letter
@@ -178,8 +175,6 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 		trainLtrDatManageCol();
 	}
 	else {  //original symbols - triangle, square, star
-		//openIndexFile(false, testOutFile, false);
-		//openIndexFile(true, trainOutFile, false);
 		openIndexFile(trainDataFileStrm, false);
 		std::cout << "Initializing random data collection for Symbols."<< std::endl;
 		//initialize starting idxs, t values and counts of training and testing data for all symbol trajectories
@@ -203,8 +198,6 @@ void MyWindow::trainLtrDatManageCol() {
 		curSymIDX = IKSolve->params->regenNotAppend() ? 0 : letters[curLtrIDX]->numFileSymbols;		//either start at beginning or start saving only randomized letters - get rid of this when moving to each letter to control symbols drawn
 		if (!flags[testLtrQualIDX]) {//not testing, so close training data filename listing file
 			trainDataFileStrm.close();
-			//testOutFile.close();
-			//trainOutFile.close();
 		}
 		flags[testLtrQualIDX] = false;
 		return;
@@ -217,9 +210,6 @@ void MyWindow::trainLtrDatManageCol() {
 	curTrajDirName = getCurTrajFileDir(-1);
 	//need to write entry into either testing or training file - if dataGenIters > some threshold make train file, else make test file 
 	if (!flags[testLtrQualIDX]) {
-		//DEPRECATED : remove distinction between test/train - have python script handle this
-		//if (curLetter->symbols[curSymIDX]->isTrainDat()) {trainDatWriteIndexFile(trainOutFile, curTrajDirName, curLtrIDX);}
-		//else {	trainDatWriteIndexFile(testOutFile, curTrajDirName, curLtrIDX);}
 		trainDatWriteIndexFile(trainDataFileStrm, curTrajDirName, curLtrIDX);
 		mCapture = true;
 	}
@@ -346,7 +336,9 @@ void MyWindow::draw() {
 	glDisable(GL_LIGHTING);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	//cout << "draw start : " << (drawCnt) << std::endl;
-
+	if (nullptr != curLetter) {
+		mTrackBall.setQuaternion(curLetter->curSymbol->cameraRot);
+	}
 	drawSkels();
 	//traw tracked markers
 	if (flags[drawTrkMrkrsIDX]) {
@@ -364,17 +356,33 @@ void MyWindow::draw() {
 	}
 	drawEntities();
 	if (flags[debugIDX]) {
-		glColor3f(0.0, 0.0, 0.0);
+		glColor3f(1.0, 0.0, 0.0);
+		dart::gui::drawStringOnScreen(0.02f, 0.11f, getCurrQuatAsRot(0));
+		dart::gui::drawStringOnScreen(0.02f, 0.08f, getCurrQuatAsRot(1));
+		dart::gui::drawStringOnScreen(0.02f, 0.05f, getCurrQuatAsRot(2));
 		dart::gui::drawStringOnScreen(0.02f, 0.02f, getCurrLocAndQuat());
 	}
 	glEnable(GL_LIGHTING);
 	//cout << "draw end : " << (drawCnt++) << std::endl;
 }
 
+std::string MyWindow::getCurrQuatAsRot(int row) {
+	std::stringstream ss;
+	ss.str("");
+	ss << "Row " << row << " :  ["; //<< this->mTrackBall.getRotationMatrix().row(row) << "]";
+	Eigen::Vector3d matRow = this->mTrackBall.getRotationMatrix().row(row);
+
+	ss << std::fixed << std::setprecision(6) << matRow(0) << "   ";
+	ss << std::fixed << std::setprecision(6) << matRow(1) << "   ";
+	ss << std::fixed << std::setprecision(6) << matRow(2);
+	ss << "]";
+	return ss.str();
+}
+
 std::string MyWindow::getCurrLocAndQuat() {
 	std::stringstream ss;
 	ss.str("");
-	ss << "Loc : " << buildStrFrmEigV3d(this->mTrans) << "\tZoom : "<<(this->mZoom)<<"\tQuat : w:" << this->mTrackBall.getCurrQuat().w() << " vec : (" << buildStrFrmEigV3d(this->mTrackBall.getCurrQuat().vec()) << ")"<< std::endl;
+	ss << "Loc : " << buildStrFrmEigV3d(this->mTrans) << "     Zoom : "<<(this->mZoom)<<"     Quat : w:" << this->mTrackBall.getCurrQuat().w() << " | vec : (" << buildStrFrmEigV3d(this->mTrackBall.getCurrQuat().vec()) << ")"<< std::endl;
 	return ss.str();
 }
 
@@ -452,7 +460,7 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 	case 'd': { // debug mode
 		flags[debugIDX] = !flags[debugIDX];
 		std::cout << "Debug Mode : " << (flags[debugIDX] ? "True" : "False") << std::endl;
-		for (int i = 0; i < letters.size(); ++i) { letters[i]->setSymbolFlags(debugIDX, flags[debugIDX]); }	//debugIDX is 0 in every class
+		for (int i = 0; i < letters.size(); ++i) { letters[i]->setDebug( flags[debugIDX]); }	//debugIDX is 0 in every class
 		break; }
 	case 'e': { // show all letter trajectories
 		flags[showAllTrajsIDX] = !flags[showAllTrajsIDX];
@@ -533,15 +541,6 @@ std::string MyWindow::getScreenCapDirFileName() {
 	ss << getFullBasePath() << curTrajDirName;
 	const std::string tmp = ss.str();
 
-//	int nError = 0;
-//#if defined(_WIN32)
-//	nError = _mkdir(tmp.c_str()); // can be used on Windows
-//#else 
-//	nError = mkdir(tmp.c_str(), 0733); // can be used on non-Windows
-//#endif
-//	if ((nError != 0) && (nError != -1)) {//-1 is exists already
-//		std::cout << "Error attempting to create path : " << tmp << "\terror : "<<nError<< std::endl;
-//	}
 	bool made = makeDirectory(tmp);
 
 	ss.str("");
@@ -565,19 +564,10 @@ bool MyWindow::screenshot() {
 	// reverse temp2 temp1
 	int tw4 = tw * 4;
 
-	//if saving difference image, save it here
-	//for (int row = 0; row < th; row++) {
-	//	memcpy(&mScreenshotTemp3[row * tw4], &mScreenshotTemp2[row * tw4], tw4);		//old copy of screenshot
-	//}
-	//calc and save 
-
-
 	for (int row = 0; row < th; row++) {
 		memcpy(&mScreenshotTemp2[row * tw4], &mScreenshotTemp[(th - row - 1) * tw4], tw4);
 	}
-
 	unsigned result = lodepng::encode(fileName, mScreenshotTemp2, tw, th);
-
 	// if there's an error, display it
 	if (result) {
 		std::cout << "lodepng error " << result << ": "
@@ -678,14 +668,7 @@ void MyWindow::trainSymDatManageCol() {
 	//global name of directory to write to, of form : <trajType>_<trajIter> --> add _<frame#>.png for file name
 	curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
 
-	//need to write entry into either testing or training file - if dataGenIters > some threshold make train file, else make test file
-	//DEPRECATED : remove distinction between test/train - have python script handle this
-	//if (dataGenIters[curTraj] < IKSolve->params->dataCapTestTrainThresh*IKSolve->params->dataCapNumExamples) {
-	//	trainDatWriteIndexFile(trainOutFile, curTrajDirName, curTraj);
-	//}
-	//else {
-	//	trainDatWriteIndexFile(testOutFile, curTrajDirName, curTraj);
-	//}
+	//need to write entry into index file
 	trainDatWriteIndexFile(trainDataFileStrm, curTrajDirName, curTraj);
 	//after drawing all frames of a trajectory the following needs to be reset (i.e. every call of this function) - this is frame # of capture of current trajectory
 	captCount[curTraj] = 0;
@@ -704,8 +687,6 @@ void MyWindow::trainSymDatManageCol() {
 	else {//at curTraj == 0 we have completed all data gen, and should stop - reset all important stuff to circle as if key 1 was pressed
 		flags[collectDataIDX] = false;
 		trainDataFileStrm.close();
-		//testOutFile.close();
-		//trainOutFile.close();
 		setDrawLtrOrSmpl(false, 0);
 		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
 		std::cout << "Finished generating test/train data, reset to sample " << trajNames[curTraj] << " trajectory" << std::endl;
@@ -753,17 +734,6 @@ void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajA
 		writeTrajCSVFileRow(outFile, _trajAraAra[row]);
 	}
 }//writeTrajCSVFile
- ////DEPRECATED : no longer build train/test split in generating program, use python processing script to partition data for caffe
- //void MyWindow::openIndexFile(bool isTrain, std::ofstream& strm, bool append) {
- //	std::stringstream ss;
- //	ss << getFullBasePath() << (isTrain ? "TrainDataIndexFile.txt" : "TestDataIndexFile.txt");
- //	const std::string tmp = ss.str();
- //	std::ios_base::openmode mode = (append ? std::fstream::app : std::fstream::out);
- //	strm.open(tmp.c_str(), mode);
- //	if (!strm.is_open()) {
- //		std::cout << tmp << " failed to open!"<< std::endl;
- //	}
- //}//openIndexFile
 
  //write a row == 1 frame of 1-mrkr-per-col traj data
 void MyWindow::writeTrajCSVFileRow(std::ofstream& outFile, eignVecTyp& _trajAra) {

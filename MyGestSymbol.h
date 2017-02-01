@@ -52,12 +52,13 @@ namespace dart {
 } // namespace dart
 
 namespace gestureIKApp {
-	class IKSolver;
 	class MyGestTraj;
+	class IKSolver;
 
 	//collection of 1 or more trajectories making up a symbol
 	class MyGestSymbol {
 	public:
+		
 		MyGestSymbol(const std::string& name, int srcIDX);
 		virtual ~MyGestSymbol();
 
@@ -90,23 +91,33 @@ namespace gestureIKApp {
 		//process trajectories and build linking trajectories to connect disjoint trajectories
 		void buildTrajComponents();
 
+		//set random camera orientation
+		void setRandCameraOrient();
+
 		//set symbol trajectory pointer and elbow centers and normal vectors of planes drawn on - planeNorm must be specified first
 		void setSymbolCenters(const Eigen::Ref<const Eigen::Vector3d>& ctPt);
 
 		//generate transition traj between symbols using neville
 		std::shared_ptr<MyGestTraj> genConnectTraj(const Eigen::Ref<const Eigen::Vector3d>& ctPt, const Eigen::Ref<const Eigen::Vector3d>& traj1End, const Eigen::Ref<const Eigen::Vector3d>& traj2St);
 		std::shared_ptr<MyGestTraj> genInterSymbolTraj(const Eigen::Ref<const Eigen::Vector3d>& ctPt, const Eigen::Ref<const Eigen::Vector3d>& sym1End, const Eigen::Ref<const Eigen::Vector3d>& midpt, const Eigen::Ref<const Eigen::Vector3d>& sym2St);
-		
-		//is this symbol a training data symbol or a test data symbol
-		//bool isTrainDat() { return flags[isTrainDatIDX]; }
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestSymbol& sym);
+		// To get byte-aligned Eigen vectors
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 	public:	//variables
 		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver
 		std::shared_ptr<MyGestSymbol> _self;									//ref to shared ptr to self, to be handed off to trajectories
 
-		unsigned int// curTraj,													//idx of current trajectory being processed
+		//symbol needs to own all randomization values, such as 
+		//	skeleton head : size variation (width, height), color; 
+		//	hand : color, shape (ellipse or rectangle), size (w/h); 
+		//	skel body : size(w/h); 
+		//	camera : location, direction, look-at point
+		//random camera rotation
+		Eigen::Quaterniond cameraRot;											//needs to be normalized, multiply current orientation quat in MyWindow
+
+		unsigned int
 			curFrame,															//current frame of this letter being processed
 			numTrajFrames,														//# of frames this symbol has
 			srcSymbolIDX;														//idx in owning letter symbols vector of source symbol for this symbol, or it's own idx if from a file
@@ -128,7 +139,6 @@ namespace gestureIKApp {
 			randCircleIDX = 3,					//if true, randomize the center, radius and plane normal of the bounding circle of this letter
 			isFastDrawnIDX = 4,					//this symbol is drawn quickly - flip orientation of elbow plane normal, 1.5x base drawing speed
 			isDoneDrawingIDX = 5,				//finished drawing this symbol
-			//isTrainDatIDX = 6,				//is training or testing example - removed - python script needs to manage partition between test and train
 			showAllTrajsIDX = 6;				//show all letter trajectories
 
 		static const unsigned int numFlags = 7;
@@ -143,7 +153,6 @@ namespace gestureIKApp {
 
 	private : 
 		unsigned int curTraj;													//idx of current trajectory being processed
-
 
 	};
 } // namespace gestureIKApp

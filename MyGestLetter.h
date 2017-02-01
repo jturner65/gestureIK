@@ -82,27 +82,22 @@ namespace gestureIKApp {
 		}
 		//build the symbols that are built from file descriptions
 		void buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames);
-
-
-		//generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present (# randomized * # from files, probably)
-		//void buildRandomSymbolTrajs(int _totNumDesSymb, int partitionForTest);
+		//generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present
 		void buildRandomSymbolTrajs(int _totNumDesSymb);
 
 		//build a single random symbol for this letter
-		//std::shared_ptr<gestureIKApp::MyGestSymbol> buildRandSymbol(int idx, int partitionForTest);
 		std::shared_ptr<gestureIKApp::MyGestSymbol> buildRandSymbol(int idx);
 
-
 		//set solver for this trajectory
-		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
+		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv) { IKSolve = _slv; }
 		////set symbol to draw to be random entry in symbols list
 		//void setRandSymbolIdx(int idx, bool disp);
+		//turn on/off debug
+		void setDebug(bool val) { setSymbolFlags(debugIDX, val); }
 		//turn on/off testing of letter quality
-		void setTestLtrQual(bool val) {	setSymbolFlags(testLtrQualIDX, val);	}
+		void setTestLtrQual(bool val) { setSymbolFlags(testLtrQualIDX, val); }
 		//set symbol and letter idx
 		void setSymbolIdx(int idx, int symIdx, bool disp);
-		//set flags of all subordinate symbols
-		void setSymbolFlags(int idx, bool val);
 		//draw all letters to test range of values from randomization
 		void drawSymbolTrajDist(dart::renderer::RenderInterface* mRI);
 		//draw all components of trajectory of current symbol
@@ -125,7 +120,14 @@ namespace gestureIKApp {
 		}
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestLetter& ltr);
+		// To get byte-aligned Eigen vectors
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+	protected : 
+		//set flag values for all symbols of this letter - idx needs to be appropriate MyGestSymbol flag idx
+		void setSymbolFlags(int idx, bool val) {
+			for (int i = 0; i < symbols.size(); ++i) { symbols[i]->setFlags(idx, val); }
+		}
 
 	public :	//variables
 		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver

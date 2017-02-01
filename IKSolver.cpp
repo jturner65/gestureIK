@@ -96,7 +96,7 @@ namespace gestureIKApp {
 		lastNewPose = newPose;
 		//normal distribution randomiser
 		normDist = std::make_shared<std::normal_distribution<double> >(0, 1.0);
-
+		uniDist = std::make_shared<std::uniform_real_distribution<double> >(0, 1.0);
 	}
 	IKSolver::~IKSolver(){}
 
