@@ -68,7 +68,7 @@ namespace gestureIKApp {
 			//NOTE Trajectory timing info from matlab includes time span between ending and beginning trajectories.  might need to normalize for this
 		}
 		//all trajectories read by here, and each traj's srcTrajData is set
-		//find average, min and max values in matab space for all and set all trajs with info
+		//find average, min and max values in matab space for all and set all trajs with info - need this to project symbol in front of char for IK
 		calcTransformPts();
 		//build trajectories and linking trajectories
 		buildTrajComponents();
@@ -109,7 +109,6 @@ namespace gestureIKApp {
 		}
 		trajectories = tmpTraj;
 		tmpTraj.clear();
-
 
 		//if (name.compare("b_12") == 0) {
 		//	std::cout << "letter b_12 about to check trajectories.size() : "<< trajectories.size() << std::endl;
@@ -172,7 +171,7 @@ namespace gestureIKApp {
 			}
 			trajLens.push_back(allTrajsLen);
 		}
-		if (isnan(allTrajsLen)) {
+		if (std::isnan(allTrajsLen)) {
 			std::cout << "NAN traj length for " << name << " so setting to 0."<< std::endl;
 			allTrajsLen = 0;
 		}
@@ -220,8 +219,7 @@ namespace gestureIKApp {
 		//	trajLen += trajFrameIncrs[i];
 		//}
 		//}
-	}
-
+	}//buildTrajFrameIncrs
 
 	 //set up all variables for initial IK'ing of this symbol's trajectories
 	void MyGestSymbol::initSymbolIK() {

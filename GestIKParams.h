@@ -88,7 +88,8 @@ namespace gestureIKApp {
 		//base value of # of trajectories to capture for training and testing data ONLY SAMPLE SYMBOLS - use numTotSymPerLtr for letter trajectories
 		int dataCapNumExamples;
 		//threshold between testing and training data as % of total data captured
-		double dataCapTestTrainThresh;
+		//REMOVED : handle partitioning in python script
+		//double dataCapTestTrainThresh;
 		
 		//IK solver and skel configuration parameters
 		//% of full reach to set up imaginary writing plane

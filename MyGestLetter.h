@@ -58,7 +58,7 @@ omniglot is collected amazon turk data
 symbols in BPL omniglot data have x,y data and time in milliseconds, individually recorded for each component trajectory
 alphabet is #22, latin, in dataset
 
-each symbol will be recorded in xml file with # of component trajectories, names of each trajectory file.
+each symbol will be referenced in xml file with # of component trajectories, names of each trajectory file.
 each trajectory file will be csv file of location of primary trajectory x,y points and velocities
 */
 namespace gestureIKApp {
@@ -82,12 +82,21 @@ namespace gestureIKApp {
 		}
 		//build the symbols that are built from file descriptions
 		void buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames);
+
+
 		//generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present (# randomized * # from files, probably)
-		void buildRandomSymbolTrajs(int _totNumDesSymb, int partitionForTest);
+		//void buildRandomSymbolTrajs(int _totNumDesSymb, int partitionForTest);
+		void buildRandomSymbolTrajs(int _totNumDesSymb);
+
+		//build a single random symbol for this letter
+		//std::shared_ptr<gestureIKApp::MyGestSymbol> buildRandSymbol(int idx, int partitionForTest);
+		std::shared_ptr<gestureIKApp::MyGestSymbol> buildRandSymbol(int idx);
+
+
 		//set solver for this trajectory
 		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
-		//set symbol to draw to be random entry in symbols list
-		void setRandSymbolIdx(int idx, bool disp);
+		////set symbol to draw to be random entry in symbols list
+		//void setRandSymbolIdx(int idx, bool disp);
 		//turn on/off testing of letter quality
 		void setTestLtrQual(bool val) {	setSymbolFlags(testLtrQualIDX, val);	}
 		//set symbol and letter idx
@@ -95,19 +104,24 @@ namespace gestureIKApp {
 		//set flags of all subordinate symbols
 		void setSymbolFlags(int idx, bool val);
 		//draw all letters to test range of values from randomization
-		void drawAllSymbols(dart::renderer::RenderInterface* mRI);
+		void drawSymbolTrajDist(dart::renderer::RenderInterface* mRI);
 		//draw all components of trajectory of current symbol
 		void drawLetter(dart::renderer::RenderInterface* mRI);
 		//build name of current symbol
 		std::string buildSymbolName(int count);
+
+		//return numTotSymbols - number of all symbols to be drawn
+		int getNumSymbols() { return symbols.size(); }
 		//file name for symbol - includes date as prefix and datatype as suffix
 		std::string getSymbolFileName();
 
-		std::string getCurSymbolName() { return symbols[curSymbolIDX]->name; }
-		int getCurSymbolFrame() { return symbols[curSymbolIDX]->curFrame; }
-		//set flags to show all letter trajectories
+		std::string getCurSymbolName() { return curSymbol->name; }
+		int getCurSymbolFrame() { return curSymbol->curFrame; }
+
+		//set flags to show all letter trajectories - TODO : replace with setting symbols directly when generating symbols as needed
 		inline void setShowAllTrajs(bool val) {
-			for (int i = 0; i < symbols.size(); ++i) { symbols[i]->setShowAllTrajs(val); }
+			flags[showAllTrajsIDX] = val;
+			for (int i = 0; i < symbols.size(); ++i) { symbols[i]->setShowAllTrajs(flags[showAllTrajsIDX]); }
 		}
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestLetter& ltr);
@@ -123,10 +137,15 @@ namespace gestureIKApp {
 		unsigned int curSymbolIDX;
 		//# of examples of this letter from files
 		unsigned int numFileSymbols;
-		//# of total symbols of this letter (# randomized * # from files, probably)
+		//# of total symbols of this letter to be IK'ed to
 		unsigned int numTotSymbols;
-		//instances of this letter
-		std::vector<std::shared_ptr<gestureIKApp::MyGestSymbol> > symbols;		
+		//source instances of this letter - these are what are drawn from to build random symbols
+		std::vector<std::shared_ptr<gestureIKApp::MyGestSymbol> > srcSymbols;
+		//instances of this letter - TODO get rid of this
+		std::vector<std::shared_ptr<gestureIKApp::MyGestSymbol> > symbols;
+
+		//currently used symbol
+		std::shared_ptr<gestureIKApp::MyGestSymbol> curSymbol;
 		
 		std::string ltrName;													//letter name
 		std::string fileName;													//xml filename source for the symbols and trajectories of this letter
@@ -134,9 +153,10 @@ namespace gestureIKApp {
 
 		std::vector<bool> flags;					//state flags of trajectory
 		static const unsigned int debugIDX = 0,		//debug mode
-			testLtrQualIDX = 1;						//test all symbols to make sure no abberrant trajectories
+			testLtrQualIDX = 1,						//test all symbols to make sure no abberrant trajectories
+			showAllTrajsIDX = 2;					//show all trajectories of letters, to show distribution results
 
-		static const unsigned int numFlags = 2;
+		static const unsigned int numFlags = 3;
 
 
 	};

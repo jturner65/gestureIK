@@ -98,7 +98,7 @@ namespace gestureIKApp {
 		std::shared_ptr<MyGestTraj> genInterSymbolTraj(const Eigen::Ref<const Eigen::Vector3d>& ctPt, const Eigen::Ref<const Eigen::Vector3d>& sym1End, const Eigen::Ref<const Eigen::Vector3d>& midpt, const Eigen::Ref<const Eigen::Vector3d>& sym2St);
 		
 		//is this symbol a training data symbol or a test data symbol
-		bool isTrainDat() { return flags[isTrainDatIDX]; }
+		//bool isTrainDat() { return flags[isTrainDatIDX]; }
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestSymbol& sym);
 
@@ -128,10 +128,10 @@ namespace gestureIKApp {
 			randCircleIDX = 3,					//if true, randomize the center, radius and plane normal of the bounding circle of this letter
 			isFastDrawnIDX = 4,					//this symbol is drawn quickly - flip orientation of elbow plane normal, 1.5x base drawing speed
 			isDoneDrawingIDX = 5,				//finished drawing this symbol
-			isTrainDatIDX = 6,
-			showAllTrajsIDX = 7;				//show all letter trajectories
+			//isTrainDatIDX = 6,				//is training or testing example - removed - python script needs to manage partition between test and train
+			showAllTrajsIDX = 6;				//show all letter trajectories
 
-		static const unsigned int numFlags = 8;
+		static const unsigned int numFlags = 7;
 
 		Eigen::Vector3d avgLoc;													//average location of symbol data in matlab space
 

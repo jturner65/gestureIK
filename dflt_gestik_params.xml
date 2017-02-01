@@ -32,10 +32,12 @@
 		<name>IK_ctrYOffset</name>
 		<val>-0.05</val>   
 	</parameter>
+<!-- removed : all test/train partitioning needs to be done in python script
 	<parameter>
 		<name>dataCapTestTrainThresh</name>
 		<val>1.0</val>   
 	</parameter>
+	-->
 	<parameter>
 		<name>dataCapNumExamples</name>
 		<val>100</val>   
@@ -98,7 +100,7 @@
 	</parameter>
 	<parameter>
 		<name>numTotSymPerLtr</name>
-		<val>1020</val> 
+		<val>30</val> 
 	</parameter>
 	<parameter>
 		<name>ltrIdxStSave</name>
@@ -137,9 +139,10 @@
 		<name>IDX_useLeftHand</name>
 		<val>FALSE</val> 
 	</parameter>
+	<!-- setting this to true will include the original omniglot trajectories -->
 	<parameter>
 		<name>IDX_regenNotAppend</name>
-		<val>FALSE</val> 
+		<val>TRUE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_genRandLtrs</name>

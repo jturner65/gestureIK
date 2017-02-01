@@ -39,8 +39,14 @@
 #include "apps/gestureIK/MyWindow.h"
 #include <iostream>
 #include <math.h>       /* fmod */
-#include <direct.h>
- 
+#if defined(_WIN32)
+	#include <direct.h>		//code for windows
+#else 
+	#include <unistd.h>
+	#include <sys/stat.h>   //code for non-Windows
+#endif
+
+#include <direct.h> 
 #include <fstream>
 
 
@@ -49,7 +55,7 @@ using namespace dart::gui;
 
 static int screenCapCnt = 0, trainSymDatCnt = 0, trainLtrtCnt = 0, displayTmrCnt = 0, drawCnt = 0;
 
-MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_ikslvr), tVals(4), tBnds(4,1), tIncr(4,1), testOutFile(), trainOutFile(),
+MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_ikslvr), tVals(4), tBnds(4,1), tIncr(4,1), trainDataFileStrm(), //testOutFile(), trainOutFile(),
 	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curTrajStr(trajNames[0]), curClassName(trajNames[0]), curSymIDX(0),
 	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0),
 	flags(numFlags,false){
@@ -82,15 +88,18 @@ MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_i
 	sqrCrnrs = regenCorners<4U>(sqCrnrConsts, false, curStIdx[2]);
 	starCrnrs = regenCorners<5U>(strCrnrConsts, false, curStIdx[3]);
 
-	////writes trajectory for circle
+	//following is for symbol generation, not used for letters
+	////writes trajectory for circle 
 	//curTraj = 0;//set to 1,2, 3 for tri/square/star
 	//void(MyWindow::*trajFunc)(eignVecTyp&);
 	//trajFunc = &MyWindow::calcCircleTrajPoints;
 	//auto trajSeq = buildTrajSeq(trajFunc, curTraj, tVals[curTraj]);
 	//writeTrajCSVFile(trajNames[curTraj], trajSeq);
+	//end symbol gen
 
 	////read all letter files and build trajectories
 	//buildLetterList();
+	
 	
 	curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
 	//set refresh function
@@ -104,14 +113,15 @@ void MyWindow::initCustWindow(std::string _winTtl) {
 	initWindow(IKSolve->params->win_Width, IKSolve->params->win_Height, _winTtl.c_str());
 }
 
-void MyWindow::openIndexFile(bool isTrain, std::ofstream& strm, bool append) {
+//handles only 1 file stream being written - use python script to split data into train/test sets
+void MyWindow::openIndexFile(std::ofstream& strm, bool append) {
 	std::stringstream ss;
-	ss << getFullBasePath() << (isTrain ? "TrainDataIndexFile.txt" : "TestDataIndexFile.txt");
+	ss << getFullBasePath() << "GenTrainDataIndexFile.txt";
 	const std::string tmp = ss.str();
-	unsigned int mode = (append ? std::fstream::app : std::fstream::out);
+	std::ios_base::openmode mode = (append ? std::fstream::app : std::fstream::out);
 	strm.open(tmp.c_str(), mode);
 	if (!strm.is_open()) {
-		std::cout << tmp << " failed to open!"<< std::endl;
+		std::cout << tmp << " failed to open!" << std::endl;
 	}
 }//openIndexFile
 
@@ -135,12 +145,8 @@ std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
 //with and without random shifts in end points,  [and moving in clockwise or ccw direction (TODO)]
 void MyWindow::trainDatInitCol(bool isLtr) {
 	if ((flags[useLtrTrajIDX]) && ((!IKSolve->params->regenNotAppend()) && (!IKSolve->params->genRandLtrs()))) {
-			std::cout << "XML specifies to not save sequences of file based letters(IDX_regenNotAppend), and to not make any random letters(IDX_genRandLtrs), and so there's nothing to save."<< std::endl;
-			curSymIDX = 0;
-			curLtrIDX = 0;
-			flags[collectDataIDX] = false;
-			setDrawLtrOrSmpl(false, 0);
-			mCapture = false;
+			std::cout << "XML specifies to not save sequences of file based letters(IDX_regenNotAppend == false), and to not make any random letters(IDX_genRandLtrs == false), and so there's nothing to save."<< std::endl;
+			resetCurVars();
 			return;
 	}	
 	flags[useLtrTrajIDX] = isLtr;
@@ -154,27 +160,27 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 		if (flags[testLtrQualIDX]){
 			std::cout << "Testing letter trajectories." << std::endl;
 			curLtrIDX = IKSolve->params->ltrIdxStSave;		//either start at beginning or start at a specific letter
-			stSymIdx = 0;									//test starting from beginning
-			curSymIDX = stSymIdx;
+			curSymIDX = 0;
 			flags[drawTrkMrkrsIDX] = true;
 			flags[drawLtrTrajIDX] = true;
 		}
 		else {
 			std::cout << "Initializing random data collection for Letter Trajectories." << std::endl;
 			bool append = !IKSolve->params->regenNotAppend();
-			openIndexFile(false, testOutFile, append);
-			openIndexFile(true, trainOutFile, append);
+			//openIndexFile(false, testOutFile, append);
+			//openIndexFile(true, trainOutFile, append);
+			openIndexFile(trainDataFileStrm, append);
 			//1st time initialize letter collection - init curLtrIDX, curSymIDX
 			curLtrIDX = IKSolve->params->ltrIdxStSave;		//either start at beginning or start at a specific letter
-			stSymIdx = append ? letters[curLtrIDX]->numFileSymbols : 0;		//either start at beginning or start saving only randomized letters
-			curSymIDX = stSymIdx;
+			curSymIDX = append ? letters[curLtrIDX]->numFileSymbols : 0;		//either start at beginning or start saving only randomized letters
 		}
 		//start capture
 		trainLtrDatManageCol();
 	}
-	else {
-		openIndexFile(false, testOutFile, false);
-		openIndexFile(true, trainOutFile, false);
+	else {  //original symbols - triangle, square, star
+		//openIndexFile(false, testOutFile, false);
+		//openIndexFile(true, trainOutFile, false);
+		openIndexFile(trainDataFileStrm, false);
 		std::cout << "Initializing random data collection for Symbols."<< std::endl;
 		//initialize starting idxs, t values and counts of training and testing data for all symbol trajectories
 		for (int i = 0; i < 4; ++i) {
@@ -190,91 +196,39 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 	}
 }//trainDatInitCol
 
-
-//manage the process of writing all training and testing data - call whenever a trajectory has been captured (from checkCapture() )
-//ONLY FOR SAMPLE SYMBOLS that consist of single trajectories!
-void MyWindow::trainSymDatManageCol() {
-	//if (flags[debugIDX]) { cout << "Start trainSymDatManageCol : " << trainSymDatCnt << std::endl; }
-	//call first time right after init
-	//flags[collectDataIDX] pre-empts flags[stCaptAtZeroIDX] so needs to set mCapture
-	//regerenate all endpoints - we start on non-random data - for current trajectory, make #verts trajectories starting on each vert without random, before using random trajectories
-	regenerateSampleData(dataGenIters[curTraj] >= (curTraj + 2));
-
-	//global name of directory to write to, of form : <trajType>_<trajIter> --> add _<frame#>.png for file name
-	curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
-
-	//need to write entry into either testing or training file - if dataGenIters > some threshold make train file, else make test file
-	if (dataGenIters[curTraj] < IKSolve->params->dataCapTestTrainThresh*IKSolve->params->dataCapNumExamples) {
-		trainDatWriteIndexFile(trainOutFile, curTrajDirName, curTraj);
-	}
-	else {
-		trainDatWriteIndexFile(testOutFile, curTrajDirName, curTraj);
-	}
-
-	//after drawing all frames of a trajectory the following needs to be reset (i.e. every call of this function) - this is frame # of capture of current trajectory
-	captCount[curTraj] = 0;
-	//...and need to advance data counts
-	dataGenIters[curTraj]++;
-
-	//after transitioning to a different symbol, the following needs to be reset
-	if (dataGenIters[curTraj] > IKSolve->params->dataCapNumExamples) {
-		dataGenIters[curTraj] = 0;
-		setDrawLtrOrSmpl(false, (curTraj + 1) % trajNames.size());		//iterate to next trajectory if we've capture sufficient samples
-		dataGenIters[curTraj] = 0;
-		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
-		std::cout << "Test/train data gen transition to sample " << trajNames[curTraj] << " trajectory"<< std::endl;
-	}
-	if (curTraj != 0) { mCapture = true; }		//repeat for next trajectory type
-	else {//at curTraj == 0 we have completed all data gen, and should stop - reset all important stuff to circle as if key 1 was pressed
-		flags[collectDataIDX] = false;
-		testOutFile.close();
-		trainOutFile.close();
-		setDrawLtrOrSmpl(false, 0);
-		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
-		std::cout << "Finished generating test/train data, reset to sample " << trajNames[curTraj] << " trajectory"<< std::endl;
-	}	
-	//if (flags[debugIDX]) { cout << "End trainSymDatManageCol : " << trainSymDatCnt++ << std::endl; }
-}
-
-//capture all letters
+//manage capture for all letters
 void MyWindow::trainLtrDatManageCol() {
 	if (curLtrIDX >= letters.size()) {//done every letter
-		curLtrIDX = 0;
-		stSymIdx = IKSolve->params->regenNotAppend() ? 0 : letters[curLtrIDX]->numFileSymbols;		//either start at beginning or start saving only randomized letters
-		curSymIDX = stSymIdx;
-		if (!flags[testLtrQualIDX]) {
-			testOutFile.close();
-			trainOutFile.close();
+		resetCurVars();
+		curSymIDX = IKSolve->params->regenNotAppend() ? 0 : letters[curLtrIDX]->numFileSymbols;		//either start at beginning or start saving only randomized letters - get rid of this when moving to each letter to control symbols drawn
+		if (!flags[testLtrQualIDX]) {//not testing, so close training data filename listing file
+			trainDataFileStrm.close();
+			//testOutFile.close();
+			//trainOutFile.close();
 		}
 		flags[testLtrQualIDX] = false;
-		flags[collectDataIDX] = false;
-		mCapture = false;
-		setDrawLtrOrSmpl(false, 0);
 		return;
 	}
 	if (!flags[testLtrQualIDX]) {
 		std::cout << "Start trainLtrDatManageCol : " << trainLtrtCnt << "\tcurLtrIDX : " << curLtrIDX << "\tcurSymbIDX : " << curSymIDX << std::endl;
 	}
 	//need to cycle through all letters 
-	setDrawLtrOrSmpl(true, curLtrIDX, false, curSymIDX);
+	setDrawLtrOrSmpl(true, curLtrIDX,  curSymIDX);
 	curTrajDirName = getCurTrajFileDir(-1);
 	//need to write entry into either testing or training file - if dataGenIters > some threshold make train file, else make test file 
 	if (!flags[testLtrQualIDX]) {
-		//if (curSymIDX < IKSolve->params->dataCapTestTrainThresh*curLetter->symbols.size()) { //flags[isTrainDatIDX]
-		if (curLetter->symbols[curSymIDX]->isTrainDat()) {
-			trainDatWriteIndexFile(trainOutFile, curTrajDirName, curLtrIDX);
-		}
-		else {
-			trainDatWriteIndexFile(testOutFile, curTrajDirName, curLtrIDX);
-		}
+		//DEPRECATED : remove distinction between test/train - have python script handle this
+		//if (curLetter->symbols[curSymIDX]->isTrainDat()) {trainDatWriteIndexFile(trainOutFile, curTrajDirName, curLtrIDX);}
+		//else {	trainDatWriteIndexFile(testOutFile, curTrajDirName, curLtrIDX);}
+		trainDatWriteIndexFile(trainDataFileStrm, curTrajDirName, curLtrIDX);
 		mCapture = true;
 	}
 	//for next iteration
 	curSymIDX += 1;
-	if (curSymIDX >= curLetter->symbols.size()){
+	//finished all symbols of this letter
+	if (curSymIDX >= curLetter->getNumSymbols()){
 		curLtrIDX += 1;
-		stSymIdx = IKSolve->params->regenNotAppend() ? 0 : (curLtrIDX >= letters.size() ? 0 : letters[curLtrIDX]->numFileSymbols);		//either start at beginning or start saving only randomized letters
-		curSymIDX = stSymIdx;
+		curSymIDX = (IKSolve->params->regenNotAppend() || (curLtrIDX >= letters.size())) ? 0 : letters[curLtrIDX]->numFileSymbols;			//either start at beginning or start saving only randomized letters - set to 0 after all letters finished
 	}
 	if (!flags[testLtrQualIDX]) {
 		std::cout << "End trainLtrDatManageCol : " << trainLtrtCnt++ << std::endl;
@@ -289,7 +243,6 @@ void MyWindow::trainDatWriteIndexFile(std::ofstream& outFile, const std::string&
 	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
 	outFile << ss.str();
 }
-
 
 //build map of all available symbols, idxed by name
 void MyWindow::buildLetterList() {
@@ -308,8 +261,9 @@ void MyWindow::buildLetterList() {
 	}
 	else {
 		for (int i = 0; i < letters.size(); ++i) {
-			if (IKSolve->params->numTotSymPerLtr > letters[i]->symbols.size()) {
-				letters[i]->buildRandomSymbolTrajs(IKSolve->params->numTotSymPerLtr, IKSolve->params->dataCapTestTrainThresh* IKSolve->params->numTotSymPerLtr);
+			if (IKSolve->params->numTotSymPerLtr > letters[i]->getNumSymbols()) {
+				//letters[i]->buildRandomSymbolTrajs(IKSolve->params->numTotSymPerLtr, IKSolve->params->dataCapTestTrainThresh* IKSolve->params->numTotSymPerLtr);
+				letters[i]->buildRandomSymbolTrajs(IKSolve->params->numTotSymPerLtr);
 				std::cout << "Made " << (IKSolve->params->numTotSymPerLtr - letters[i]->numFileSymbols) << " Random versions of letter : " << (*letters[i]) << std::endl;
 			}
 			else {
@@ -346,7 +300,7 @@ void MyWindow::displayTimer(int _val){
 
 	//if (flags[debugIDX]) { cout << "displayTimer : IKSolve start"<< std::endl; }
 	if (flags[useLtrTrajIDX]) {
-		if (flags[pauseIKLtrIDX]) {//wait for keypress between draw frames			
+		if (flags[pauseIKLtrIDX]) {//wait for 20 frames between draw frames			
 			pauseCount = pauseCount + 1;
 			if (pauseCount % 20 != 0) {
 				//exit without IK solving
@@ -359,11 +313,11 @@ void MyWindow::displayTimer(int _val){
 		}
 
 		//cout << "TODO : IK on letter " << curLetter->ltrName << " symbol idx : "<< curLetter->curSymbol << std::endl;
-		//setup trajectories and then solve 
+		//setup trajectories and then solve - executes IK to current trajectory location and returns true if done
 		flags[doneTrajIDX] = curLetter->solve();
 		//if (flags[debugIDX]) { cout << "displayTimer : letter solve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << std::endl; }
 	}
-	else {
+	else {//IK on sample symbols
 		switch (curTraj) {
 		case 0: {		calcCircleTrajPoints(mTrajPoints);		break;		}
 		case 1: {		calcTrajPoints(mTrajPoints, triCrnrs, (curTraj + 2), tVals[curTraj]);		break;		}
@@ -398,8 +352,8 @@ void MyWindow::draw() {
 	if (flags[drawTrkMrkrsIDX]) {
 		IKSolve->drawTrkMrkrs(mRI, true);
 	}
-	if (flags[showAllTrajsIDX] && flags[useLtrTrajIDX] && (nullptr != curLetter)) {//if show all trajs and showing letters and a current letter exists
-			curLetter->drawAllSymbols(mRI);
+	if (flags[showAllTrajsIDX] && flags[useLtrTrajIDX] && (nullptr != curLetter)) {//if show all trajs (show all symbols for a letter, for debugging) and showing letters and a current letter exists
+			curLetter->drawSymbolTrajDist(mRI);
 	} else if (flags[drawLtrTrajIDX]) {
 		if (flags[useLtrTrajIDX] && (nullptr != curLetter)) {
 			curLetter->drawLetter(mRI);			
@@ -442,31 +396,20 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 			std::cout << "Insufficient letters loaded (" << letters.size() << ") to handle letter : "<< static_cast<char>(keyVal) <<" at idx : "<<idx<< std::endl;
 			return;
 		}
-		//setDrawLtrOrSmpl(true, idx, true, -1);
-		setDrawLtrOrSmpl(true, idx, false, curSymIDX);
-		curSymIDX = (curSymIDX + 1) % curLetter->symbols.size();
+		//repeatedly pressing the same letter will cycle through all available symbols of that letter
+		setDrawLtrOrSmpl(true, idx, curSymIDX);
+		curSymIDX = (curSymIDX + 1) % curLetter->getNumSymbols();
 		return;
 	} 
 	switch (_key) {
-	case '1': {  // st trajectory to traj 1
-		setDrawLtrOrSmpl(false, 0);
+		//1-4 are all sample trajectories - char '1' == 49
+	case '1':
+	case '2':
+	case '3':
+	case '4': {  // st trajectory to traj 1
+		setDrawLtrOrSmpl(false, keyVal - 49);
 		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
 		std::cout << "sample "<< trajNames[curTraj] << " trajectory"<< std::endl;
-		break; }
-	case '2': {  // st trajectory to traj 2 tTri, tSqr, tStar,
-		setDrawLtrOrSmpl(false, 1);
-		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
-		std::cout << "sample " << trajNames[curTraj] << " trajectory"<< std::endl;
-		break; }
-	case '3': {  // st trajectory to traj 3
-		setDrawLtrOrSmpl(false, 2);
-		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
-		std::cout << "sample " << trajNames[curTraj] << " trajectory"<< std::endl;
-		break; }
-	case '4': {  // st trajectory to traj 4
-		setDrawLtrOrSmpl(false, 3);
-		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
-		std::cout << "sample " << trajNames[curTraj] << " trajectory"<< std::endl;
 		break; }
 	case '`': {         //reset trackball loc with origTrackBallQ and zoom with 1
 		mTrackBall.setQuaternion(origTrackBallQ);
@@ -723,6 +666,53 @@ void MyWindow::calcCircleTrajPoints(eignVecTyp& _trajPts) {
 	}
 }//calcCircleTrajPoints
 
+ //manage the process of writing all training and testing data - call whenever a trajectory has been captured (from checkCapture() )
+ //ONLY FOR SAMPLE SYMBOLS (triangle, square, star) that consist of single trajectories!
+void MyWindow::trainSymDatManageCol() {
+	//if (flags[debugIDX]) { cout << "Start trainSymDatManageCol : " << trainSymDatCnt << std::endl; }
+	//call first time right after init
+	//flags[collectDataIDX] pre-empts flags[stCaptAtZeroIDX] so needs to set mCapture
+	//regerenate all endpoints - we start on non-random data - for current trajectory, make #verts trajectories starting on each vert without random, before using random trajectories
+	regenerateSampleData(dataGenIters[curTraj] >= (curTraj + 2));
+
+	//global name of directory to write to, of form : <trajType>_<trajIter> --> add _<frame#>.png for file name
+	curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
+
+	//need to write entry into either testing or training file - if dataGenIters > some threshold make train file, else make test file
+	//DEPRECATED : remove distinction between test/train - have python script handle this
+	//if (dataGenIters[curTraj] < IKSolve->params->dataCapTestTrainThresh*IKSolve->params->dataCapNumExamples) {
+	//	trainDatWriteIndexFile(trainOutFile, curTrajDirName, curTraj);
+	//}
+	//else {
+	//	trainDatWriteIndexFile(testOutFile, curTrajDirName, curTraj);
+	//}
+	trainDatWriteIndexFile(trainDataFileStrm, curTrajDirName, curTraj);
+	//after drawing all frames of a trajectory the following needs to be reset (i.e. every call of this function) - this is frame # of capture of current trajectory
+	captCount[curTraj] = 0;
+	//...and need to advance data counts
+	dataGenIters[curTraj]++;
+
+	//after transitioning to a different symbol, the following needs to be reset
+	if (dataGenIters[curTraj] > IKSolve->params->dataCapNumExamples) {
+		dataGenIters[curTraj] = 0;
+		setDrawLtrOrSmpl(false, (curTraj + 1) % trajNames.size());		//iterate to next trajectory if we've captured sufficient samples
+		dataGenIters[curTraj] = 0;
+		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
+		std::cout << "Test/train data gen transition to sample " << trajNames[curTraj] << " trajectory" << std::endl;
+	}
+	if (curTraj != 0) { mCapture = true; }		//repeat for next trajectory type
+	else {//at curTraj == 0 we have completed all data gen, and should stop - reset all important stuff to circle as if key 1 was pressed
+		flags[collectDataIDX] = false;
+		trainDataFileStrm.close();
+		//testOutFile.close();
+		//trainOutFile.close();
+		setDrawLtrOrSmpl(false, 0);
+		curTrajDirName = getCurTrajFileDir(dataGenIters[curTraj]);
+		std::cout << "Finished generating test/train data, reset to sample " << trajNames[curTraj] << " trajectory" << std::endl;
+	}
+	//if (flags[debugIDX]) { cout << "End trainSymDatManageCol : " << trainSymDatCnt++ << std::endl; }
+}
+
 //write trajectory file to csv named _fname
 void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajAraAra) {
 	int numRows = _trajAraAra.size(), numCols = _trajAraAra[0].size();
@@ -763,6 +753,17 @@ void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajA
 		writeTrajCSVFileRow(outFile, _trajAraAra[row]);
 	}
 }//writeTrajCSVFile
+ ////DEPRECATED : no longer build train/test split in generating program, use python processing script to partition data for caffe
+ //void MyWindow::openIndexFile(bool isTrain, std::ofstream& strm, bool append) {
+ //	std::stringstream ss;
+ //	ss << getFullBasePath() << (isTrain ? "TrainDataIndexFile.txt" : "TestDataIndexFile.txt");
+ //	const std::string tmp = ss.str();
+ //	std::ios_base::openmode mode = (append ? std::fstream::app : std::fstream::out);
+ //	strm.open(tmp.c_str(), mode);
+ //	if (!strm.is_open()) {
+ //		std::cout << tmp << " failed to open!"<< std::endl;
+ //	}
+ //}//openIndexFile
 
  //write a row == 1 frame of 1-mrkr-per-col traj data
 void MyWindow::writeTrajCSVFileRow(std::ofstream& outFile, eignVecTyp& _trajAra) {

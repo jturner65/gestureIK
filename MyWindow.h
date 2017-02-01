@@ -113,8 +113,11 @@ public:
 
 	Eigen::Vector3d getCirclEndPoint(const Eigen::Ref<const Eigen::Vector3d>& ctrPt, double theta, double rad);
 
+	//DEPRECATED : no longer allow for train/test split here, use python script to build split instead
 	//open index file for current data collection, either training or testing idx
-	void openIndexFile(bool isTrain, std::ofstream& strm, bool append);
+	//void openIndexFile(bool isTrain, std::ofstream& strm, bool append);
+	//open index file for current data collection, either training or testing idx
+	void openIndexFile(std::ofstream& strm, bool append);
 
 	virtual void keyboard(unsigned char _key, int _x, int _y);
 	//regenerate sample object trajectories with or without randomization
@@ -122,14 +125,15 @@ public:
 	//override glutwindow screenshot function
 	virtual bool screenshot();
 
-	void setDrawLtrOrSmpl(bool drawLtr, int idx, bool useRandSym = false, int symIdx = 0) {
+	void setDrawLtrOrSmpl(bool drawLtr, int idx, int symIdx = 0) {
 		flags[useLtrTrajIDX] = drawLtr;
 		flags[doneTrajIDX] = false;
 		if (drawLtr) {
 			curLtrIDX = idx;
 			curLetter = letters[idx];
-			if (useRandSym) {	curLetter->setRandSymbolIdx(idx, !flags[debugIDX]);	}			//set random symbol among list of symbols for this letter			
-			else {				curLetter->setSymbolIdx(idx, symIdx, !flags[debugIDX]);}		//don't display if debugging only (other debug text makes it redundant)
+			//if (useRandSym) {	curLetter->setRandSymbolIdx(idx, !flags[debugIDX]);	}			//set random symbol among list of symbols for this letter			
+			//else {				
+			curLetter->setSymbolIdx(idx, symIdx, !flags[debugIDX]);//}		//don't display if debugging only (other debug text makes it redundant)
 			curSymIDX = curLetter->curSymbolIDX;
 			curTrajStr = curLetter->getCurSymbolName();							//build name of current symbol trajectory for screen cap purposes
 			curClassName = std::string(curLetter->ltrName);			//class name for test/train index file - use letter name not symbol name
@@ -174,16 +178,26 @@ private:
 		for (int i = 0; i < 1000; ++i) {
 			auto rnd = IKSolve->getRandDbl(mu, .00001);
 			std::cout << "i : " << i << "\tgetRandDbl with mu : " << mu << " : " << rnd << std::endl;
-
 		}
 	}
+
+	//reset all control variables 
+	void resetCurVars() {
+		curSymIDX = 0;
+		curLtrIDX = 0;
+		flags[collectDataIDX] = false;
+		setDrawLtrOrSmpl(false, 0);
+		mCapture = false;
+	}
+
 
 	//skeleton
 	dart::dynamics::SkeletonPtr skelPtr;
 	//ticks for sample traj drawing
 	std::vector<double> tVals, tBnds, tIncr;
-	//file stream for test and train index files
-	std::ofstream testOutFile, trainOutFile;
+	//file stream for test and train index files - remove distinction, have python script handle partition
+	//std::ofstream testOutFile, trainOutFile;
+	std::ofstream trainDataFileStrm;
 	//strings for file names and directories
 	//name of directory of current trajectory
 	std::string curTrajDirName;
@@ -209,7 +223,7 @@ private:
 	//currently drawn letter
 	std::shared_ptr<MyGestLetter> curLetter;
 	//current letter in list of shrd ptrs of ltrs, current symbol in list of symbols in letter, start idx of symbols - either 0 or the # of file-loaded symbols for a letter (if specified to regen only random and not file-built sequences)
-	int curLtrIDX, curSymIDX, stSymIdx;
+	int curLtrIDX, curSymIDX;
 
 	//hold a copy of the last screen shot for difference screens
 	std::vector<unsigned char> mScreenshotTemp3;
@@ -225,9 +239,9 @@ private:
 		drawLtrTrajIDX = 5,						//draw all trajectory components of symbol or sample symbol
 		collectDataIDX = 6,						//turn on the training/testing data collection mechanism
 		doneTrajIDX = 7,						//finished current trajectory
-		pauseIKLtrIDX = 8,						//pause between IK frames
+		pauseIKLtrIDX = 8,						//pause between IK frames - for debugging purposes
 		testLtrQualIDX = 9,						//iterate through all letters without screen cap to test traj quality
-		showAllTrajsIDX = 10;					//show all trajectories of letters, to show distribution results
+		showAllTrajsIDX = 10;					//show all trajectories of letters, to show distribution results - debug
 
 	static const unsigned int numFlags = 11;
 };

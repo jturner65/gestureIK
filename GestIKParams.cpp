@@ -39,7 +39,7 @@
 
 namespace gestureIKApp {
 
-	GestIKParams::GestIKParams() : defaultVals(), dataCapNumExamples(100), dataCapTestTrainThresh(.5),
+	GestIKParams::GestIKParams() : defaultVals(), dataCapNumExamples(100), //dataCapTestTrainThresh(.5),
 		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), IK_elbowScale(0.36), IK_fastTrajMult(1.5), IK_ctrYOffset(0),
 		trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1), trajRandCtrStdScale_X(1), trajRandCtrStdScale_Y(1), trajRandCtrStdScale_Z(1),
 		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26), numTotSymPerLtr(0), ltrIdxStSave(0), fixedClipLen(16), origZoom(.65f),
@@ -64,7 +64,7 @@ namespace gestureIKApp {
 		if (_name.compare("IK_drawRad") == 0) { IK_drawRad = stod(s);      return; }
 		if (_name.compare("IK_ctrYOffset") == 0) { IK_ctrYOffset = stod(s);      return; }
 
-		if (_name.compare("dataCapTestTrainThresh") == 0) { dataCapTestTrainThresh = stod(s);      return; }
+		//if (_name.compare("dataCapTestTrainThresh") == 0) { dataCapTestTrainThresh = stod(s);      return; }
 		if (_name.compare("trajLenThresh") == 0) { trajLenThresh = stod(s);      return; }
 		if (_name.compare("trajDistMult") == 0) { trajDistMult = stod(s);      return; }
 		if (_name.compare("trajDesiredVel") == 0) { trajDesiredVel = stod(s); return; }
@@ -112,7 +112,7 @@ namespace gestureIKApp {
 		//use as template - set any class variables to reasonable defaults
 		//fMaxSDMult = 4;						//fMaxSDMult is magic number from Unity code that multiples the sd for the per-step priors for the force limits- UI enterable? hardcoded to 4.0 in unity code
 		dataCapNumExamples = 100;
-		dataCapTestTrainThresh = .5;
+		//dataCapTestTrainThresh = .5;
 
 		IK_reachPct = .75;
 		IK_solveIters = 100;
@@ -179,7 +179,7 @@ namespace gestureIKApp {
 	std::vector<double> GestIKParams::accumulateVals() {		//grab all locals that are modifiable by UI or used elsewhere
 		std::vector<double> res;
 		res.push_back(dataCapNumExamples);
-		res.push_back(dataCapTestTrainThresh);
+		//res.push_back(dataCapTestTrainThresh);
 
 		res.push_back(IK_reachPct);
 		res.push_back(IK_solveIters);
@@ -230,7 +230,7 @@ namespace gestureIKApp {
 	void GestIKParams::distributeVals(std::vector<double>& vals) {//copy all UI values to their appropriate lcl variables (from UI or file)
 		int idx = 0;
 		dataCapNumExamples = (int)floor(vals[idx++] + .5);
-		dataCapTestTrainThresh = vals[idx++];
+		//dataCapTestTrainThresh = vals[idx++];
 
 		IK_reachPct = vals[idx++];
 		IK_solveIters = (unsigned int)floor(vals[idx++] + .5);
@@ -278,7 +278,8 @@ namespace gestureIKApp {
 
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
 		out << "GestIK Params values : "<<"\tdateFNameOffset : "<< p.dateFNameOffset<< std::endl;
-		out << "Letter data type : "<< DataType2str[p.dataType]<< "\tdataCapNumExamples : " << p.dataCapNumExamples << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
+		out << "Letter data type : " << DataType2str[p.dataType] << "\tdataCapNumExamples : " << p.dataCapNumExamples;// << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh
+		out << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
 		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| IK_fastTrajMult  : " << p.IK_fastTrajMult << "\t| IK_ctrYOffset  : " << p.IK_ctrYOffset << std::endl;
 		out << "trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult  << "\ttrajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << std::endl;
 		out << "clipCountOffset : " << p.clipCountOffset << "\t#letters (out of 26) to load : "<<p.numLetters <<"\t| traj rand scale x,y,z ("   << p.trajRandCtrStdScale_X<<", "<<p.trajRandCtrStdScale_Y << ", " << p.trajRandCtrStdScale_Z <<")\t| bkg clr (rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")"<< std::endl;
