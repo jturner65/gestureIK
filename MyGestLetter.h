@@ -133,8 +133,6 @@ namespace gestureIKApp {
 		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver
 		//idx in letters array (0 == a, 1 == b etc)
 		unsigned int curIDX;
-		//current symbol index for debug drawing all letters
-		unsigned int curDrawSymIDX;
 		//current symbol idx used
 		unsigned int curSymbolIDX;
 		//# of examples of this letter from files

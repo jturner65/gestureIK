@@ -87,6 +87,7 @@ namespace gestureIKApp {
 			//set shared ptr ref to self
 			symbols[i]->setSolver(IKSolve);
 			symbols[i]->buildTrajsFromFile(trajFileNames[i], symbols[i]);
+			symbols[i]->setRandCameraOrient();
 			//srcSymbols are only source trajectory symbols
 			srcSymbols.push_back(symbols[i]);
 		}

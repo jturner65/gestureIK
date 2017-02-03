@@ -127,6 +127,9 @@ namespace gestureIKApp {
 		//amount of overshoot to use for 4-pt neville (for building connecting trajs)
 		double trajNev4OvPct;
 
+		//randomization control
+		//random camera orientation theta
+		double rnd_camThet;
 		//int width/height of windows
 		int win_Width, win_Height;
 

@@ -356,7 +356,7 @@ void MyWindow::draw() {
 	}
 	drawEntities();
 	if (flags[debugIDX]) {
-		glColor3f(1.0, 0.0, 0.0);
+		glColor3f(1.0f, 0.0f, 0.0f);
 		dart::gui::drawStringOnScreen(0.02f, 0.11f, getCurrQuatAsRot(0));
 		dart::gui::drawStringOnScreen(0.02f, 0.08f, getCurrQuatAsRot(1));
 		dart::gui::drawStringOnScreen(0.02f, 0.05f, getCurrQuatAsRot(2));

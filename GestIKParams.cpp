@@ -42,7 +42,7 @@ namespace gestureIKApp {
 	GestIKParams::GestIKParams() : defaultVals(), dataCapNumExamples(100), //dataCapTestTrainThresh(.5),
 		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), IK_elbowScale(0.36), IK_fastTrajMult(1.5), IK_ctrYOffset(0),
 		trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1), trajRandCtrStdScale_X(1), trajRandCtrStdScale_Y(1), trajRandCtrStdScale_Z(1),
-		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), win_Width(800), win_Height(800), numLetters(26), numTotSymPerLtr(0), ltrIdxStSave(0), fixedClipLen(16), origZoom(.65f),
+		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), rnd_camThet(.789), win_Width(800), win_Height(800), numLetters(26), numTotSymPerLtr(0), ltrIdxStSave(0), fixedClipLen(16), origZoom(.65f),
 		clipCountOffset(0), dataType(MULT_8),
 		bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""),
 		flags(numFlags, false)
@@ -69,6 +69,8 @@ namespace gestureIKApp {
 		if (_name.compare("trajDistMult") == 0) { trajDistMult = stod(s);      return; }
 		if (_name.compare("trajDesiredVel") == 0) { trajDesiredVel = stod(s); return; }
 		if (_name.compare("trajNev4OvPct") == 0) { trajNev4OvPct = stod(s); return; }
+		if (_name.compare("rnd_camThet") == 0) { rnd_camThet = stod(s); return; }
+		
 		if (_name.compare("trajRandCtrStd") == 0) { trajRandCtrStd = stod(s); return; }
 		if (_name.compare("trajRandSclStd") == 0) { trajRandSclStd = stod(s); return; }
 		if (_name.compare("trajRandCtrStdScale_X") == 0) { trajRandCtrStdScale_X = stod(s); return; }
@@ -135,6 +137,7 @@ namespace gestureIKApp {
 		trajNumReps = 5;
 		trajDesiredVel = .03;
 		trajNev4OvPct = .2;
+		rnd_camThet = .789;
 
 		win_Width = 800;
 		win_Height = 800;
@@ -202,6 +205,7 @@ namespace gestureIKApp {
 		res.push_back(trajNumReps);
 		res.push_back(trajDesiredVel);
 		res.push_back(trajNev4OvPct);
+		res.push_back(rnd_camThet);
 
 		res.push_back(win_Width);
 		res.push_back(win_Height);
@@ -253,6 +257,7 @@ namespace gestureIKApp {
 		trajNumReps = (int)floor(vals[idx++] + .5);
 		trajDesiredVel = vals[idx++];
 		trajNev4OvPct = vals[idx++];
+		rnd_camThet = vals[idx++];
 
 		win_Width = (int)floor(vals[idx++] + .5);
 		win_Height = (int)floor(vals[idx++] + .5);
@@ -278,7 +283,7 @@ namespace gestureIKApp {
 
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
 		out << "GestIK Params values : "<<"\tdateFNameOffset : "<< p.dateFNameOffset<< std::endl;
-		out << "Letter data type : " << DataType2str[p.dataType] << "\tdataCapNumExamples : " << p.dataCapNumExamples;// << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh
+		out << "Letter data type : " << DataType2str[p.dataType] << "\tdataCapNumExamples : " << p.dataCapNumExamples << "\t rnd_camThet : " << p.rnd_camThet;// << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh
 		out << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
 		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| IK_fastTrajMult  : " << p.IK_fastTrajMult << "\t| IK_ctrYOffset  : " << p.IK_ctrYOffset << std::endl;
 		out << "trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult  << "\ttrajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << std::endl;

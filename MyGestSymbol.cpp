@@ -275,18 +275,17 @@ namespace gestureIKApp {
 
 	//build random camera orientation
 	void MyGestSymbol::setRandCameraOrient() {
-		//first pick random rot axis in y/z plane and normalize
-		double phi = IKSolve->getUniRandDbl(0, 6.2832);
-		Eigen::Vector3d rotVec(0, sin(phi), cos(phi));
-		rotVec.normalize();//should be 1 already, but just in case
-		//next find x direction deviation (default camera is in positive x looking toward negative x, so this should be small) - set as rotvec
-		rotVec(0) = IKSolve->getRandDbl(0, .001);
+		//first pick random rot axis in y/z plane and normalize while find x direction deviation (default camera is in positive x looking toward negative x, so this should be small) - set as rotvec
+		double phi = IKSolve->getUniRandDbl(-DART_2PI, DART_2PI);
+		Eigen::Vector3d rotVec(IKSolve->getRandDbl(0, .0001), sin(phi), cos(phi));
 		rotVec.normalize();
-		//then find rotational amount thet around this axis (+/- Pi/4), build quat as w == cos(thet/2); v == sin(thet/2) * rotvec'
-		double thet = IKSolve->getUniRandDbl(-.789,.789);
+		//then find rotational amount thet around this axis, build quat as w == cos(thet/2); v == sin(thet/2) * rotvec
+		double thet = IKSolve->getUniRandDbl(-IKSolve->params->rnd_camThet, IKSolve->params->rnd_camThet);
 		thet *= .5;
-		cameraRot.w() = cos(thet);
-		cameraRot.vec() = sin(thet) * rotVec;
+		Eigen::Vector3d tmpV(sin(thet) * rotVec);
+		Eigen::Quaterniond tmpRot(cos(thet), tmpV(0), tmpV(1), tmpV(2));
+		tmpRot.normalize();
+		cameraRot = tmpRot * cameraRot;
 		cameraRot.normalize();
 	}
 
@@ -294,7 +293,7 @@ namespace gestureIKApp {
 	bool MyGestSymbol::buildRandomSymbol(std::shared_ptr<MyGestSymbol> _src, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast) {
 		_self = _thisSP;
 		avgLoc << _src->avgLoc;		//avg location in matlab space
-		//use this for random :  double getRandDbl(double mu, double std = 1.0) 
+		//use this for random :  double getRandDbl(double mu, double std = 1.0)  
 		do {
 			sclAmt = IKSolve->getRandDbl(_src->sclAmt, IKSolve->params->trajRandSclStd);
 		} while (sclAmt <= 0);

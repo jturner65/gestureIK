@@ -110,12 +110,21 @@ namespace gestureIKApp {
 		std::shared_ptr<MyGestSymbol> _self;									//ref to shared ptr to self, to be handed off to trajectories
 
 		//symbol needs to own all randomization values, such as 
-		//	skeleton head : size variation (width, height), color; 
-		//	hand : color, shape (ellipse or rectangle), size (w/h); 
+		//	skeleton head : size variation (w/h), color; 
+		//	hand : color, shape (ellipse or rectangle), size (width, depth, length); 
 		//	skel body : size(w/h); 
-		//	camera : location, direction, look-at point
+		//	camera : location, direction, look-at point(?)
 		//random camera rotation
 		Eigen::Quaterniond cameraRot;											//needs to be normalized, multiply current orientation quat in MyWindow
+		//random camera displacment
+		Eigen::Vector3d cameraDisp;
+		float headWidth,
+			headHeight,
+			headClr,
+			handWidth,
+			handLength,
+			handDepth,
+			handClr;
 
 		unsigned int
 			curFrame,															//current frame of this letter being processed

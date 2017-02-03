@@ -110,6 +110,11 @@
 		<name>clipCountOffset</name>
 		<val>0</val> 
 	</parameter>
+<!--+/- camera orientation range in radians-->
+	<parameter>
+		<name>rnd_camThet</name>
+		<val>.35</val>
+	</parameter>
 <!--Set dataType 0 == const vel for all ltrs, 1 == fixed 16, 2 == mult8 train/test -->
 	<parameter>
 		<name>dataType</name>
