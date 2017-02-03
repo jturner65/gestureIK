@@ -67,7 +67,7 @@ namespace gestureIKApp {
 	//collection of 1 or more trajectories making up a symbol
 	class MyGestLetter {
 	public:
-		MyGestLetter(const std::string& _ltrName);
+		MyGestLetter(const std::string& _ltrName, unsigned int _ltrNum);
 		virtual ~MyGestLetter();
 
 		//data from matlab will be 3 cols per point : (x,y, timing data), where timing is how long between consecutive points in milliseconds.
@@ -97,7 +97,7 @@ namespace gestureIKApp {
 		//turn on/off testing of letter quality
 		void setTestLtrQual(bool val) { setSymbolFlags(testLtrQualIDX, val); }
 		//set symbol and letter idx
-		void setSymbolIdx(int idx, int symIdx, bool disp);
+		void setSymbolIdx(int symIdx, bool disp);
 		//draw all letters to test range of values from randomization
 		void drawSymbolTrajDist(dart::renderer::RenderInterface* mRI);
 		//draw all components of trajectory of current symbol
@@ -131,10 +131,8 @@ namespace gestureIKApp {
 
 	public :	//variables
 		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver
-		//idx in letters array (0 == a, 1 == b etc)
+		//idx in letters array (0 == a, 1 == b etc) - only for debugging
 		unsigned int curIDX;
-		//current symbol idx used
-		unsigned int curSymbolIDX;
 		//# of examples of this letter from files
 		unsigned int numFileSymbols;
 		//# of total symbols of this letter to be IK'ed to

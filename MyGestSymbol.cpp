@@ -45,13 +45,15 @@
 
 namespace gestureIKApp {
 
-	MyGestSymbol::MyGestSymbol(const std::string& _name, int _srcIDX) : IKSolve(nullptr), _self(nullptr), cameraRot(0.5*sqrt(2), 0, -0.5*sqrt(2), 0), curFrame(0), numTrajFrames(0), srcSymbolIDX(_srcIDX), allTrajsLen(0), //trajVel(.03), 
+	MyGestSymbol::MyGestSymbol(const std::string& _name, int _srcIDX) : IKSolve(nullptr), _self(nullptr), 
+		//cameraRot(0.5*sqrt(2), 0, -0.5*sqrt(2), 0),
+		cameraRot(origTrackBallQ), cameraTrans(0,0,0), cameraZoom(-1),//set when IKSolve is set
+		curFrame(0), numTrajFrames(0), srcSymbolIDX(_srcIDX), allTrajsLen(0), //trajVel(.03), 
 		sclAmt(1.0), curTrajDist(0), trajectories(0), trajLens(0), trajFrameIncrs(0), name(_name), flags(numFlags,false),
-		avgLoc(0,0,0),// maxLoc(0,0,0), 
-		ptrCtrPt(0,0,0), elbowCtrPt(0,0,0), ptrPlaneNorm(-1,0,0), elbowPlaneNorm(0,0,0), circleRad(0), curTraj(0)
+		avgLoc(0,0,0), ptrCtrPt(0,0,0), elbowCtrPt(0,0,0), ptrPlaneNorm(-1,0,0), elbowPlaneNorm(0,0,0), circleRad(0), curTraj(0)
 
 	{
-		//show connecting trajectories
+		//show connecting trajectories in debug output
 		flags[drawConnTrajIDX] = true;
 	}
 	
@@ -246,19 +248,30 @@ namespace gestureIKApp {
 		++curFrame;
 		if (flags[debugIDX]) {
 			if (finishedCurTraj) { std::cout << "finishedCurTraj is true for " << name << " #trajs : " << trajLens.size() << " curTraj : " << curTraj << " curTrajDist : allTrajsLen : trajStartLoc " << curTrajDist << " : " << allTrajsLen << " : " << trajStartLoc << "\t frame count : " << curFrame << std::endl; }
-		}
-		if (curTrajDist >= allTrajsLen) {
-			if (flags[debugIDX]) {
+			if (curTrajDist >= allTrajsLen) {
 				std::cout << std::endl;
 				if (!finishedCurTraj) {
 					std::cout << "!!!finishedCurTraj is false for " << name << " #trajs : " << trajLens.size() << " when ending - frame count : " << curFrame << std::endl;
 				}
 				//std::cout << "Return from solve for " << name << " made " << curFrame << " frames.  finishedCurTraj : " << finishedCurTraj << std::endl;
 				if ((!IKSolve->params->useFixedGlblVel()) && (curFrame % IKSolve->params->fixedClipLen != 0)) {//don't check if not setting to be multiple of 16
-					std::cout << "!!!! Non-mult of specified fixed clip length " << IKSolve->params->fixedClipLen <<" : Frame count for symbol : " << name << " count : " << curFrame << std::endl;
+					std::cout << "!!!! Non-mult of specified fixed clip length " << IKSolve->params->fixedClipLen << " : Frame count for symbol : " << name << " count : " << curFrame << std::endl;
 				}
 				std::cout << std::endl;
 			}
+		}
+		if (curTrajDist >= allTrajsLen) {
+			//if (flags[debugIDX]) {
+			//	std::cout << std::endl;
+			//	if (!finishedCurTraj) {
+			//		std::cout << "!!!finishedCurTraj is false for " << name << " #trajs : " << trajLens.size() << " when ending - frame count : " << curFrame << std::endl;
+			//	}
+			//	//std::cout << "Return from solve for " << name << " made " << curFrame << " frames.  finishedCurTraj : " << finishedCurTraj << std::endl;
+			//	if ((!IKSolve->params->useFixedGlblVel()) && (curFrame % IKSolve->params->fixedClipLen != 0)) {//don't check if not setting to be multiple of 16
+			//		std::cout << "!!!! Non-mult of specified fixed clip length " << IKSolve->params->fixedClipLen <<" : Frame count for symbol : " << name << " count : " << curFrame << std::endl;
+			//	}
+			//	std::cout << std::endl;
+			//}
 			flags[isDoneDrawingIDX] = true;
 			return true;
 		}	//traversed entire length of trajectory
@@ -273,8 +286,24 @@ namespace gestureIKApp {
 		return false;
 	}//solve
 
-	//build random camera orientation
-	void MyGestSymbol::setRandCameraOrient() {
+	////build random camera orientation
+	//void MyGestSymbol::setRandCameraOrient() {
+	//	//first pick random rot axis in y/z plane and normalize while find x direction deviation (default camera is in positive x looking toward negative x, so this should be small) - set as rotvec
+	//	double phi = IKSolve->getUniRandDbl(-DART_2PI, DART_2PI);
+	//	Eigen::Vector3d rotVec(IKSolve->getRandDbl(0, .0001), sin(phi), cos(phi));
+	//	rotVec.normalize();
+	//	//then find rotational amount thet around this axis, build quat as w == cos(thet/2); v == sin(thet/2) * rotvec
+	//	double thet = IKSolve->getUniRandDbl(-IKSolve->params->rnd_camThet, IKSolve->params->rnd_camThet);
+	//	thet *= .5;
+	//	Eigen::Vector3d tmpV(sin(thet) * rotVec);
+	//	Eigen::Quaterniond tmpRot(cos(thet), tmpV(0), tmpV(1), tmpV(2));
+	//	tmpRot.normalize();
+	//	cameraRot = tmpRot * cameraRot;
+	//	cameraRot.normalize();
+	//}
+
+	void MyGestSymbol::setRandCamSkelVals() {
+		//build random camera orientation
 		//first pick random rot axis in y/z plane and normalize while find x direction deviation (default camera is in positive x looking toward negative x, so this should be small) - set as rotvec
 		double phi = IKSolve->getUniRandDbl(-DART_2PI, DART_2PI);
 		Eigen::Vector3d rotVec(IKSolve->getRandDbl(0, .0001), sin(phi), cos(phi));
@@ -287,6 +316,26 @@ namespace gestureIKApp {
 		tmpRot.normalize();
 		cameraRot = tmpRot * cameraRot;
 		cameraRot.normalize();
+		//random zoom
+		//find variation amt 
+		cameraZoom = IKSolve->params->origZoom + static_cast<float>(IKSolve->getUniRandDbl(-IKSolve->params->rnd_camZoom, IKSolve->params->rnd_camZoom));
+		//std::cout << "Old Zoom : " << IKSolve->params->origZoom << "\t New Zoom : " << cameraZoom << std::endl;
+		//random camera location 
+		Eigen::Vector3d min(-IKSolve->params->rnd_camTrans, -IKSolve->params->rnd_camTrans, -IKSolve->params->rnd_camTrans),
+			max(IKSolve->params->rnd_camTrans, IKSolve->params->rnd_camTrans, IKSolve->params->rnd_camTrans);
+		cameraTrans = origMTrans + IKSolve->getUniRandVec(min, max);
+		//std::cout << "Base (original) Translation : (" << origMTrans(0)<<"," << origMTrans(1) << "," << origMTrans(2) << ")\tTranslation modification : (" << cameraTrans(0) << "," << cameraTrans(1) << "," << cameraTrans(2) <<")"<< std::endl;
+
+		//random skel head dims
+
+		//random skel head color - color is grayscale so just 1 double 0-1, avoid values .33-.66
+
+		//random skel hand shape
+
+		//random skel hand dims
+
+		//random skel hand color - color is grayscale so just 1 double 0-1, avoid values .33-.66
+
 	}
 
 	//make this symbol a randomized version of the passed symbol - 
@@ -299,8 +348,8 @@ namespace gestureIKApp {
 		} while (sclAmt <= 0);
 		//trajVel = IKSolve->params->trajDesiredVel;
 		flags[isFastDrawnIDX] = isFast;
-		//build random camera orientation
-		setRandCameraOrient();
+		//derive all random camera and skeleton quantites
+		setRandCamSkelVals();
 		//if (isFast) {
 		//	trajVel *= IKSolve->params->IK_fastTrajMult;
 		//}
@@ -375,6 +424,8 @@ namespace gestureIKApp {
 	 //set reference to IK solver - set in all trajectories
 	void MyGestSymbol::setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv) {
 		IKSolve = _slv;
+		//zoom may vary based on randomization, if this symbol is randomized
+		cameraZoom = IKSolve->params->origZoom;
 		circleRad = IKSolve->params->IK_drawRad;
 		ptrCtrPt << IKSolve->drawCrclCtr;
 		ptrPlaneNorm << (IKSolve->tstRShldrSt - ptrCtrPt).normalized();

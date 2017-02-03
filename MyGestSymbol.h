@@ -91,8 +91,10 @@ namespace gestureIKApp {
 		//process trajectories and build linking trajectories to connect disjoint trajectories
 		void buildTrajComponents();
 
+		//set all random camera and environment values
+		void setRandCamSkelVals();
 		//set random camera orientation
-		void setRandCameraOrient();
+		//void setRandCameraOrient();
 
 		//set symbol trajectory pointer and elbow centers and normal vectors of planes drawn on - planeNorm must be specified first
 		void setSymbolCenters(const Eigen::Ref<const Eigen::Vector3d>& ctPt);
@@ -116,15 +118,14 @@ namespace gestureIKApp {
 		//	camera : location, direction, look-at point(?)
 		//random camera rotation
 		Eigen::Quaterniond cameraRot;											//needs to be normalized, multiply current orientation quat in MyWindow
-		//random camera displacment
-		Eigen::Vector3d cameraDisp;
-		float headWidth,
-			headHeight,
-			headClr,
-			handWidth,
-			handLength,
-			handDepth,
-			handClr;
+		//random camera displacment (mTrans and zoom)
+		Eigen::Vector3d cameraTrans;
+		float cameraZoom;
+		//random head and hand dimensions
+		Eigen::Vector3d rnd_headSize,
+			rnd_headClr,
+			rnd_handSize,
+			rnd_handClr;
 
 		unsigned int
 			curFrame,															//current frame of this letter being processed

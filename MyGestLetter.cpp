@@ -46,8 +46,8 @@
 
 namespace gestureIKApp {
 
-	MyGestLetter::MyGestLetter(const std::string& _ltrName):IKSolve(nullptr), curDrawSymIDX(0),
-		curSymbolIDX(0), numFileSymbols(0), numTotSymbols(0), srcSymbols(0), symbols(0), 
+	MyGestLetter::MyGestLetter(const std::string& _ltrName, unsigned int _ltrNum):IKSolve(nullptr), 
+		curIDX(_ltrNum), numFileSymbols(0), numTotSymbols(0), srcSymbols(0), symbols(0),
 		curSymbol(nullptr), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags)
 	{
 		std::stringstream ss;
@@ -87,7 +87,8 @@ namespace gestureIKApp {
 			//set shared ptr ref to self
 			symbols[i]->setSolver(IKSolve);
 			symbols[i]->buildTrajsFromFile(trajFileNames[i], symbols[i]);
-			symbols[i]->setRandCameraOrient();
+			//set random values for the file-based symbols
+			symbols[i]->setRandCamSkelVals();
 			//srcSymbols are only source trajectory symbols
 			srcSymbols.push_back(symbols[i]);
 		}
@@ -149,24 +150,13 @@ namespace gestureIKApp {
 		return finished;
 	}
 
-	////sets random index in symbol list for letter to draw
-	//void MyGestLetter::setRandSymbolIdx(int idx, bool disp) {
-	//	curIDX = idx;
-	//	curSymbolIDX = (*uni)(mtrn_gen);
-	//  curSymbol = symbols[curSymbolIDX];
-	//	curSymbol->initSymbolIK();
-	//	if (disp) { std::cout << "Curr Rand symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX << std::endl; }
-	//}
-
 	//sets specific index in symbol list for letter to draw - used to let myWindow control which symbols to draw (for train and test data)
-	void MyGestLetter::setSymbolIdx(int idx, int symIdx, bool disp) {
-		curIDX = idx;
-		curSymbolIDX = symIdx;
+	void MyGestLetter::setSymbolIdx(int symIdx, bool disp) {
 		//TODO replace with generating random symbol here - symIdx is only specified to determine if all symbols of this letter have been drawn - need to maintain a count instead
-		curSymbol = symbols[curSymbolIDX];
+		curSymbol = symbols[symIdx];
 
 		curSymbol->initSymbolIK();
-		if (disp) { std::cout << "Specified symbol to use for ltr idx : " << curIDX << " : " << ltrName << " : " << curSymbolIDX <<"\t with : "<< curSymbol->numTrajFrames <<" frames "<< std::endl; }
+		if (disp) { std::cout << "MyGestLetter::setSymbolIdx : Specified " << symIdx << "th symbol to use for ltr idx : " << curIDX << " : " << ltrName << " with : "<< curSymbol->numTrajFrames <<" frames "<< std::endl; }
 	}
 
 	//draw all trajectory components of all symbols of current letter being used for IK

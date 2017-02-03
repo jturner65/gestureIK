@@ -70,7 +70,9 @@ namespace gestureIKApp {
 		if (_name.compare("trajDesiredVel") == 0) { trajDesiredVel = stod(s); return; }
 		if (_name.compare("trajNev4OvPct") == 0) { trajNev4OvPct = stod(s); return; }
 		if (_name.compare("rnd_camThet") == 0) { rnd_camThet = stod(s); return; }
-		
+		if (_name.compare("rnd_camZoom") == 0) { rnd_camZoom = stof(s);			return; }
+		if (_name.compare("rnd_camTrans") == 0) { rnd_camTrans = stof(s);			return; }
+
 		if (_name.compare("trajRandCtrStd") == 0) { trajRandCtrStd = stod(s); return; }
 		if (_name.compare("trajRandSclStd") == 0) { trajRandSclStd = stod(s); return; }
 		if (_name.compare("trajRandCtrStdScale_X") == 0) { trajRandCtrStdScale_X = stod(s); return; }
@@ -97,6 +99,8 @@ namespace gestureIKApp {
 
 		//floats 
 		if (_name.compare("origZoom") == 0) { origZoom = stof(s);			return; }
+
+
 		//strings
 		//if (_name.compare("skelFileName") == 0) { skelFileName = std::string(s);	return; }
 		//boolean
@@ -106,6 +110,13 @@ namespace gestureIKApp {
 		if (_name.compare("IDX_genRandLtrs") == 0) { flags[IDX_genRandLtrs] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_regenNotAppend") == 0) { flags[IDX_regenNotAppend] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_chgTrajDbgClrs") == 0) { flags[IDX_chgTrajDbgClrs] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_rndCamOrient") == 0) {	flags[IDX_rndCamOrient] = (s.compare("TRUE") == 0 ? true : false);        return; }          
+		if (_name.compare("IDX_rndCamLoc") == 0) {		flags[IDX_rndCamLoc] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_rndHeadDims") == 0) {	flags[IDX_rndHeadDims] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_rndHeadClr") == 0) {		flags[IDX_rndHeadClr] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_rndHandShape") == 0) {	flags[IDX_rndHandShape] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_rndHandDims") == 0) {	flags[IDX_rndHandDims] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_rndHandClr") == 0) {		flags[IDX_rndHandClr] = (s.compare("TRUE") == 0 ? true : false);        return; }
 
 	}	//setParamValFromXMLStr
 
@@ -137,7 +148,9 @@ namespace gestureIKApp {
 		trajNumReps = 5;
 		trajDesiredVel = .03;
 		trajNev4OvPct = .2;
-		rnd_camThet = .789;
+		rnd_camThet = .35;
+		rnd_camZoom = .05;
+		rnd_camTrans = .25;
 
 		win_Width = 800;
 		win_Height = 800;
@@ -161,6 +174,13 @@ namespace gestureIKApp {
 		flags[IDX_regenNotAppend] = true;
 		flags[IDX_genRandLtrs] = true;
 		flags[IDX_chgTrajDbgClrs] = false;
+		flags[IDX_rndCamOrient] = false;
+		flags[IDX_rndCamLoc] = false;
+		flags[IDX_rndHeadDims] = false;
+		flags[IDX_rndHeadClr] = false;
+		flags[IDX_rndHandShape] = false;
+		flags[IDX_rndHandDims] = false;
+		flags[IDX_rndHandClr] = false;
 		defaultVals = accumulateVals();			//set default values as current param vals
 	}//setDefaultVals
 	//set current date as file name offset to keep files unique
@@ -206,6 +226,8 @@ namespace gestureIKApp {
 		res.push_back(trajDesiredVel);
 		res.push_back(trajNev4OvPct);
 		res.push_back(rnd_camThet);
+		res.push_back(rnd_camZoom);
+		res.push_back(rnd_camTrans);
 
 		res.push_back(win_Width);
 		res.push_back(win_Height);
@@ -258,6 +280,8 @@ namespace gestureIKApp {
 		trajDesiredVel = vals[idx++];
 		trajNev4OvPct = vals[idx++];
 		rnd_camThet = vals[idx++];
+		rnd_camZoom = vals[idx++];
+		rnd_camTrans = vals[idx++];
 
 		win_Width = (int)floor(vals[idx++] + .5);
 		win_Height = (int)floor(vals[idx++] + .5);
@@ -283,7 +307,8 @@ namespace gestureIKApp {
 
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
 		out << "GestIK Params values : "<<"\tdateFNameOffset : "<< p.dateFNameOffset<< std::endl;
-		out << "Letter data type : " << DataType2str[p.dataType] << "\tdataCapNumExamples : " << p.dataCapNumExamples << "\t rnd_camThet : " << p.rnd_camThet;// << "\t| dataCapTestTrainThresh : " << p.dataCapTestTrainThresh
+		out << "Letter data type : " << DataType2str[p.dataType] << "\tdataCapNumExamples : " << p.dataCapNumExamples << "\t rnd_camThet : " << p.rnd_camThet << "\t rnd_camZoom : " << p.rnd_camZoom << "\t rnd_camTrans : " << p.rnd_camTrans;
+
 		out << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
 		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| IK_fastTrajMult  : " << p.IK_fastTrajMult << "\t| IK_ctrYOffset  : " << p.IK_ctrYOffset << std::endl;
 		out << "trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult  << "\ttrajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << std::endl;

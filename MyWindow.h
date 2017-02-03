@@ -44,7 +44,6 @@
 #include <fstream>
 #include "dart/dart.h"
 #include "apps/gestureIK/GestGlbls.h"
-#include "apps/gestureIK/MyGuiHandler.h"
 #include "apps/gestureIK/MyGestLetter.h"
 #include "apps/gestureIK/IKSolver.h"
 #include "apps/gestureIK/GestIKParser.h"
@@ -125,26 +124,8 @@ public:
 	//override glutwindow screenshot function
 	virtual bool screenshot();
 
-	void setDrawLtrOrSmpl(bool drawLtr, int idx, int symIdx = 0) {
-		flags[useLtrTrajIDX] = drawLtr;
-		flags[doneTrajIDX] = false;
-		if (drawLtr) {
-			curLtrIDX = idx;
-			curLetter = letters[idx];
-			//if (useRandSym) {	curLetter->setRandSymbolIdx(idx, !flags[debugIDX]);	}			//set random symbol among list of symbols for this letter			
-			//else {				
-			curLetter->setSymbolIdx(idx, symIdx, !flags[debugIDX]);//}		//don't display if debugging only (other debug text makes it redundant)
-			curSymIDX = curLetter->curSymbolIDX;
-			curTrajStr = curLetter->getCurSymbolName();							//build name of current symbol trajectory for screen cap purposes
-			curClassName = std::string(curLetter->ltrName);			//class name for test/train index file - use letter name not symbol name
-		} else {
-			curTraj = idx;
-			tVals[idx] = 0;
-			curTrajStr = trajNames[curTraj];
-			curClassName = std::string(trajNames[curTraj]);
-			captCount[idx] = 0;
-		}
-	}
+	//setup each letter or sample trajectory
+	void setDrawLtrOrSmpl(bool drawLtr, int idx, int symIdx = 0);
 
 	bool makeDirectory(const std::string& tmp);
 
@@ -169,7 +150,7 @@ public:
 	void writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajAra);
 	void writeTrajCSVFileRow(std::ofstream& outFile, eignVecTyp& _trajAra);
 
-private:
+protected :
 	inline std::string getCurrLocAndQuat();
 	inline std::string getCurrQuatAsRot(int row);
 
@@ -183,7 +164,7 @@ private:
 	}
 
 	//reset all control variables 
-	void resetCurVars() {
+	inline void resetCurVars() {
 		curSymIDX = 0;
 		curLtrIDX = 0;
 		flags[collectDataIDX] = false;
@@ -191,9 +172,36 @@ private:
 		mCapture = false;
 	}
 
+	//set random values for orientation and/or skeleton geometry
+	void setRandomValues();
 
+	//set camera values to passed values
+	inline void setCameraVals(const Eigen::Quaterniond& _tbQuat, float _zoom, const Eigen::Ref<const Eigen::Vector3d>& _trans) {
+		mTrackBall.setQuaternion(_tbQuat);
+		mZoom = _zoom;
+		mTrans << _trans;
+	}
+	//reset skeleton values to original values
+	void resetSkelVals();
+	//reset initial values size and color for passed body node name
+	void setShapeSize(const std::string& nodeName, const Eigen::Ref<const Eigen::Vector3d>& _origSize);
+	void setShapeClr(const std::string& nodeName, const Eigen::Ref<const Eigen::Vector3d>& _origClr);
+	//save initial skeleton values 
+	void saveInitSkelVals();
+	//save size and color vals for particular shape
+	void saveInitShapeVals(const std::string& nodeName, Eigen::Ref<Eigen::Vector3d> _destSize, Eigen::Ref<Eigen::Vector3d> _destClr);
+
+	///////////////////////////
+	//variables 
+	////////////////////////
 	//skeleton
 	dart::dynamics::SkeletonPtr skelPtr;
+	//original skeleton values, to reset values
+	Eigen::Vector3d skel_headSize,
+		skel_headClr,
+		skel_handSize,
+		skel_handClr;
+
 	//ticks for sample traj drawing
 	std::vector<double> tVals, tBnds, tIncr;
 	//file stream for test and train index files - remove distinction, have python script handle partition
@@ -205,7 +213,7 @@ private:
 	std::shared_ptr<IKSolver> IKSolve;
 
 	//current trajectory name as string, current class name as string - for letters curTrajStr will be e.g a_12 and curClassName will be e.g. a
-	std::string curTrajStr, curClassName;
+	std::string curClassName;
 
 	///sample generated non-letter trajectory symbols
 	//points to track - finger and elbow, fixed points around shoulders and head
@@ -238,6 +246,7 @@ private:
 		pauseIKLtrIDX = 8,						//pause between IK frames - for debugging purposes
 		testLtrQualIDX = 9,						//iterate through all letters without screen cap to test traj quality
 		showAllTrajsIDX = 10;					//show all trajectories of letters, to show distribution results - debug
+		//setRandEnvValsIDX = 11;					//use randomized values for display/environment values, like camera loc/orientation or skeleton head or hand geometry,shape or dims.
 
 	static const unsigned int numFlags = 11;
 };

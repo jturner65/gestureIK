@@ -122,6 +122,7 @@ namespace gestureIKApp {
 		}
 		//get uniform random double between min and max - put here so that accessible in all classes
 		inline double getUniRandDbl(double min, double max) {
+			if (min == max) { return min; }
 			if (min > max) {double t = min; min = max; max = t;	}//if wrong order, swap
 			double val = (*uniDist)(mtrn_gen);//0-1
 			val *= (max - min);		//0-(max-min)
@@ -139,6 +140,11 @@ namespace gestureIKApp {
 			val += mu;
 			return val;
 		}
+		//get gauss random double with mean mu and std = std - put here so that accessible in all classes
+		inline Eigen::Vector3d getUniRandVec(const Eigen::Ref<const Eigen::Vector3d>& min, const Eigen::Ref<const Eigen::Vector3d>& max) {
+			return Eigen::Vector3d(getUniRandDbl(min(0), max(0)), getUniRandDbl(min(1), max(1)), getUniRandDbl(min(2), max(2)));
+		}
+
 
 		void drawTrkMrkrs(dart::renderer::RenderInterface* mRI, bool onlyTraj);
 

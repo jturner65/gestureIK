@@ -56,9 +56,12 @@ using namespace dart::gui;
 static int screenCapCnt = 0, trainSymDatCnt = 0, trainLtrtCnt = 0, displayTmrCnt = 0, drawCnt = 0;
 
 MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_ikslvr), tVals(4), tBnds(4,1), tIncr(4,1), trainDataFileStrm(), 
-	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curTrajStr(trajNames[0]), curClassName(trajNames[0]), curSymIDX(0),
-	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0),
-	flags(numFlags,false){
+	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curClassName(trajNames[0]), curSymIDX(0),
+	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0), 
+	skel_headSize(0,0,0), skel_headClr(0, 0, 0), skel_handSize(0, 0, 0), skel_handClr(0, 0, 0), flags(numFlags,false)
+{
+	skelPtr = IKSolve->getSkel();
+	saveInitSkelVals();
 
 	mBackground[0] = IKSolve->params->bkgR;
 	mBackground[1] = IKSolve->params->bkgG;
@@ -71,9 +74,6 @@ MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_i
 	mTrackBall.setQuaternion(origTrackBallQ);
 	mZoom = IKSolve->params->origZoom;
 	mTrans = origMTrans;
-
-	//start trajectory at initial position of hand
-	skelPtr = IKSolve->getSkel();
 	
 	//set values used to map out trajectories to draw - needs to be owned by each symbol
 	IKSolve->setSampleCenters();
@@ -126,7 +126,7 @@ void MyWindow::openIndexFile(std::ofstream& strm, bool append) {
 
  //get current trajectory's file directory
  //dataIterVal is value of current iteration of data generation
-//or current symbol name if using letters
+//or current symbol name if using letters - dataIterVal == -1 for letters, otherwise for debug symbols
 std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
 	if (flags[useLtrTrajIDX]) {
 		return curLetter->getSymbolFileName();
@@ -134,7 +134,7 @@ std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
 	else {
 		std::stringstream ss("");
 		//<trajType>_<trajIter>
-		ss << curTrajStr << "_" << dataIterVal;
+		ss << curClassName << "_" << dataIterVal;
 		return ss.str();
 	}
 }
@@ -191,10 +191,13 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 	}
 }//trainDatInitCol
 
-//manage capture for all letters
+//manage capture for all letters - handles transition from symbol to symbol, letter to letter
 void MyWindow::trainLtrDatManageCol() {
-	if (curLtrIDX >= letters.size()) {//done every letter
+	if (curLtrIDX >= letters.size()) {//done with every letter
 		resetCurVars();
+		//in case any camera or skeleton settings have changed for randomization
+		setCameraVals(origTrackBallQ, IKSolve->params->origZoom, origMTrans);
+		resetSkelVals();
 		curSymIDX = IKSolve->params->regenNotAppend() ? 0 : letters[curLtrIDX]->numFileSymbols;		//either start at beginning or start saving only randomized letters - get rid of this when moving to each letter to control symbols drawn
 		if (!flags[testLtrQualIDX]) {//not testing, so close training data filename listing file
 			trainDataFileStrm.close();
@@ -203,9 +206,9 @@ void MyWindow::trainLtrDatManageCol() {
 		return;
 	}
 	if (!flags[testLtrQualIDX]) {
-		std::cout << "Start trainLtrDatManageCol : " << trainLtrtCnt << "\tcurLtrIDX : " << curLtrIDX << "\tcurSymbIDX : " << curSymIDX << std::endl;
+		std::cout << "Function : trainLtrDatManageCol : current letter : " << trainLtrtCnt++ << "\tcurLtrIDX : " << curLtrIDX << "\tcurSymbIDX : " << curSymIDX << std::endl;
 	}
-	//need to cycle through all letters 
+	//need to cycle through all letters - call with idx of next symbol and letter to draw
 	setDrawLtrOrSmpl(true, curLtrIDX,  curSymIDX);
 	curTrajDirName = getCurTrajFileDir(-1);
 	//need to write entry into either testing or training file - if dataGenIters > some threshold make train file, else make test file 
@@ -213,17 +216,80 @@ void MyWindow::trainLtrDatManageCol() {
 		trainDatWriteIndexFile(trainDataFileStrm, curTrajDirName, curLtrIDX);
 		mCapture = true;
 	}
+
 	//for next iteration
+	//TODO get rid of curSymIDX - let each letter maintain count of how many symbols have been drawn
 	curSymIDX += 1;
+	bool doneWithLetter = (curSymIDX >= curLetter->getNumSymbols());
 	//finished all symbols of this letter
-	if (curSymIDX >= curLetter->getNumSymbols()){
+	if (doneWithLetter) {
 		curLtrIDX += 1;
 		curSymIDX = (IKSolve->params->regenNotAppend() || (curLtrIDX >= letters.size())) ? 0 : letters[curLtrIDX]->numFileSymbols;			//either start at beginning or start saving only randomized letters - set to 0 after all letters finished
 	}
-	if (!flags[testLtrQualIDX]) {
-		std::cout << "End trainLtrDatManageCol : " << trainLtrtCnt++ << std::endl;
-	}
 }//trainLtrDatManageCol
+
+void MyWindow::setRandomValues() {
+	//randomize orientation
+	if (IKSolve->params->rndCamOrient()) { mTrackBall.setQuaternion(curLetter->curSymbol->cameraRot); }
+	if (IKSolve->params->rndCamLoc()) {
+		//get values from curLetter
+		mZoom = curLetter->curSymbol->cameraZoom;
+		//set mTrans with symbol's cameraTans
+		mTrans = curLetter->curSymbol->cameraTrans;
+	}
+	
+	//random head width/height (ellispoid)
+	if (IKSolve->params->rndHeadDims()) {
+		setShapeSize("h_head", curLetter->curSymbol->rnd_headSize);
+	}
+	//random head color (avoid colors close to gray)
+	if (IKSolve->params->rndHeadClr()) {
+		setShapeClr("h_head", curLetter->curSymbol->rnd_headClr);
+	}
+	//TODO random hand shape - ellipsoid or rectangular
+	if (IKSolve->params->rndHandShape()){
+		
+	}
+	//random hand width/depth/length
+	if (IKSolve->params->rndHandDims()){
+		setShapeSize("h_hand_right", curLetter->curSymbol->rnd_handSize);
+		setShapeSize("h_hand_left", curLetter->curSymbol->rnd_handSize);
+	}
+	//random hand color
+	if (IKSolve->params->rndHandClr()){
+		setShapeClr("h_hand_right", curLetter->curSymbol->rnd_handClr);
+		setShapeClr("h_hand_left", curLetter->curSymbol->rnd_handClr);
+	}
+}
+
+//setup each new letter symbol or sample trajectory
+void MyWindow::setDrawLtrOrSmpl(bool drawLtr, int idx, int symNum) {
+	flags[useLtrTrajIDX] = drawLtr;
+	flags[doneTrajIDX] = false;
+
+	if (drawLtr) {													//drawing actual letter
+		if ((!flags[testLtrQualIDX]) && (nullptr != curLetter)) {
+			std::cout << "Wrote " << screenCapCnt << " .pngs of symbol traj : " << curLetter->getCurSymbolName() << std::endl;
+		}
+		curLtrIDX = idx;
+		curLetter = letters[idx];
+		curLetter->setSymbolIdx(symNum, !flags[debugIDX]);		//don't display if debugging only (other debug text makes it redundant)
+		//set randomization values based on setting for current letter
+		setRandomValues();
+
+		//curSymIDX = curLetter->curSymbolIDX;
+		curClassName = std::string(curLetter->ltrName);				//class name for test/train index file - use letter name not symbol name
+	}
+	else {														//drawing triangle/square/star example symbols
+		curTraj = idx;
+		tVals[idx] = 0;
+		curClassName = std::string(trajNames[curTraj]);
+		captCount[idx] = 0;
+	}
+
+	screenCapCnt = 0;												//since changing symbol, reset count of screen captures
+}//setDrawLtrOrSmpl
+
 
 //write line in index/label text file for each example
 void MyWindow::trainDatWriteIndexFile(std::ofstream& outFile, const std::string& fileDir, int cls) {
@@ -238,9 +304,9 @@ void MyWindow::trainDatWriteIndexFile(std::ofstream& outFile, const std::string&
 void MyWindow::buildLetterList() {
 	letters.clear();
 	
-	for (int i = 0; i < IKSolve->params->numLetters; ++i) {
+	for (unsigned int i = 0; i < IKSolve->params->numLetters; ++i) {
 		std::string c(1, i + 97);
-		letters.push_back(std::make_shared<MyGestLetter>(c));
+		letters.push_back(std::make_shared<MyGestLetter>(c,i));
 		letters[i]->setSolver(IKSolve);
 		GestIKParser::readGestLetterXML(letters[i]);
 		std::cout << "Made letter : " << (*letters[i]) << std::endl;
@@ -336,9 +402,7 @@ void MyWindow::draw() {
 	glDisable(GL_LIGHTING);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	//cout << "draw start : " << (drawCnt) << std::endl;
-	if (nullptr != curLetter) {
-		mTrackBall.setQuaternion(curLetter->curSymbol->cameraRot);
-	}
+
 	drawSkels();
 	//traw tracked markers
 	if (flags[drawTrkMrkrsIDX]) {
@@ -405,6 +469,7 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 			return;
 		}
 		//repeatedly pressing the same letter will cycle through all available symbols of that letter
+		//TODO have this work only using To be coded debug array of example random trajs
 		setDrawLtrOrSmpl(true, idx, curSymIDX);
 		curSymIDX = (curSymIDX + 1) % curLetter->getNumSymbols();
 		return;
@@ -420,9 +485,7 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		std::cout << "sample "<< trajNames[curTraj] << " trajectory"<< std::endl;
 		break; }
 	case '`': {         //reset trackball loc with origTrackBallQ and zoom with 1
-		mTrackBall.setQuaternion(origTrackBallQ);
-		mZoom = IKSolve->params->origZoom;
-		mTrans = origMTrans;
+		setCameraVals(origTrackBallQ, IKSolve->params->origZoom, origMTrans);
 		break; }
 	case 'a': {  // screen capture all letters (train and test)
 		if (letters.size() == 0) {
@@ -509,6 +572,78 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
   glutPostRedisplay();
 }
 
+
+//save initial value for particular shape
+void MyWindow::saveInitShapeVals(const std::string& nodeName, Eigen::Ref<Eigen::Vector3d> _destSize, Eigen::Ref<Eigen::Vector3d> _destClr) {
+	Eigen::Vector3d tmp(0, 0, 0);
+	dart::dynamics::ShapePtr _bodyShape = skelPtr->getBodyNode(nodeName)->getVisualizationShape(0);
+	//must cast to appropriate child class
+	switch (_bodyShape->getShapeType()) {
+		case dart::dynamics::Shape::BOX: {
+			const dart::dynamics::BoxShape* box1 = static_cast<const dart::dynamics::BoxShape*>(_bodyShape.get());
+			tmp = box1->getSize();
+			break;
+		}
+		case dart::dynamics::Shape::ELLIPSOID: {
+			const dart::dynamics::EllipsoidShape* ellipsoid1 = static_cast<const dart::dynamics::EllipsoidShape*>(_bodyShape.get());
+			tmp = ellipsoid1->getSize();
+			break;
+		}
+		default: {}//if not either shape then problem, do nothing
+	}
+	_destSize(0) = tmp(0);
+	_destSize(1) = tmp(1);
+	_destSize(2) = tmp(2);
+	_destClr = _bodyShape->getColor();
+}//saveInitSkelShapeSize
+
+//save initial skeleton values 
+void MyWindow::saveInitSkelVals() {
+	if (nullptr != skelPtr) {
+		//head initial values
+		saveInitShapeVals("h_head", skel_headSize, skel_headClr);
+		//hand initial values - use right hand for base
+		saveInitShapeVals("h_hand_right", skel_handSize, skel_handClr);
+	}
+}
+
+void MyWindow::setShapeSize(const std::string& nodeName, const Eigen::Ref<const Eigen::Vector3d>& _origSize) {
+	dart::dynamics::ShapePtr _bodyShape = skelPtr->getBodyNode(nodeName)->getVisualizationShape(0);
+	//must cast to appropriate child class
+	switch (_bodyShape->getShapeType()) {
+	case dart::dynamics::Shape::BOX: {
+		dart::dynamics::BoxShape* box1 = static_cast<dart::dynamics::BoxShape*>(_bodyShape.get());
+		box1->setSize(_origSize);
+		break;
+	}
+	case dart::dynamics::Shape::ELLIPSOID: {
+		dart::dynamics::EllipsoidShape* ellipsoid1 = static_cast<dart::dynamics::EllipsoidShape*>(_bodyShape.get());
+		ellipsoid1->setSize(_origSize);
+		break;
+	}
+	default: {}//if not either shape then problem, do nothing
+	}
+}//setShapeSize
+
+void MyWindow::setShapeClr(const std::string& nodeName, const Eigen::Ref<const Eigen::Vector3d>& _origClr) {
+	skelPtr->getBodyNode(nodeName)->getVisualizationShape(0)->setColor(Eigen::Vector3d(_origClr));
+}//setShapeClr
+
+
+//reset all skeleton values to initial values
+void MyWindow::resetSkelVals() {
+	if (nullptr != skelPtr) {
+		//reset head initial values
+		setShapeSize("h_head", skel_headSize);
+		setShapeClr("h_head", skel_headClr);
+		//reset hand initial values - TODO reset shape first
+		setShapeSize("h_hand_right", skel_handSize);
+		setShapeClr("h_hand_right", skel_handClr);
+		setShapeSize("h_hand_left", skel_handSize);
+		setShapeClr("h_hand_left", skel_handClr);
+	}
+}
+
 //automate the capture of training data - regenerate all corners with random values, and reset t-values
 void MyWindow::regenerateSampleData(bool rand) {
 	triCrnrs = regenCorners<3U>(triCrnrConsts, rand, curStIdx[1]);
@@ -570,20 +705,18 @@ bool MyWindow::screenshot() {
 	unsigned result = lodepng::encode(fileName, mScreenshotTemp2, tw, th);
 	// if there's an error, display it
 	if (result) {
-		std::cout << "lodepng error " << result << ": "
-			<< lodepng_error_text(result) << std::endl;
+		std::cout << "lodepng error " << result << ": " << lodepng_error_text(result) << std::endl;
 		return false;
 	}
 	else {
-		std::cout << "wrote screenshot " << fileName //<< "\t screenCapCnt : " << screenCapCnt++ 
-			<< std::endl;
-
+		screenCapCnt++;
+		//std::cout << "wrote screenshot " << fileName << std::endl;
 		return true;
 	}
 }//screenshot
 
 void MyWindow::drawAxes(const Eigen::Ref<const Eigen::Vector3d>& axesLoc, float len, bool altColor) {
-	float col = (altColor ? .5f : 0);
+	float col = (altColor ? .5f : 0);//allow for alternate color axes x:orange, y:cyan, z:purple
 	glPushMatrix();
 	glTranslatef(axesLoc(0), axesLoc(1), axesLoc(2));
 	glPushMatrix();

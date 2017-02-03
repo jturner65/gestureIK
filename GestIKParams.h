@@ -62,13 +62,28 @@ namespace gestureIKApp {
 		void setParamValFromXMLStr(const std::string& _name, const std::string& s);
 
 		//whether or not to add the possibility of using the left hand to draw to random letter gen
-		inline bool useLeftHand() { return flags[IDX_useLeftHand]; }
+		inline bool useLeftHand() {		return flags[IDX_useLeftHand]; }
 		//whether or not to generate randomized versions of loaded letters - note numTotSymPerLtr still needs to be specified to be greater than # of file-based samples to get any random samples
-		inline bool genRandLtrs() { return flags[IDX_genRandLtrs]; }
+		inline bool genRandLtrs() {		return flags[IDX_genRandLtrs]; }
 		//whether or not to make img sequences of the non-random-generated (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
-		inline bool regenNotAppend() { return flags[IDX_regenNotAppend]; }
+		inline bool regenNotAppend() {	return flags[IDX_regenNotAppend]; }
 		//whether or not to change colors of trajectories for debug display
-		inline bool chgTrajClrs() { return flags[IDX_chgTrajDbgClrs]; }
+		inline bool chgTrajClrs() {		return flags[IDX_chgTrajDbgClrs]; }
+		//random skel or camera checks
+		//randomize camera orientation
+		inline bool rndCamOrient() {	return flags[IDX_rndCamOrient]; }
+		//random camera translation
+		inline bool rndCamLoc() {		return flags[IDX_rndCamLoc]; }
+		//random head width/height (ellispoid)
+		inline bool rndHeadDims() {		return flags[IDX_rndHeadDims]; }
+		//random head color (avoid colors close to gray)
+		inline bool rndHeadClr() {		return flags[IDX_rndHeadClr]; }
+		//random hand shape - ellipsoid or rectangular
+		inline bool rndHandShape() {	return flags[IDX_rndHandShape]; }
+		//random hand width/depth/length
+		inline bool rndHandDims() {		return flags[IDX_rndHandDims]; }
+		//random hand color
+		inline bool rndHandClr() {		return flags[IDX_rndHandClr]; }
 		//whether or not to force training data to be 16 frames long
 		inline bool limitTo16Frames() { return (dataType == FIXED_16); }
 		//whether or not to use fixed global velocity for all trajectories
@@ -127,9 +142,19 @@ namespace gestureIKApp {
 		//amount of overshoot to use for 4-pt neville (for building connecting trajs)
 		double trajNev4OvPct;
 
-		//randomization control
+		//randomization control vars
 		//random camera orientation theta
 		double rnd_camThet;
+		//random camera zoom standard dev
+		double rnd_camZoom;
+		//random camera translation std
+		double rnd_camTrans;
+
+
+
+		//end randomization control vars
+
+
 		//int width/height of windows
 		int win_Width, win_Height;
 
@@ -165,9 +190,24 @@ namespace gestureIKApp {
 			//whether or not to regenerate the original non-randomized (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
 			IDX_regenNotAppend = 2,
 			//whether or not to change colors per trajectory for debug display
-			IDX_chgTrajDbgClrs = 3;
+			IDX_chgTrajDbgClrs = 3,
+			//randomization settings - whether or not to turn on randomization for camera or skeleton dimensions
+			//random camera orientation
+			IDX_rndCamOrient = 4,
+			//random camera location (translate)
+			IDX_rndCamLoc = 5,
+			//random head width/height
+			IDX_rndHeadDims = 6,
+			//random head color(near black or near white) - always ellipsoid
+			IDX_rndHeadClr = 7,
+			//randomize hand shape - either block or ellipsoid
+			IDX_rndHandShape = 8,
+			//randomize hand width/depth/length
+			IDX_rndHandDims = 9,
+			//randomize hand color
+			IDX_rndHandClr = 10;
 
-		static const int numFlags = 4;
+		static const int numFlags = 11;
 	};
 
 }//namespace gestureIKApp 
