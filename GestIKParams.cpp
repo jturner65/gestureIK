@@ -42,8 +42,8 @@ namespace gestureIKApp {
 	GestIKParams::GestIKParams() : defaultVals(), dataCapNumExamples(100), //dataCapTestTrainThresh(.5),
 		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), IK_elbowScale(0.36), IK_fastTrajMult(1.5), IK_ctrYOffset(0),
 		trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1), trajRandCtrStdScale_X(1), trajRandCtrStdScale_Y(1), trajRandCtrStdScale_Z(1),
-		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), rnd_camThet(.789), win_Width(800), win_Height(800), numLetters(26), numTotSymPerLtr(0), ltrIdxStSave(0), fixedClipLen(16), origZoom(.65f),
-		clipCountOffset(0), dataType(MULT_8),
+		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), rnd_camThet(.35), rnd_camZoom(.05), rnd_camTrans(.25), rnd_headClrBnd(.2), rnd_headDimPct(.1), rnd_handClrBnd(.2),rnd_handDimPct(.1),// rnd_handShape(0),
+		win_Width(800), win_Height(800), numLetters(26), numTotSymPerLtr(0), ltrIdxStSave(0), fixedClipLen(16), origZoom(.65f),	clipCountOffset(0), dataType(MULT_8),
 		bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""),
 		flags(numFlags, false)
 	{
@@ -65,13 +65,19 @@ namespace gestureIKApp {
 		if (_name.compare("IK_ctrYOffset") == 0) { IK_ctrYOffset = stod(s);      return; }
 
 		//if (_name.compare("dataCapTestTrainThresh") == 0) { dataCapTestTrainThresh = stod(s);      return; }
-		if (_name.compare("trajLenThresh") == 0) { trajLenThresh = stod(s);      return; }
-		if (_name.compare("trajDistMult") == 0) { trajDistMult = stod(s);      return; }
+		if (_name.compare("trajLenThresh") == 0) { trajLenThresh = stod(s);   return; }
+		if (_name.compare("trajDistMult") == 0) { trajDistMult = stod(s);  return; }
 		if (_name.compare("trajDesiredVel") == 0) { trajDesiredVel = stod(s); return; }
 		if (_name.compare("trajNev4OvPct") == 0) { trajNev4OvPct = stod(s); return; }
+
 		if (_name.compare("rnd_camThet") == 0) { rnd_camThet = stod(s); return; }
-		if (_name.compare("rnd_camZoom") == 0) { rnd_camZoom = stof(s);			return; }
-		if (_name.compare("rnd_camTrans") == 0) { rnd_camTrans = stof(s);			return; }
+		if (_name.compare("rnd_camZoom") == 0) { rnd_camZoom = stod(s);	return; }
+		if (_name.compare("rnd_camTrans") == 0) { rnd_camTrans = stod(s); return; }
+
+		if (_name.compare("rnd_headClrBnd") == 0) { rnd_headClrBnd = stod(s); return; }
+		if (_name.compare("rnd_headDimPct") == 0) { rnd_headDimPct = stod(s); return; }
+		if (_name.compare("rnd_handClrBnd") == 0) { rnd_handClrBnd = stod(s); return; }
+		if (_name.compare("rnd_handDimPct") == 0) { rnd_handDimPct = stod(s); return; }
 
 		if (_name.compare("trajRandCtrStd") == 0) { trajRandCtrStd = stod(s); return; }
 		if (_name.compare("trajRandSclStd") == 0) { trajRandSclStd = stod(s); return; }
@@ -94,12 +100,12 @@ namespace gestureIKApp {
 		if (_name.compare("ltrIdxStSave") == 0) { ltrIdxStSave = stoi(s);	if (ltrIdxStSave >= numLetters) { ltrIdxStSave  = numLetters-1;} 		return; }
 		if (_name.compare("fixedClipLen") == 0) { fixedClipLen = stoi(s);			return; }
 		if (_name.compare("clipCountOffset") == 0) { clipCountOffset = stoi(s); return; }
+		//if (_name.compare("rnd_handShape") == 0) { rnd_handShape = stoi(s);			return; }
 		//enum
 		if (_name.compare("dataType") == 0) {	dataType = static_cast<DataType>(stoi(s)); return;	}
 
 		//floats 
 		if (_name.compare("origZoom") == 0) { origZoom = stof(s);			return; }
-
 
 		//strings
 		//if (_name.compare("skelFileName") == 0) { skelFileName = std::string(s);	return; }
@@ -151,6 +157,11 @@ namespace gestureIKApp {
 		rnd_camThet = .35;
 		rnd_camZoom = .05;
 		rnd_camTrans = .25;
+		rnd_headClrBnd = .2;
+		rnd_headDimPct = .1;
+		rnd_handClrBnd = .2;
+		rnd_handDimPct = .1;
+		//rnd_handShape = 0;
 
 		win_Width = 800;
 		win_Height = 800;
@@ -228,6 +239,11 @@ namespace gestureIKApp {
 		res.push_back(rnd_camThet);
 		res.push_back(rnd_camZoom);
 		res.push_back(rnd_camTrans);
+		res.push_back(rnd_headClrBnd);
+		res.push_back(rnd_headDimPct);
+		res.push_back(rnd_handClrBnd);
+		res.push_back(rnd_handDimPct);
+		//res.push_back(rnd_handShape);
 
 		res.push_back(win_Width);
 		res.push_back(win_Height);
@@ -282,7 +298,12 @@ namespace gestureIKApp {
 		rnd_camThet = vals[idx++];
 		rnd_camZoom = vals[idx++];
 		rnd_camTrans = vals[idx++];
+		rnd_headClrBnd = vals[idx++];
+		rnd_headDimPct = vals[idx++];
+		rnd_handClrBnd = vals[idx++];
+		rnd_handDimPct = vals[idx++];
 
+		//rnd_handShape = (int)floor(vals[idx++] + .5);
 		win_Width = (int)floor(vals[idx++] + .5);
 		win_Height = (int)floor(vals[idx++] + .5);
 
@@ -307,14 +328,17 @@ namespace gestureIKApp {
 
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
 		out << "GestIK Params values : "<<"\tdateFNameOffset : "<< p.dateFNameOffset<< std::endl;
-		out << "Letter data type : " << DataType2str[p.dataType] << "\tdataCapNumExamples : " << p.dataCapNumExamples << "\t rnd_camThet : " << p.rnd_camThet << "\t rnd_camZoom : " << p.rnd_camZoom << "\t rnd_camTrans : " << p.rnd_camTrans;
-
-		out << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
+		out << "Letter data type : " << DataType2str[p.dataType] << "\tdataCapNumExamples : " << p.dataCapNumExamples << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
+		out << "Random Env/Skel vals : rnd_camThet : " << p.rnd_camThet << "\t rnd_camZoom : " << p.rnd_camZoom << "\t rnd_camTrans : " << p.rnd_camTrans << std::endl;
+		out << "\t rnd_headClrBnd : " << p.rnd_headClrBnd << "\t rnd_headDimPct : " << p.rnd_headDimPct << "\t rnd_handClrBnd : " << p.rnd_handClrBnd << "\t rnd_handDimPct : " << p.rnd_handDimPct << std::endl; //"\t rnd_handShape : " << p.rnd_handShape << std::endl;
 		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| IK_fastTrajMult  : " << p.IK_fastTrajMult << "\t| IK_ctrYOffset  : " << p.IK_ctrYOffset << std::endl;
 		out << "trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult  << "\ttrajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << std::endl;
 		out << "clipCountOffset : " << p.clipCountOffset << "\t#letters (out of 26) to load : "<<p.numLetters <<"\t| traj rand scale x,y,z ("   << p.trajRandCtrStdScale_X<<", "<<p.trajRandCtrStdScale_Y << ", " << p.trajRandCtrStdScale_Z <<")\t| bkg clr (rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")"<< std::endl;
 		out << "Generate left hand data : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False") << "\tGenerate Random Letters : " << (p.flags[p.IDX_genRandLtrs] ? "True" : "False") << "\tSave Non-random (File-based) letter IK (set to false to ignore these to add more random sequences): " << (p.flags[p.IDX_regenNotAppend] ? "True" : "False") << std::endl;
 		out << "Display trajectories with different colors : " << (p.flags[p.IDX_chgTrajDbgClrs] ? "True" : "False")  << std::endl;
+		out << "Randomize :" << std::endl;
+		out<<"\tCamera Orientation : " << (p.flags[p.IDX_rndCamOrient] ? "True" : "False") << "\t Camera Location / Zoom : " << (p.flags[p.IDX_rndCamLoc] ? "True" : "False") << "\t  Head Dimensions: " << (p.flags[p.IDX_rndHeadDims] ? "True" : "False") << "\t  Head Color: " << (p.flags[p.IDX_rndHeadClr] ? "True" : "False") << std::endl;
+		out << "\tHand Shape : " << (p.flags[p.IDX_rndHandShape] ? "True" : "False") << "\t  Hand Dimensions : " << (p.flags[p.IDX_rndHandDims] ? "True" : "False") << "\t Hand Color : " << (p.flags[p.IDX_rndHandClr] ? "True" : "False") << std::endl;
 		return out;
 	}
 

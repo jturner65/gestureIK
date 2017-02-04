@@ -58,7 +58,7 @@ static int screenCapCnt = 0, trainSymDatCnt = 0, trainLtrtCnt = 0, displayTmrCnt
 MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_ikslvr), tVals(4), tBnds(4,1), tIncr(4,1), trainDataFileStrm(), 
 	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curClassName(trajNames[0]), curSymIDX(0),
 	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0), 
-	skel_headSize(0,0,0), skel_headClr(0, 0, 0), skel_handSize(0, 0, 0), skel_handClr(0, 0, 0), flags(numFlags,false)
+	skel_headSize(0,0,0), skel_headClr(0, 0, 0), skel_handSize(0, 0, 0), skel_handClr(0, 0, 0), curHandShape(0), flags(numFlags,false)
 {
 	skelPtr = IKSolve->getSkel();
 	saveInitSkelVals();
@@ -240,25 +240,40 @@ void MyWindow::setRandomValues() {
 	
 	//random head width/height (ellispoid)
 	if (IKSolve->params->rndHeadDims()) {
-		setShapeSize("h_head", curLetter->curSymbol->rnd_headSize);
+		Eigen::Vector3d newHeadSize(skel_headSize);
+		for (unsigned int i = 0; i < 3; ++i) {
+			newHeadSize(i) += newHeadSize(i)*curLetter->curSymbol->rnd_headSize(i);
+		}
+		setShapeSize("h_head", 0, newHeadSize);
 	}
 	//random head color (avoid colors close to gray)
 	if (IKSolve->params->rndHeadClr()) {
-		setShapeClr("h_head", curLetter->curSymbol->rnd_headClr);
+		setShapeClr("h_head", 0, curLetter->curSymbol->rnd_headClr);
 	}
 	//TODO random hand shape - ellipsoid or rectangular
 	if (IKSolve->params->rndHandShape()){
-		
+		int hndShIdx = curLetter->curSymbol->rnd_handShape;
+		if (curHandShape != hndShIdx) {//if different, hide current, unhide new
+			skelPtr->getBodyNode("h_hand_right")->getVisualizationShape(curHandShape)->setHidden(true);
+			skelPtr->getBodyNode("h_hand_left")->getVisualizationShape(curHandShape)->setHidden(true);
+			skelPtr->getBodyNode("h_hand_right")->getVisualizationShape(hndShIdx)->setHidden(false);
+			skelPtr->getBodyNode("h_hand_left")->getVisualizationShape(hndShIdx)->setHidden(false);
+			curHandShape = hndShIdx;
+		}
 	}
 	//random hand width/depth/length
 	if (IKSolve->params->rndHandDims()){
-		setShapeSize("h_hand_right", curLetter->curSymbol->rnd_handSize);
-		setShapeSize("h_hand_left", curLetter->curSymbol->rnd_handSize);
+		Eigen::Vector3d newHandSize(skel_handSize);
+		for (unsigned int i = 0; i < 3; ++i) {
+			newHandSize(i) += newHandSize(i)*curLetter->curSymbol->rnd_handSize(i);
+		}
+		setShapeSize("h_hand_right", curHandShape, newHandSize);
+		setShapeSize("h_hand_left", curHandShape, newHandSize);
 	}
 	//random hand color
 	if (IKSolve->params->rndHandClr()){
-		setShapeClr("h_hand_right", curLetter->curSymbol->rnd_handClr);
-		setShapeClr("h_hand_left", curLetter->curSymbol->rnd_handClr);
+		setShapeClr("h_hand_right", curHandShape, curLetter->curSymbol->rnd_handClr);
+		setShapeClr("h_hand_left", curHandShape, curLetter->curSymbol->rnd_handClr);
 	}
 }
 
@@ -486,6 +501,7 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		break; }
 	case '`': {         //reset trackball loc with origTrackBallQ and zoom with 1
 		setCameraVals(origTrackBallQ, IKSolve->params->origZoom, origMTrans);
+		resetSkelVals();
 		break; }
 	case 'a': {  // screen capture all letters (train and test)
 		if (letters.size() == 0) {
@@ -574,9 +590,9 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 
 
 //save initial value for particular shape
-void MyWindow::saveInitShapeVals(const std::string& nodeName, Eigen::Ref<Eigen::Vector3d> _destSize, Eigen::Ref<Eigen::Vector3d> _destClr) {
+void MyWindow::saveInitShapeVals(const std::string& nodeName, int visIDX, Eigen::Ref<Eigen::Vector3d> _destSize, Eigen::Ref<Eigen::Vector3d> _destClr) {
 	Eigen::Vector3d tmp(0, 0, 0);
-	dart::dynamics::ShapePtr _bodyShape = skelPtr->getBodyNode(nodeName)->getVisualizationShape(0);
+	dart::dynamics::ShapePtr _bodyShape = skelPtr->getBodyNode(nodeName)->getVisualizationShape(visIDX);
 	//must cast to appropriate child class
 	switch (_bodyShape->getShapeType()) {
 		case dart::dynamics::Shape::BOX: {
@@ -591,23 +607,37 @@ void MyWindow::saveInitShapeVals(const std::string& nodeName, Eigen::Ref<Eigen::
 		}
 		default: {}//if not either shape then problem, do nothing
 	}
-	_destSize(0) = tmp(0);
-	_destSize(1) = tmp(1);
-	_destSize(2) = tmp(2);
+	_destSize << tmp;
 	_destClr = _bodyShape->getColor();
 }//saveInitSkelShapeSize
+
+void MyWindow::addSphereHand(const std::string& nodeName) {
+	dart::dynamics::ShapePtr _handShape = skelPtr->getBodyNode(nodeName)->getVisualizationShape(0);		//get box shape of hand
+	const dart::dynamics::BoxShape* box1 = static_cast<const dart::dynamics::BoxShape*>(_handShape.get());
+	Eigen::Vector3d sz (box1->getSize());
+	sz *= 1.1;
+	std::shared_ptr<dart::dynamics::Shape> shape (new dart::dynamics::EllipsoidShape(sz));
+	skelPtr->getBodyNode(nodeName)->addVisualizationShape(shape);
+	shape->setColor(box1->getColor());
+	shape->setLocalTransform(box1->getLocalTransform());
+	//add vis shape, now hide it
+	skelPtr->getBodyNode(nodeName)->getVisualizationShape(1)->setHidden(true);
+}
 
 //save initial skeleton values 
 void MyWindow::saveInitSkelVals() {
 	if (nullptr != skelPtr) {
 		//head initial values
-		saveInitShapeVals("h_head", skel_headSize, skel_headClr);
+		saveInitShapeVals("h_head", 0, skel_headSize, skel_headClr);
 		//hand initial values - use right hand for base
-		saveInitShapeVals("h_hand_right", skel_handSize, skel_handClr);
+		saveInitShapeVals("h_hand_right", 0, skel_handSize, skel_handClr);
+		//add spherical visualization shapes of the same dimensions to both hands and hide them
+		addSphereHand("h_hand_right");
+		addSphereHand("h_hand_left");
 	}
 }
 
-void MyWindow::setShapeSize(const std::string& nodeName, const Eigen::Ref<const Eigen::Vector3d>& _origSize) {
+void MyWindow::setShapeSize(const std::string& nodeName, int visIDX, const Eigen::Ref<const Eigen::Vector3d>& _origSize) {
 	dart::dynamics::ShapePtr _bodyShape = skelPtr->getBodyNode(nodeName)->getVisualizationShape(0);
 	//must cast to appropriate child class
 	switch (_bodyShape->getShapeType()) {
@@ -625,8 +655,8 @@ void MyWindow::setShapeSize(const std::string& nodeName, const Eigen::Ref<const 
 	}
 }//setShapeSize
 
-void MyWindow::setShapeClr(const std::string& nodeName, const Eigen::Ref<const Eigen::Vector3d>& _origClr) {
-	skelPtr->getBodyNode(nodeName)->getVisualizationShape(0)->setColor(Eigen::Vector3d(_origClr));
+void MyWindow::setShapeClr(const std::string& nodeName, int visIDX, const Eigen::Ref<const Eigen::Vector3d>& _origClr) {
+	skelPtr->getBodyNode(nodeName)->getVisualizationShape(visIDX)->setColor(Eigen::Vector3d(_origClr));
 }//setShapeClr
 
 
@@ -634,13 +664,22 @@ void MyWindow::setShapeClr(const std::string& nodeName, const Eigen::Ref<const E
 void MyWindow::resetSkelVals() {
 	if (nullptr != skelPtr) {
 		//reset head initial values
-		setShapeSize("h_head", skel_headSize);
-		setShapeClr("h_head", skel_headClr);
+		setShapeSize("h_head", 0, skel_headSize);
+		setShapeClr("h_head", 0, skel_headClr);
 		//reset hand initial values - TODO reset shape first
-		setShapeSize("h_hand_right", skel_handSize);
-		setShapeClr("h_hand_right", skel_handClr);
-		setShapeSize("h_hand_left", skel_handSize);
-		setShapeClr("h_hand_left", skel_handClr);
+		setShapeSize("h_hand_right", 0, skel_handSize);
+		setShapeClr("h_hand_right", 0, skel_handClr);
+		setShapeSize("h_hand_left", 0, skel_handSize);
+		setShapeClr("h_hand_left", 0, skel_handClr);
+		//spherical shape hand - hide initially
+		setShapeSize("h_hand_right", 1, skel_handSize);
+		setShapeClr("h_hand_right", 1, skel_handClr);
+		setShapeSize("h_hand_left", 1, skel_handSize);
+		setShapeClr("h_hand_left", 1, skel_handClr);
+		//hide ellipsoid hand
+		skelPtr->getBodyNode("h_hand_right")->getVisualizationShape(1)->setHidden(true);
+		skelPtr->getBodyNode("h_hand_left")->getVisualizationShape(1)->setHidden(true);
+
 	}
 }
 

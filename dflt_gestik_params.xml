@@ -36,8 +36,7 @@
 	<parameter>
 		<name>dataCapTestTrainThresh</name>
 		<val>1.0</val>   
-	</parameter>
-	-->
+	</parameter>	-->
 	<parameter>
 		<name>dataCapNumExamples</name>
 		<val>100</val>   
@@ -119,12 +118,32 @@
 <!-- +/- camera zoom uniform range -->
 	<parameter>
 		<name>rnd_camZoom</name>
-		<val>0</val>
+		<val>0.1</val>
 	</parameter>
 <!-- camera uniform pct of translation dim - should be around 50-100 -->
 	<parameter>
 		<name>rnd_camTrans</name>
 		<val>150</val>
+	</parameter>
+<!-- head color bound - grayscale : avoid rand colors of bkgrnd clr +/- this amt (.05-.25)-->
+	<parameter>
+		<name>rnd_headClrBnd</name>
+		<val>.2</val>
+	</parameter>
+	<!-- +/- head dim mod pct -->
+	<parameter>
+		<name>rnd_headDimPct</name>
+		<val>0.3</val>
+	</parameter>
+<!-- hand color bound - grayscale : avoid rand colors of bkgrnd clr +/- this amt (.05-.25)-->
+	<parameter>
+		<name>rnd_handClrBnd</name>
+		<val>.2</val>
+	</parameter>
+<!-- +/- hand dim mod pct -->
+	<parameter>
+		<name>rnd_handDimPct</name>
+		<val>0.4</val>
 	</parameter>
 <!--END random camera and skeleton values -->
 <!--Set dataType 0 == const vel for all ltrs, 1 == fixed 16, 2 == mult8 train/test -->
@@ -172,15 +191,15 @@
 <!-- randomization flags - which aspects of skeleton and environment to randomize -->
 	<parameter>
 		<name>IDX_rndCamOrient</name>
-		<val>TRUE</val> 
+		<val>FALSE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_rndCamLoc</name>
-		<val>TRUE</val> 
+		<val>FALSE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_rndHeadDims</name>
-		<val>FALSE</val> 
+		<val>TRUE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_rndHeadClr</name>
@@ -192,7 +211,7 @@
 	</parameter>
 	<parameter>
 		<name>IDX_rndHandDims</name>
-		<val>FALSE</val> 
+		<val>TRUE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_rndHandClr</name>

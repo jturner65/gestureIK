@@ -149,11 +149,18 @@ namespace gestureIKApp {
 		double rnd_camZoom;
 		//random camera translation std
 		double rnd_camTrans;
-
-
-
+		//bound around background color to avoid when generating a color for head
+		double rnd_headClrBnd;
+		//pct of original size that head dims can vary
+		double rnd_headDimPct;
+		//bound around background color to avoid when generating a color for hand
+		double rnd_handClrBnd;
+		//pct of original size that hand dimensions can vary
+		double rnd_handDimPct;
 		//end randomization control vars
 
+		//specify hand shape : 0: rectangular, 1: ellipsoid
+		//int handShape;
 
 		//int width/height of windows
 		int win_Width, win_Height;

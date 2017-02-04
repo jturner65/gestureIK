@@ -359,12 +359,12 @@
                     <color>0.9 0.9 0.9</color>
                 </visualization_shape>
                 <collision_shape>
-                    <transformation>0.0 0.08825 0.0 0.0 0.0 0.0</transformation>
+                    <transformation>0.0 0.09425 0.0 0.0 0.0 0.0</transformation>
                     <geometry>
                         <ellipsoid>
                             <!--size>0.6500*0.1565 1.0000*0.1565 0.8000*0.1565</size-->
                             <!--<size>0.101725 0.1565 0.1252</size>-->
-                            <size>0.121725 0.1865 0.1502</size>
+                            <size>0.141725 0.2165 0.1702</size>
                         </ellipsoid>
                     </geometry>
                 </collision_shape>                                
@@ -479,7 +479,6 @@
                     </geometry>
                 </collision_shape>                                
             </body>
-
             <!-- Right Arm -->
             <body name="h_scapula_right">
                 <transformation>0.0 0.3069 0.0 0.9423 0.0 0.0</transformation>

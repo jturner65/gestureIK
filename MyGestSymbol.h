@@ -121,13 +121,14 @@ namespace gestureIKApp {
 		//random camera displacment (mTrans and zoom)
 		Eigen::Vector3d cameraTrans;
 		float cameraZoom;
-		//random head and hand dimensions
+		//random head and hand dimensions and color
 		Eigen::Vector3d rnd_headSize,
-			rnd_headClr,
 			rnd_handSize,
+			rnd_headClr,
 			rnd_handClr;
 
 		unsigned int
+			rnd_handShape,														// 0: rectangular, 1: ellipsoid
 			curFrame,															//current frame of this letter being processed
 			numTrajFrames,														//# of frames this symbol has
 			srcSymbolIDX;														//idx in owning letter symbols vector of source symbol for this symbol, or it's own idx if from a file

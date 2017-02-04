@@ -45,10 +45,10 @@
 
 namespace gestureIKApp {
 
-	MyGestSymbol::MyGestSymbol(const std::string& _name, int _srcIDX) : IKSolve(nullptr), _self(nullptr), 
+	MyGestSymbol::MyGestSymbol(const std::string& _name, int _srcIDX) : IKSolve(nullptr), _self(nullptr),
 		//cameraRot(0.5*sqrt(2), 0, -0.5*sqrt(2), 0),
-		cameraRot(origTrackBallQ), cameraTrans(0,0,0), cameraZoom(-1),//set when IKSolve is set
-		curFrame(0), numTrajFrames(0), srcSymbolIDX(_srcIDX), allTrajsLen(0), //trajVel(.03), 
+		cameraRot(origTrackBallQ), cameraTrans(0, 0, 0), cameraZoom(-1),//set when IKSolve is set
+		rnd_headClr(.9, .9, .9), rnd_handClr(.9, .9, .9), rnd_handShape(0),curFrame(0), numTrajFrames(0), srcSymbolIDX(_srcIDX), allTrajsLen(0), //trajVel(.03), 
 		sclAmt(1.0), curTrajDist(0), trajectories(0), trajLens(0), trajFrameIncrs(0), name(_name), flags(numFlags,false),
 		avgLoc(0,0,0), ptrCtrPt(0,0,0), elbowCtrPt(0,0,0), ptrPlaneNorm(-1,0,0), elbowPlaneNorm(0,0,0), circleRad(0), curTraj(0)
 
@@ -325,18 +325,30 @@ namespace gestureIKApp {
 			max(IKSolve->params->rnd_camTrans, IKSolve->params->rnd_camTrans, IKSolve->params->rnd_camTrans);
 		cameraTrans = origMTrans + IKSolve->getUniRandVec(min, max);
 		//std::cout << "Base (original) Translation : (" << origMTrans(0)<<"," << origMTrans(1) << "," << origMTrans(2) << ")\tTranslation modification : (" << cameraTrans(0) << "," << cameraTrans(1) << "," << cameraTrans(2) <<")"<< std::endl;
+		//random skel head dims - pct of base +/- in each dim - y set to zero to not get smaller (separate from skel)
+		Eigen::Vector3d headMin(-IKSolve->params->rnd_headDimPct, 0, -IKSolve->params->rnd_headDimPct),
+			headMax(IKSolve->params->rnd_headDimPct, IKSolve->params->rnd_headDimPct, IKSolve->params->rnd_headDimPct);
+		rnd_headSize = IKSolve->getUniRandVec(headMin, headMax);
 
-		//random skel head dims
-
-		//random skel head color - color is grayscale so just 1 double 0-1, avoid values .33-.66
-
-		//random skel hand shape
-
-		//random skel hand dims
+		//random skel head color - color is grayscale so just 1 double 0-1, avoid values +/- bnd amt around background clr
+		float rndAmt;
+		do {
+			rndAmt = static_cast<float>(IKSolve->getUniRandDbl(0, 1));
+		} while ((rndAmt > (IKSolve->params->bkgR - IKSolve->params->rnd_headClrBnd)) && (rndAmt < (IKSolve->params->bkgR + IKSolve->params->rnd_headClrBnd)));//in gray range
+		rnd_headClr << rndAmt, rndAmt, rndAmt;
+		//random skel hand shape : 0: rectangular, 1: ellipsoid
+		rnd_handShape = (IKSolve->getUniRandDbl(0, 1) >= .5 ? 1 : 0);
+		//random skel hand dims - pct of base +/- in each dim - y set to zero to not get smaller (separate from skel)
+		Eigen::Vector3d handMin(-IKSolve->params->rnd_handDimPct, 0, -IKSolve->params->rnd_handDimPct),
+			handMax(IKSolve->params->rnd_handDimPct, IKSolve->params->rnd_handDimPct, IKSolve->params->rnd_handDimPct);
+		rnd_handSize = IKSolve->getUniRandVec(handMin, handMax);
 
 		//random skel hand color - color is grayscale so just 1 double 0-1, avoid values .33-.66
-
-	}
+		do {
+			rndAmt = static_cast<float>(IKSolve->getUniRandDbl(0, 1));
+		} while ((rndAmt >(IKSolve->params->bkgR - IKSolve->params->rnd_handClrBnd)) && (rndAmt < (IKSolve->params->bkgR + IKSolve->params->rnd_handClrBnd)));//in gray range
+		rnd_handClr << rndAmt, rndAmt, rndAmt;
+	}//setRandCamSkelVals
 
 	//make this symbol a randomized version of the passed symbol - 
 	bool MyGestSymbol::buildRandomSymbol(std::shared_ptr<MyGestSymbol> _src, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast) {

@@ -184,12 +184,14 @@ protected :
 	//reset skeleton values to original values
 	void resetSkelVals();
 	//reset initial values size and color for passed body node name
-	void setShapeSize(const std::string& nodeName, const Eigen::Ref<const Eigen::Vector3d>& _origSize);
-	void setShapeClr(const std::string& nodeName, const Eigen::Ref<const Eigen::Vector3d>& _origClr);
+	void setShapeSize(const std::string& nodeName, int visIDX, const Eigen::Ref<const Eigen::Vector3d>& _origSize);
+	void setShapeClr(const std::string& nodeName, int visIDX, const Eigen::Ref<const Eigen::Vector3d>& _origClr);
 	//save initial skeleton values 
 	void saveInitSkelVals();
 	//save size and color vals for particular shape
-	void saveInitShapeVals(const std::string& nodeName, Eigen::Ref<Eigen::Vector3d> _destSize, Eigen::Ref<Eigen::Vector3d> _destClr);
+	void saveInitShapeVals(const std::string& nodeName, int visIDX, Eigen::Ref<Eigen::Vector3d> _destSize, Eigen::Ref<Eigen::Vector3d> _destClr);
+	//add a spherical visualization shape to each hand
+	void MyWindow::addSphereHand(const std::string& nodeName);
 
 	///////////////////////////
 	//variables 
@@ -201,7 +203,8 @@ protected :
 		skel_headClr,
 		skel_handSize,
 		skel_handClr;
-
+	//0 == rect, 1 == ellipse
+	int curHandShape;
 	//ticks for sample traj drawing
 	std::vector<double> tVals, tBnds, tIncr;
 	//file stream for test and train index files - remove distinction, have python script handle partition
