@@ -78,12 +78,12 @@ namespace gestureIKApp {
 		bool solve();
 		//build a uniform distribution engine to be able to select randomly from all the symbols that represent this letter (read from file and desired from random generation)
 		void buildUniDist() {
-			uni = std::make_shared< std::uniform_int_distribution<int> >(0, (numTotSymbols - 1));
+			uni = std::make_shared< std::uniform_int_distribution<int> >(0, (numFileSymbols - 1));
 		}
 		//build the symbols that are built from file descriptions
 		void buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames);
 		//generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present
-		void buildRandomSymbolTrajs(int _totNumDesSymb);
+		void buildRandExSymbolTrajs(int _totNumDesSymb);
 
 		//build a single random symbol for this letter
 		std::shared_ptr<gestureIKApp::MyGestSymbol> buildRandSymbol(int idx);
@@ -106,7 +106,7 @@ namespace gestureIKApp {
 		std::string buildSymbolName(int count);
 
 		//return numTotSymbols - number of all symbols to be drawn
-		int getNumSymbols() { return symbols.size(); }
+		int getNumSymbols() { return exampleSymbols.size(); }
 		//file name for symbol - includes date as prefix and datatype as suffix
 		std::string getSymbolFileName();
 
@@ -116,7 +116,7 @@ namespace gestureIKApp {
 		//set flags to show all letter trajectories - TODO : replace with setting symbols directly when generating symbols as needed
 		inline void setShowAllTrajs(bool val) {
 			flags[showAllTrajsIDX] = val;
-			for (int i = 0; i < symbols.size(); ++i) { symbols[i]->setShowAllTrajs(flags[showAllTrajsIDX]); }
+			for (int i = 0; i < exampleSymbols.size(); ++i) { exampleSymbols[i]->setShowAllTrajs(flags[showAllTrajsIDX]); }
 		}
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestLetter& ltr);
@@ -126,7 +126,7 @@ namespace gestureIKApp {
 	protected : 
 		//set flag values for all symbols of this letter - idx needs to be appropriate MyGestSymbol flag idx
 		void setSymbolFlags(int idx, bool val) {
-			for (int i = 0; i < symbols.size(); ++i) { symbols[i]->setFlags(idx, val); }
+			for (int i = 0; i < exampleSymbols.size(); ++i) { exampleSymbols[i]->setFlags(idx, val); }
 		}
 
 	public :	//variables
@@ -139,8 +139,8 @@ namespace gestureIKApp {
 		unsigned int numTotSymbols;
 		//source instances of this letter - these are what are drawn from to build random symbols
 		std::vector<std::shared_ptr<gestureIKApp::MyGestSymbol> > srcSymbols;
-		//instances of this letter - TODO get rid of this
-		std::vector<std::shared_ptr<gestureIKApp::MyGestSymbol> > symbols;
+		//example instances of this letter, for debugging
+		std::vector<std::shared_ptr<gestureIKApp::MyGestSymbol> > exampleSymbols;
 
 		//currently used symbol
 		std::shared_ptr<gestureIKApp::MyGestSymbol> curSymbol;

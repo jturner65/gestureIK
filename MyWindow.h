@@ -68,6 +68,8 @@ public:
 	void initCustWindow(std::string _winTtl);
 
 	void buildLetterList();
+	//build debug letters
+	void buildRandDbugLetterList();
 	eignVecVecTyp buildTrajSeq(void (MyWindow::*trajFunc)(eignVecTyp&), int traj, double& t);
 
 	void calcCircleTrajPoints(eignVecTyp& _trajPts);
@@ -248,10 +250,10 @@ protected :
 		doneTrajIDX = 7,						//finished current trajectory
 		pauseIKLtrIDX = 8,						//pause between IK frames - for debugging purposes
 		testLtrQualIDX = 9,						//iterate through all letters without screen cap to test traj quality
-		showAllTrajsIDX = 10;					//show all trajectories of letters, to show distribution results - debug
-		//setRandEnvValsIDX = 11;					//use randomized values for display/environment values, like camera loc/orientation or skeleton head or hand geometry,shape or dims.
+		showAllTrajsIDX = 10,					//show all trajectories of letters, to show distribution results - debug
+		debugLtrsBuiltIDX = 11;					//set of debug letters built for visualization
 
-	static const unsigned int numFlags = 11;
+	static const unsigned int numFlags = 12;
 };
 
 //calc total length of combined trajectories

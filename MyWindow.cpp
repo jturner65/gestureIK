@@ -165,11 +165,13 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 		}
 		else {
 			std::cout << "Initializing random data collection for Letter Trajectories." << std::endl;
-			bool append = !IKSolve->params->regenNotAppend();
-			openIndexFile(trainDataFileStrm, append);
+			//bool append = !IKSolve->params->regenNotAppend();
+			//openIndexFile(trainDataFileStrm, append);
+			openIndexFile(trainDataFileStrm, false);
 			//1st time initialize letter collection - init curLtrIDX, curSymIDX
 			curLtrIDX = IKSolve->params->ltrIdxStSave;		//either start at beginning or start at a specific letter
-			curSymIDX = append ? letters[curLtrIDX]->numFileSymbols : 0;		//either start at beginning or start saving only randomized letters
+			//curSymIDX = append ? letters[curLtrIDX]->numFileSymbols : 0;		//either start at beginning or start saving only randomized letters
+			curSymIDX =  0;		//either start at beginning or start saving only randomized letters
 		}
 		//start capture
 		trainLtrDatManageCol();
@@ -198,7 +200,8 @@ void MyWindow::trainLtrDatManageCol() {
 		//in case any camera or skeleton settings have changed for randomization
 		setCameraVals(origTrackBallQ, IKSolve->params->origZoom, origMTrans);
 		resetSkelVals();
-		curSymIDX = IKSolve->params->regenNotAppend() ? 0 : letters[curLtrIDX]->numFileSymbols;		//either start at beginning or start saving only randomized letters - get rid of this when moving to each letter to control symbols drawn
+		//curSymIDX = IKSolve->params->regenNotAppend() ? 0 : letters[curLtrIDX]->numFileSymbols;		//either start at beginning or start saving only randomized letters - get rid of this when moving to each letter to control symbols drawn
+		curSymIDX = 0;
 		if (!flags[testLtrQualIDX]) {//not testing, so close training data filename listing file
 			trainDataFileStrm.close();
 		}
@@ -220,11 +223,12 @@ void MyWindow::trainLtrDatManageCol() {
 	//for next iteration
 	//TODO get rid of curSymIDX - let each letter maintain count of how many symbols have been drawn
 	curSymIDX += 1;
-	bool doneWithLetter = (curSymIDX >= curLetter->getNumSymbols());
+	bool doneWithLetter = (curSymIDX >= IKSolve->params->numTotSymPerLtr);// (curSymIDX >= curLetter->getNumSymbols());
 	//finished all symbols of this letter
 	if (doneWithLetter) {
 		curLtrIDX += 1;
-		curSymIDX = (IKSolve->params->regenNotAppend() || (curLtrIDX >= letters.size())) ? 0 : letters[curLtrIDX]->numFileSymbols;			//either start at beginning or start saving only randomized letters - set to 0 after all letters finished
+		//curSymIDX = (IKSolve->params->regenNotAppend() || (curLtrIDX >= letters.size())) ? 0 : letters[curLtrIDX]->numFileSymbols;			//either start at beginning or start saving only randomized letters - set to 0 after all letters finished
+		curSymIDX = 0;
 	}
 }//trainLtrDatManageCol
 
@@ -291,7 +295,6 @@ void MyWindow::setDrawLtrOrSmpl(bool drawLtr, int idx, int symNum) {
 		curLetter->setSymbolIdx(symNum, !flags[debugIDX]);		//don't display if debugging only (other debug text makes it redundant)
 		//set randomization values based on setting for current letter
 		setRandomValues();
-
 		//curSymIDX = curLetter->curSymbolIDX;
 		curClassName = std::string(curLetter->ltrName);				//class name for test/train index file - use letter name not symbol name
 	}
@@ -318,30 +321,26 @@ void MyWindow::trainDatWriteIndexFile(std::ofstream& outFile, const std::string&
 //build map of all available symbols, idxed by name
 void MyWindow::buildLetterList() {
 	letters.clear();
-	
+
 	for (unsigned int i = 0; i < IKSolve->params->numLetters; ++i) {
 		std::string c(1, i + 97);
-		letters.push_back(std::make_shared<MyGestLetter>(c,i));
+		letters.push_back(std::make_shared<MyGestLetter>(c, i));
 		letters[i]->setSolver(IKSolve);
 		GestIKParser::readGestLetterXML(letters[i]);
 		std::cout << "Made letter : " << (*letters[i]) << std::endl;
 	}
-	//buildRandomSymbolTrajs
-	if (!IKSolve->params->genRandLtrs()) {
-		std::cout << "Not making random letters due to 'IDX_genRandLtrs' flag in config xml setting.  Set to true to make them."<< std::endl;
-	}
-	else {
-		for (int i = 0; i < letters.size(); ++i) {
-			if (IKSolve->params->numTotSymPerLtr > letters[i]->getNumSymbols()) {
-				//letters[i]->buildRandomSymbolTrajs(IKSolve->params->numTotSymPerLtr, IKSolve->params->dataCapTestTrainThresh* IKSolve->params->numTotSymPerLtr);
-				letters[i]->buildRandomSymbolTrajs(IKSolve->params->numTotSymPerLtr);
-				std::cout << "Made " << (IKSolve->params->numTotSymPerLtr - letters[i]->numFileSymbols) << " Random versions of letter : " << (*letters[i]) << std::endl;
-			}
-			else {
-				std::cout << "Insufficient letters specified " << IKSolve->params->numTotSymPerLtr << " so no random versions of letter : " << (*letters[i]) << " made." << std::endl;
-			}
-		}
-	}
+}
+void MyWindow::buildRandDbugLetterList() {
+	for (int i = 0; i < letters.size(); ++i) {
+		//if (IKSolve->params->numTotSymPerLtr > letters[i]->getNumSymbols()) {
+		//	//letters[i]->buildRandExSymbolTrajs(IKSolve->params->numTotSymPerLtr, IKSolve->params->dataCapTestTrainThresh* IKSolve->params->numTotSymPerLtr);
+			letters[i]->buildRandExSymbolTrajs(40);
+			std::cout << "Made 20 Random versions of letter : " << (*letters[i]) << " for debug purposes."<< std::endl;
+		//}
+		//else {
+		//	std::cout << "Insufficient letters specified " << IKSolve->params->numTotSymPerLtr << " so no random versions of letter : " << (*letters[i]) << " made." << std::endl;
+		//}
+	}	
 }//buildLetterList
 
 //build circular trajectory and write to csv file
@@ -538,6 +537,10 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		break; }
 	case 'd': { // debug mode
 		flags[debugIDX] = !flags[debugIDX];
+		if (flags[debugIDX] && !flags[debugLtrsBuiltIDX]) {
+			flags[debugLtrsBuiltIDX] = true;
+			buildRandDbugLetterList();
+		}
 		std::cout << "Debug Mode : " << (flags[debugIDX] ? "True" : "False") << std::endl;
 		for (int i = 0; i < letters.size(); ++i) { letters[i]->setDebug( flags[debugIDX]); }	//debugIDX is 0 in every class
 		break; }
@@ -667,18 +670,23 @@ void MyWindow::resetSkelVals() {
 		setShapeSize("h_head", 0, skel_headSize);
 		setShapeClr("h_head", 0, skel_headClr);
 		//reset hand initial values - TODO reset shape first
-		setShapeSize("h_hand_right", 0, skel_handSize);
-		setShapeClr("h_hand_right", 0, skel_handClr);
-		setShapeSize("h_hand_left", 0, skel_handSize);
-		setShapeClr("h_hand_left", 0, skel_handClr);
-		//spherical shape hand - hide initially
-		setShapeSize("h_hand_right", 1, skel_handSize);
-		setShapeClr("h_hand_right", 1, skel_handClr);
-		setShapeSize("h_hand_left", 1, skel_handSize);
-		setShapeClr("h_hand_left", 1, skel_handClr);
-		//hide ellipsoid hand
-		skelPtr->getBodyNode("h_hand_right")->getVisualizationShape(1)->setHidden(true);
-		skelPtr->getBodyNode("h_hand_left")->getVisualizationShape(1)->setHidden(true);
+		for (unsigned int i = 0; i < 2; ++i) {
+			setShapeSize("h_hand_right", i, skel_handSize);
+			setShapeClr("h_hand_right", i, skel_handClr);
+			setShapeSize("h_hand_left", i, skel_handSize);
+			setShapeClr("h_hand_left", i, skel_handClr);
+			skelPtr->getBodyNode("h_hand_right")->getVisualizationShape(i)->setHidden(i);
+			skelPtr->getBodyNode("h_hand_left")->getVisualizationShape(i)->setHidden(i);
+		}
+		curHandShape = 0;
+		////spherical shape hand - hide initially
+		//setShapeSize("h_hand_right", 1, skel_handSize);
+		//setShapeClr("h_hand_right", 1, skel_handClr);
+		//setShapeSize("h_hand_left", 1, skel_handSize);
+		//setShapeClr("h_hand_left", 1, skel_handClr);
+		////hide ellipsoid hand
+		//skelPtr->getBodyNode("h_hand_right")->getVisualizationShape(1)->setHidden(true);
+		//skelPtr->getBodyNode("h_hand_left")->getVisualizationShape(1)->setHidden(true);
 
 	}
 }

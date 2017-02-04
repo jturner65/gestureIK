@@ -359,12 +359,12 @@
                     <color>0.9 0.9 0.9</color>
                 </visualization_shape>
                 <collision_shape>
-                    <transformation>0.0 0.09425 0.0 0.0 0.0 0.0</transformation>
+                    <transformation>0.0 0.10425 0.0 0.0 0.0 0.0</transformation>
                     <geometry>
                         <ellipsoid>
                             <!--size>0.6500*0.1565 1.0000*0.1565 0.8000*0.1565</size-->
                             <!--<size>0.101725 0.1565 0.1252</size>-->
-                            <size>0.141725 0.2165 0.1702</size>
+                            <size>0.141725 0.2665 0.1702</size>
                         </ellipsoid>
                     </geometry>
                 </collision_shape>                                

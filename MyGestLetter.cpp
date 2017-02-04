@@ -47,7 +47,7 @@
 namespace gestureIKApp {
 
 	MyGestLetter::MyGestLetter(const std::string& _ltrName, unsigned int _ltrNum):IKSolve(nullptr), 
-		curIDX(_ltrNum), numFileSymbols(0), numTotSymbols(0), srcSymbols(0), symbols(0),
+		curIDX(_ltrNum), numFileSymbols(0), numTotSymbols(0), srcSymbols(0), exampleSymbols(0),
 		curSymbol(nullptr), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags)
 	{
 		std::stringstream ss;
@@ -73,7 +73,7 @@ namespace gestureIKApp {
 	//symbol file describing the trajectories that make up this symbol - called from xml parser
 	//per symbol list of trajectory file names
 	void MyGestLetter::buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames){
-		symbols.clear();
+		exampleSymbols.clear();
 		srcSymbols.clear();
 		//std::stringstream ss;
 		for (int i = 0; i < numFileSymbols; ++i) {
@@ -83,14 +83,14 @@ namespace gestureIKApp {
 
 			//std::allocate_shared<MyGestSymbol>(Eigen::aligned_allocator <MyGestSymbol>(), name, i);
 			//symbols.push_back(std::make_shared<MyGestSymbol>(name, i));
-			symbols.push_back(std::allocate_shared<MyGestSymbol>(Eigen::aligned_allocator <MyGestSymbol>(), name, i));
+			exampleSymbols.push_back(std::allocate_shared<MyGestSymbol>(Eigen::aligned_allocator <MyGestSymbol>(), name, i));
 			//set shared ptr ref to self
-			symbols[i]->setSolver(IKSolve);
-			symbols[i]->buildTrajsFromFile(trajFileNames[i], symbols[i]);
+			exampleSymbols[i]->setSolver(IKSolve);
+			exampleSymbols[i]->buildTrajsFromFile(trajFileNames[i], exampleSymbols[i]);
 			//set random values for the file-based symbols
-			symbols[i]->setRandCamSkelVals();
+			exampleSymbols[i]->setRandCamSkelVals();
 			//srcSymbols are only source trajectory symbols
-			srcSymbols.push_back(symbols[i]);
+			srcSymbols.push_back(exampleSymbols[i]);
 		}
 		numTotSymbols = numFileSymbols;
 		//build distribution of potential symbols to draw from to find random symbol idx to ik to 
@@ -98,29 +98,28 @@ namespace gestureIKApp {
 	}//readLetterFile
 
 	//generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present - note this is total desired, so # to add is _totNumDesSymb - numFileSymbols
-	//TODO use this to only hold debug symbols intended to illustrate distributions - all actual symbols are generated on the fly
-	void MyGestLetter::buildRandomSymbolTrajs(int _totNumDesSymb) {
+	//TODO use this to only hold debug/example symbols intended to illustrate distributions - all actual symbols are generated on the fly
+	void MyGestLetter::buildRandExSymbolTrajs(int _totNumDesSymb) {
 		if (_totNumDesSymb <= numTotSymbols) {
 			std::cout << "Requested " << _totNumDesSymb << " random and file based symbols, but already have " << numTotSymbols << " made, so doing nothing."<< std::endl;
 			return;
 		}
-		int randSymbolIDX;
 		std::shared_ptr<gestureIKApp::MyGestSymbol> tmpPtr;
 		for (int i = numTotSymbols; i < _totNumDesSymb; ++i) {		//adding symbols
 			tmpPtr = buildRandSymbol(i);
-			symbols.push_back(tmpPtr);
+			exampleSymbols.push_back(tmpPtr);
 		}
 		numTotSymbols = _totNumDesSymb;
 		//rebuild new distribution of potential symbols to draw from to find random symbol idx to ik to 
-		buildUniDist();
-	}//buildRandomSymbolTrajs
+		//buildUniDist();
+	}//buildRandExSymbolTrajs
 
 	std::shared_ptr<gestureIKApp::MyGestSymbol> MyGestLetter::buildRandSymbol(int idx) {
 		std::shared_ptr<gestureIKApp::MyGestSymbol> tmpPtr(nullptr);
 		//std::stringstream ss;
 		int srcSymbolIDX;
 		bool isDone = false;
-		bool isFast = (2 * (*uni)(mtrn_gen)) > numTotSymbols;		//mtrn_gen is uniform from 0 to numTotSymbols-1, so this should be ~50% TODO replace with xml boolean, if used (? is fast traj considered?)
+		bool isFast = (2 * (*uni)(mtrn_gen)) > numFileSymbols;		//mtrn_gen is uniform from 0 to numTotSymbols-1, so this should be ~50% TODO replace with xml boolean, if used (? is fast traj considered?)
 		//uncomment to equally represent each source symbol
 		//srcSymbolIDX = idx % numFileSymbols;						//just move ahead 1 symbol - this will have each letter equally represented (except those that have too many trajectories or otherwise fail in mySymbol::buildRandomSymbol
 		do {
@@ -153,7 +152,8 @@ namespace gestureIKApp {
 	//sets specific index in symbol list for letter to draw - used to let myWindow control which symbols to draw (for train and test data)
 	void MyGestLetter::setSymbolIdx(int symIdx, bool disp) {
 		//TODO replace with generating random symbol here - symIdx is only specified to determine if all symbols of this letter have been drawn - need to maintain a count instead
-		curSymbol = symbols[symIdx];
+		//curSymbol = symbols[symIdx];
+		curSymbol = buildRandSymbol(symIdx);
 
 		curSymbol->initSymbolIK();
 		if (disp) { std::cout << "MyGestLetter::setSymbolIdx : Specified " << symIdx << "th symbol to use for ltr idx : " << curIDX << " : " << ltrName << " with : "<< curSymbol->numTrajFrames <<" frames "<< std::endl; }
@@ -161,7 +161,7 @@ namespace gestureIKApp {
 
 	//draw all trajectory components of all symbols of current letter being used for IK
 	void MyGestLetter::drawSymbolTrajDist(dart::renderer::RenderInterface* mRI) {
-		for (int i = 0; i < symbols.size(); ++i) { symbols[i]->drawTrajs(mRI);		}
+		for (int i = 0; i < exampleSymbols.size(); ++i) { exampleSymbols[i]->drawTrajs(mRI);		}
 	}
 	
 	//draw all trajectory components of current symbol being used for IK

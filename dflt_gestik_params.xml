@@ -118,7 +118,7 @@
 <!-- +/- camera zoom uniform range -->
 	<parameter>
 		<name>rnd_camZoom</name>
-		<val>0.1</val>
+		<val>0.02</val>
 	</parameter>
 <!-- camera uniform pct of translation dim - should be around 50-100 -->
 	<parameter>
@@ -191,11 +191,11 @@
 <!-- randomization flags - which aspects of skeleton and environment to randomize -->
 	<parameter>
 		<name>IDX_rndCamOrient</name>
-		<val>FALSE</val> 
+		<val>TRUE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_rndCamLoc</name>
-		<val>FALSE</val> 
+		<val>TRUE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_rndHeadDims</name>
@@ -203,11 +203,11 @@
 	</parameter>
 	<parameter>
 		<name>IDX_rndHeadClr</name>
-		<val>FALSE</val> 
+		<val>TRUE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_rndHandShape</name>
-		<val>FALSE</val> 
+		<val>TRUE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_rndHandDims</name>
@@ -215,7 +215,7 @@
 	</parameter>
 	<parameter>
 		<name>IDX_rndHandClr</name>
-		<val>FALSE</val> 
+		<val>TRUE</val> 
 	</parameter>
 </GestIKParams>
 <!-- Template to build gesture IK xml configuration file to store params -- all file names relative to dart data path -->
