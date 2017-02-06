@@ -328,7 +328,8 @@ namespace gestureIKApp {
 
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
 		out << "GestIK Params values : "<<"\tdateFNameOffset : "<< p.dateFNameOffset<< std::endl;
-		out << "Letter data type : " << DataType2str[p.dataType] << "\tdataCapNumExamples : " << p.dataCapNumExamples << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
+		out << "Letter data type : " << DataType2str[p.dataType];// << "\tdataCapNumExamples : " << p.dataCapNumExamples;
+		out << "\t# total Symbols per letter : " << p.numTotSymPerLtr << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
 		out << "Random Env/Skel vals : rnd_camThet : " << p.rnd_camThet << "\t rnd_camZoom : " << p.rnd_camZoom << "\t rnd_camTrans : " << p.rnd_camTrans << std::endl;
 		out << "\t rnd_headClrBnd : " << p.rnd_headClrBnd << "\t rnd_headDimPct : " << p.rnd_headDimPct << "\t rnd_handClrBnd : " << p.rnd_handClrBnd << "\t rnd_handDimPct : " << p.rnd_handDimPct << std::endl; //"\t rnd_handShape : " << p.rnd_handShape << std::endl;
 		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| IK_fastTrajMult  : " << p.IK_fastTrajMult << "\t| IK_ctrYOffset  : " << p.IK_ctrYOffset << std::endl;
