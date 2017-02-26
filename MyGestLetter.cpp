@@ -67,7 +67,7 @@ namespace gestureIKApp {
 
 	std::string MyGestLetter::buildSymbolName(int count) {
 		std::stringstream ss;
-		ss << ltrName << "_" << buildStrFromInt(IKSolve->params->clipCountOffset + count) ;
+		ss << ltrName << "_" << buildStrFromInt(count) ;
 		return ss.str();
 	}// buildSymbolName
 	//symbol file describing the trajectories that make up this symbol - called from xml parser
@@ -77,8 +77,6 @@ namespace gestureIKApp {
 		srcSymbols.clear();
 		//std::stringstream ss;
 		for (int i = 0; i < numFileSymbols; ++i) {
-			//ss.str("");
-			//ss << ltrName << "_" << buildStrFromInt(IKSolve->params->clipCountOffset + i)<< "_train";
 			const std::string name = buildSymbolName(i);
 
 			//std::allocate_shared<MyGestSymbol>(Eigen::aligned_allocator <MyGestSymbol>(), name, i);
@@ -125,8 +123,6 @@ namespace gestureIKApp {
 		do {
 			//comment out if we want to equally represent each source symbol
 			srcSymbolIDX = (*uni)(mtrn_gen);						//random idx of source symbol
-			//ss.str("");
-			//ss << ltrName << "_" << buildStrFromInt(IKSolve->params->clipCountOffset + i) << ((i < partitionForTest) ? "_train" : "_test");
 			const std::string name = buildSymbolName(idx);
 			//tmpPtr = std::make_shared<MyGestSymbol>(name, srcSymbolIDX);
 			tmpPtr = std::allocate_shared<MyGestSymbol>(Eigen::aligned_allocator <MyGestSymbol>(), name, srcSymbolIDX);

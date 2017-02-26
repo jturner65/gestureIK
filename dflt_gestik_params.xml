@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
 <GestIKParams version="1.0">
+<!--ik solver params -->
 	<parameter>
 		<name>IK_alpha</name>
 		<val>0.01</val>   
@@ -32,15 +33,7 @@
 		<name>IK_ctrYOffset</name>
 		<val>-0.05</val>   
 	</parameter>
-<!-- removed : all test/train partitioning needs to be done in python script
-	<parameter>
-		<name>dataCapTestTrainThresh</name>
-		<val>1.0</val>   
-	</parameter>	-->
-	<parameter>
-		<name>dataCapNumExamples</name>
-		<val>100</val>   
-	</parameter>
+<!--trajectory gen params -->
 	<parameter>
 		<name>trajLenThresh</name>
 		<val>0.01</val>   
@@ -81,6 +74,7 @@
 		<name>trajNev4OvPct</name>
 		<val>.2</val>   
 	</parameter>
+<!--window, cam and env params -->
 	<parameter>
 		<name>win_Width</name>
 		<val>200</val>   
@@ -94,10 +88,6 @@
 		<val>0.80</val> 
 	</parameter>
 	<parameter>
-		<name>numLetters</name>
-		<val>26</val> 
-	</parameter>
-	<parameter>
 		<name>numTotSymPerLtr</name>
 		<val>1000</val> 
 	</parameter>
@@ -105,25 +95,26 @@
 		<name>ltrIdxStSave</name>
 		<val>0</val> 
 	</parameter>
+<!-- quality of motion blur : int from 0 to 5 (0 disabled, 5 highest quality) must be between 0 and 5 inclusive -->
 	<parameter>
-		<name>clipCountOffset</name>
-		<val>0</val> 
+		<name>motionBlurQual</name>
+		<val>5</val>
 	</parameter>
 <!--random camera and skeleton values -->
 <!--+/- camera orientation uniform range in radians-->
 	<parameter>
 		<name>rnd_camThet</name>
-		<val>.35</val>
+		<val>.15</val>
 	</parameter>
 <!-- +/- camera zoom uniform range -->
 	<parameter>
 		<name>rnd_camZoom</name>
-		<val>0.02</val>
+		<val>0.01</val>
 	</parameter>
 <!-- camera uniform pct of translation dim - should be around 50-100 -->
 	<parameter>
 		<name>rnd_camTrans</name>
-		<val>150</val>
+		<val>50</val>
 	</parameter>
 <!-- head color bound - grayscale : avoid rand colors of bkgrnd clr +/- this amt (.05-.25)-->
 	<parameter>
@@ -149,7 +140,7 @@
 <!--Set dataType 0 == const vel for all ltrs, 1 == fixed 16, 2 == mult8 train/test -->
 	<parameter>
 		<name>dataType</name>
-		<val>1</val> 
+		<val>0</val> 
 	</parameter>
 	<parameter>
 		<name>bkgR</name>
@@ -173,6 +164,10 @@
 	</parameter>
 	<parameter>
 		<name>IDX_useLeftHand</name>
+		<val>FALSE</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_useMotionBlur</name>
 		<val>FALSE</val> 
 	</parameter>
 	<!-- setting this to true will include the original omniglot trajectories -->

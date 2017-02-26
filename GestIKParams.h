@@ -61,8 +61,10 @@ namespace gestureIKApp {
 		void setCurrentValsAsDefault();
 		void setParamValFromXMLStr(const std::string& _name, const std::string& s);
 
-		//whether or not to add the possibility of using the left hand to draw to random letter gen
-		inline bool useLeftHand() {		return flags[IDX_useLeftHand]; }
+		//whether or not to add the possibility of using the left hand to draw to random letter gen - needs to move active shoulder as camera target
+		inline bool useLeftHand() { return flags[IDX_useLeftHand]; } 
+		//whether or not to use motion blur to render frames
+		inline bool useMotionBlur() {		return flags[IDX_useMotionBlur]; }
 		//whether or not to generate randomized versions of loaded letters - note numTotSymPerLtr still needs to be specified to be greater than # of file-based samples to get any random samples
 		inline bool genRandLtrs() {		return flags[IDX_genRandLtrs]; }
 		//whether or not to make img sequences of the non-random-generated (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
@@ -98,13 +100,6 @@ namespace gestureIKApp {
 
 	public:	//variables
 		std::vector<double> defaultVals;
-
-		//data collection parameters
-		//base value of # of trajectories to capture for training and testing data ONLY SAMPLE SYMBOLS - use numTotSymPerLtr for letter trajectories
-		int dataCapNumExamples;
-		//threshold between testing and training data as % of total data captured
-		//REMOVED : handle partitioning in python script
-		//double dataCapTestTrainThresh;
 		
 		//IK solver and skel configuration parameters
 		//% of full reach to set up imaginary writing plane
@@ -159,23 +154,16 @@ namespace gestureIKApp {
 		double rnd_handDimPct;
 		//end randomization control vars
 
-		//specify hand shape : 0: rectangular, 1: ellipsoid
-		//int handShape;
+		//quality of motion blur - 0-5 from xml file
+		int motionBlurQual;
 
 		//int width/height of windows
 		int win_Width, win_Height;
-
-		//# of letters in alphabet to process (first n) - 26 for whole alphabet, 1 for just a, etc
-		int numLetters;
-		//# of total symbols of a particular letter we're generating - if < # of file-based examples, is ignored, if > then we generate random versions of the file based letters to make up diff
+		//# of total symbols of a particular letter we're generating
 		int numTotSymPerLtr;
 
-		//ltr idx to begin saving (a==0, b==1, etc) (>25 forced to 25)
-		int ltrIdxStSave;
 		//size of window for LSTM in training - make clips fixed to multples of this length to prevent image paddings
 		int fixedClipLen;
-		//offset in naming so that multiple sets can be generated.
-		int clipCountOffset;
 		//initial zoom
 		float origZoom;
 		//letter type to be generated - either constant velocity, 16-frame long train/mult8 test, or mult8 train/mult8 test
@@ -191,7 +179,7 @@ namespace gestureIKApp {
 		std::vector<bool> flags;									//various boolean flags used to drive GestIK
 		static const int
 			//whether or not to add the possibility of using the left hand to draw to random letter gen
-			IDX_useLeftHand = 0,
+			IDX_useLeftHand = 0,  //TODO not implemented yet
 			//whether or not to generate randomized versions of loaded letters - note numTotSymPerLtr still needs to be specified to be greater than # of file-based samples to get any random samples
 			IDX_genRandLtrs = 1,
 			//whether or not to regenerate the original non-randomized (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
@@ -212,9 +200,11 @@ namespace gestureIKApp {
 			//randomize hand width/depth/length
 			IDX_rndHandDims = 9,
 			//randomize hand color
-			IDX_rndHandClr = 10;
+			IDX_rndHandClr = 10,
+			//use motion blur
+			IDX_useMotionBlur = 11;
 
-		static const int numFlags = 11;
+		static const int numFlags = 12;
 	};
 
 }//namespace gestureIKApp 

@@ -94,9 +94,14 @@ public:
 	}
 	//screen cap all letters
 	void trainLtrDatManageCol();
-
+	//override
+	virtual void timeStepping();
 	//override
 	virtual void displayTimer(int _val);
+	//render function for using motionblur
+	void renderBlur();
+	//override render from win3d
+	virtual void render() override;
 	//override draw function in SimWindow
 	virtual void draw();
 	void drawAxes(const Eigen::Ref<const Eigen::Vector3d>& axesLoc, float len, bool altColor);
@@ -114,20 +119,28 @@ public:
 
 	Eigen::Vector3d getCirclEndPoint(const Eigen::Ref<const Eigen::Vector3d>& ctrPt, double theta, double rad);
 
-	//DEPRECATED : no longer allow for train/test split here, use python script to build split instead
-	//open index file for current data collection, either training or testing idx
-	//void openIndexFile(bool isTrain, std::ofstream& strm, bool append);
 	//open index file for current data collection, either training or testing idx
 	void openIndexFile(std::ofstream& strm, bool append);
 
 	virtual void keyboard(unsigned char _key, int _x, int _y);
 	//regenerate sample object trajectories with or without randomization
 	void regenerateSampleData(bool rand);
+
+	//reload all xml-based parameters, and reset values derived from these parameters
+	void reloadXml() {
+		IKSolve->loadIKParams();
+		//rebuild motionBlurFreq if used
+		setMotionBlurQual();
+	}//
+
 	//override glutwindow screenshot function
 	virtual bool screenshot();
 
 	//setup each letter or sample trajectory
 	void setDrawLtrOrSmpl(bool drawLtr, int idx, int symIdx = 0);
+
+	//set motionBlurFreq based on motionblur quality specified in IKParams
+	void setMotionBlurQual();
 
 	bool makeDirectory(const std::string& tmp);
 
@@ -230,6 +243,13 @@ protected :
 	//all idxed by curTraj (symbols only): current screen capture idx for each of 4 trajs,current start vertex for each of 4 trajs (circle idx ignored TODO),# of trajectories catured for training data, testing data for each of 4 trajs
 	std::vector<int> captCount, curStIdx, dataGenIters;
 
+	//precalced based on window dims set from IKSolve->params
+	double aspectRatio;
+
+	///Motion Blur
+	//motion blur frequency  
+	int motionBlurFreq;
+
 	///letter trajectories
 	//structure holding all letters
 	std::vector<std::shared_ptr<MyGestLetter>> letters;
@@ -251,9 +271,10 @@ protected :
 		pauseIKLtrIDX = 8,						//pause between IK frames - for debugging purposes
 		testLtrQualIDX = 9,						//iterate through all letters without screen cap to test traj quality
 		showAllTrajsIDX = 10,					//show all trajectories of letters, to show distribution results - debug
-		debugLtrsBuiltIDX = 11;					//set of debug letters built for visualization
+		debugLtrsBuiltIDX = 11,					//set of debug letters built for visualization
+		useMotionBlurIDX = 12;					//use motion blur when capturing/rendering
 
-	static const unsigned int numFlags = 12;
+	static const unsigned int numFlags = 13;
 };
 
 //calc total length of combined trajectories

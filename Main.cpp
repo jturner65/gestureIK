@@ -71,17 +71,12 @@ int main(int argc, char* argv[]) {
 	std::cout << "\td : debug mode on/off" << std::endl;
 	std::cout << "\tv : markers on/off" << std::endl;
 	std::cout << "\ts : turn current symbol trajectory display on/off." << std::endl;
-	std::cout << "\tb : load letters and build letter list." << std::endl;
+	std::cout << "\tb : reload xml control params and load letter trajs." << std::endl;
+	std::cout << std::endl;
 
 	std::cout << "Left click: rotate camera" << std::endl;
 	std::cout << "Right click: pan camera" << std::endl;
 	std::cout << "Shift + Left click: zoom camera" << std::endl;
-
-	std::cout << "Sample Trajectories : " << std::endl;
-	std::cout << "\t1,2,3,4 : follow trajectory for sample objects : circle, triangle, square, star." << std::endl;
-	std::cout << "\tr : restart current sample object with randomization." << std::endl;
-	std::cout << "\tw : capture sample symbols Triangle/Square/Star to disk." << std::endl;
-	std::cout << "\ty : reset sample object endpoints to non-random locations." << std::endl;
 
 	std::cout << std::endl;
 	std::cout << "Letter Trajectories : " << std::endl;
@@ -90,9 +85,13 @@ int main(int argc, char* argv[]) {
 	std::cout << "\tp : pause between rendering IK Frames for letters." << std::endl;
 	std::cout << "\tShift + <letter> : follow random human trajectory for <letter> " << std::endl;
 
-	
-	//window.initWindow(320, 240, "Gesture IK");
-	//window.initWindow(800, 800, "Gesture IK");
+	std::cout << std::endl;
+	std::cout << "Sample Trajectories : " << std::endl;			//(debug mechanism) 
+	std::cout << "\t1,2,3,4 : follow trajectory for sample objects : circle, triangle, square, star." << std::endl;
+	std::cout << "\tr : restart current sample object with randomization." << std::endl;
+	std::cout << "\tw : capture sample symbols Triangle/Square/Star to disk." << std::endl;
+	std::cout << "\ty : reset sample object endpoints to non-random locations." << std::endl;
+
 	window.initCustWindow("Gesture IK");
 	glutMainLoop();
 

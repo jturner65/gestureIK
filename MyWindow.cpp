@@ -57,9 +57,10 @@ static int screenCapCnt = 0, trainSymDatCnt = 0, trainLtrtCnt = 0, displayTmrCnt
 
 MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_ikslvr), tVals(4), tBnds(4,1), tIncr(4,1), trainDataFileStrm(), 
 	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curClassName(trajNames[0]), curSymIDX(0),
-	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0), 
+	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0), aspectRatio(1.0), motionBlurFreq(1),
 	skel_headSize(0,0,0), skel_headClr(0, 0, 0), skel_handSize(0, 0, 0), skel_handClr(0, 0, 0), curHandShape(0), flags(numFlags,false)
 {
+	//IKsolver instanced before window, so relevant components loaded into solver and then into window from solver TODO: change this?  
 	skelPtr = IKSolve->getSkel();
 	saveInitSkelVals();
 
@@ -109,8 +110,12 @@ MyWindow::~MyWindow() {}
 
 //set window size based on params value loaded from xml
 void MyWindow::initCustWindow(std::string _winTtl) {
+	//set motionblur flag and quality - needs to be called after mWorld is set
+	setMotionBlurQual();
+
 	initWindow(IKSolve->params->win_Width, IKSolve->params->win_Height, _winTtl.c_str());
-}
+	aspectRatio = static_cast<double>(mWinWidth) / static_cast<double>(mWinHeight);
+}//initCustWindow
 
 //handles only 1 file stream being written - use python script to split data into train/test sets
 void MyWindow::openIndexFile(std::ofstream& strm, bool append) {
@@ -156,22 +161,17 @@ void MyWindow::trainDatInitCol(bool isLtr) {
 	mShowMarkers = false;
 	
 	if (flags[useLtrTrajIDX]) {
-		if (flags[testLtrQualIDX]){
+		curSymIDX = 0;
+		curLtrIDX = 0;
+		if (flags[testLtrQualIDX]){//testing letters, drawing many trajs simultaneously
 			std::cout << "Testing letter trajectories." << std::endl;
-			curLtrIDX = IKSolve->params->ltrIdxStSave;		//either start at beginning or start at a specific letter
-			curSymIDX = 0;
+			//turn on for debugging
 			flags[drawTrkMrkrsIDX] = true;
 			flags[drawLtrTrajIDX] = true;
 		}
 		else {
 			std::cout << "Initializing random data collection for Letter Trajectories." << std::endl;
-			//bool append = !IKSolve->params->regenNotAppend();
-			//openIndexFile(trainDataFileStrm, append);
 			openIndexFile(trainDataFileStrm, false);
-			//1st time initialize letter collection - init curLtrIDX, curSymIDX
-			curLtrIDX = IKSolve->params->ltrIdxStSave;		//either start at beginning or start at a specific letter
-			//curSymIDX = append ? letters[curLtrIDX]->numFileSymbols : 0;		//either start at beginning or start saving only randomized letters
-			curSymIDX =  0;		//either start at beginning or start saving only randomized letters
 		}
 		//start capture
 		trainLtrDatManageCol();
@@ -321,8 +321,8 @@ void MyWindow::trainDatWriteIndexFile(std::ofstream& outFile, const std::string&
 //build map of all available symbols, idxed by name
 void MyWindow::buildLetterList() {
 	letters.clear();
-
-	for (unsigned int i = 0; i < IKSolve->params->numLetters; ++i) {
+	//TODO use xml-specified list of letters instead of sequence, to enable specific letters to be generated (?)
+	for (unsigned int i = 0; i < 26; ++i) {
 		std::string c(1, i + 97);
 		letters.push_back(std::make_shared<MyGestLetter>(c, i));
 		letters[i]->setSolver(IKSolve);
@@ -332,14 +332,8 @@ void MyWindow::buildLetterList() {
 }
 void MyWindow::buildRandDbugLetterList() {
 	for (int i = 0; i < letters.size(); ++i) {
-		//if (IKSolve->params->numTotSymPerLtr > letters[i]->getNumSymbols()) {
-		//	//letters[i]->buildRandExSymbolTrajs(IKSolve->params->numTotSymPerLtr, IKSolve->params->dataCapTestTrainThresh* IKSolve->params->numTotSymPerLtr);
-			letters[i]->buildRandExSymbolTrajs(40);
-			std::cout << "Made 20 Random versions of letter : " << (*letters[i]) << " for debug purposes."<< std::endl;
-		//}
-		//else {
-		//	std::cout << "Insufficient letters specified " << IKSolve->params->numTotSymPerLtr << " so no random versions of letter : " << (*letters[i]) << " made." << std::endl;
-		//}
+		letters[i]->buildRandExSymbolTrajs(40);
+		std::cout << "Made 20 Random versions of letter : " << (*letters[i]) << " for debug purposes."<< std::endl;
 	}	
 }//buildLetterList
 
@@ -359,29 +353,27 @@ eignVecVecTyp MyWindow::buildTrajSeq(void (MyWindow::*trajFunc)(eignVecTyp&), in
 	return _trajAraAra;
 }
 
+
+
 static int pauseCount = 0;
-void MyWindow::displayTimer(int _val){
+void MyWindow::timeStepping() {
 	if (flags[initTrnDatCapIDX]) {//initialize trajectories for training/testing data capture
 		flags[initTrnDatCapIDX] = false;
 		trainDatInitCol(flags[useLtrTrajIDX]);
 	}
 	//if last time around we finished trajectory, reset values/recapture, etc, for next trajectory
-	if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }			//check at end of trajectory if attempting to save screen shots
-
-	//if (flags[debugIDX]) { cout << "displayTimer : IKSolve start"<< std::endl; }
+	if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }			//check at end of trajectory if attempting to save screen shots																										//if (flags[debugIDX]) { cout << "displayTimer : IKSolve start"<< std::endl; }
 	if (flags[useLtrTrajIDX]) {
 		if (flags[pauseIKLtrIDX]) {//wait for 20 frames between draw frames			
 			pauseCount = pauseCount + 1;
 			if (pauseCount % 20 != 0) {
 				//exit without IK solving
-				glutPostRedisplay();
-				glutTimerFunc(mDisplayTimeout, refreshTimer, _val);
 				return;
-			} else {
+			}
+			else {
 				pauseCount = 0;
 			}
 		}
-
 		//cout << "TODO : IK on letter " << curLetter->ltrName << " symbol idx : "<< curLetter->curSymbol << std::endl;
 		//setup trajectories and then solve - executes IK to current trajectory location and returns true if done
 		flags[doneTrajIDX] = curLetter->solve();
@@ -397,9 +389,14 @@ void MyWindow::displayTimer(int _val){
 		IKSolve->solve(mTrajPoints);
 		//if (flags[debugIDX]) { cout << "displayTimer : IKSolve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << std::endl; }
 	}
+}//timeStepping
+
+void MyWindow::displayTimer(int _val){
+	//timestepping calls managed in renderblur if using motion blur.  yuck
+	if (!flags[useMotionBlurIDX]) { timeStepping(); }
 	glutPostRedisplay();
 	glutTimerFunc(mDisplayTimeout, refreshTimer, _val);
-}
+}//displayTimer
 
 void MyWindow::drawCurTraj() {
 	eignVecTyp drawPoints(7);
@@ -411,8 +408,95 @@ void MyWindow::drawCurTraj() {
 	}
 }
 
+//render function for using motionblur - TODO can't do this here, need to figure blur externally
+void MyWindow::renderBlur() {
+	int numIter = mDisplayTimeout / (mWorld->getTimeStep() * 1000);
+	float numMotionBlurFrames = ceil(floor(mDisplayTimeout) / (mWorld->getTimeStep() * 1000 * motionBlurFreq));
+	for (int i = 0; i < numIter; i += motionBlurFreq) {
+		//for (int j = 0; j < motionBlurFreq; j++) {
+			//if (i + j < numIter) {
+			timeStepping();
+			//bake goes here
+
+		//	}
+		//}
+
+		draw();
+		glAccum((i == 0 ? GL_LOAD : GL_ACCUM), 1.0f / numMotionBlurFrames);
+	} // for loop
+
+	// Draw trackball indicator
+	if (mRotate && !mCapture) { mTrackBall.draw(mWinWidth, mWinHeight); }
+
+	// Clear and return the buffer
+	glAccum(GL_RETURN, 1.0f);
+	if (mCapture) { screenshot(); }
+	//need to swap after capture
+	glutSwapBuffers();
+}//renderBlur
+
+//override render originally in wind3d
+void MyWindow::render() {
+	if (flags[useMotionBlurIDX]) { renderBlur(); return; }
+	draw();
+
+	glAccum(GL_LOAD, 1.0f);
+	// Draw trackball indicator
+	if (mRotate && !mCapture) { mTrackBall.draw(mWinWidth, mWinHeight); }
+
+	// Clear and return the buffer
+	glAccum(GL_RETURN, 1.0f);
+	if (mCapture) { screenshot(); }
+	//need to swap after capture
+	glutSwapBuffers();
+
+}//render
+
 //override draw in simwindow
 void MyWindow::draw() {
+///////////////////from render
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(mPersp, aspectRatio, 0.1, 10.0);
+	gluLookAt(mEye[0], mEye[1], mEye[2], 0.0, 0.0, -1.0, mUp[0], mUp[1], mUp[2]);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	initGL();
+	mTrackBall.applyGLRotation();
+
+	// Draw world origin indicator
+	if (!mCapture){
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_TEXTURE_2D);
+		glDisable(GL_LIGHTING);
+		glLineWidth(2.0);
+		if (mRotate || mTranslate || mZooming) {
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glBegin(GL_LINES);
+			glVertex3f(-0.1f, 0.0f, -0.0f);
+			glVertex3f(0.15f, 0.0f, -0.0f);
+			glEnd();
+
+			glColor3f(0.0f, 1.0f, 0.0f);
+			glBegin(GL_LINES);
+			glVertex3f(0.0f, -0.1f, 0.0f);
+			glVertex3f(0.0f, 0.15f, 0.0f);
+			glEnd();
+
+			glColor3f(0.0f, 0.0f, 1.0f);
+			glBegin(GL_LINES);
+			glVertex3f(0.0f, 0.0f, -0.1f);
+			glVertex3f(0.0f, 0.0f, 0.15f);
+			glEnd();
+		}
+	}
+
+	glScalef(mZoom, mZoom, mZoom);
+	glTranslatef(mTrans[0] * 0.001, mTrans[1] * 0.001, mTrans[2] * 0.001);
+	initLights();
+///////////////////end from render
+
 	glDisable(GL_LIGHTING);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	//cout << "draw start : " << (drawCnt) << std::endl;
@@ -425,12 +509,8 @@ void MyWindow::draw() {
 	if (flags[showAllTrajsIDX] && flags[useLtrTrajIDX] && (nullptr != curLetter)) {//if show all trajs (show all symbols for a letter, for debugging) and showing letters and a current letter exists
 			curLetter->drawSymbolTrajDist(mRI);
 	} else if (flags[drawLtrTrajIDX]) {
-		if (flags[useLtrTrajIDX] && (nullptr != curLetter)) {
-			curLetter->drawLetter(mRI);			
-		}
-		else {
-			drawCurTraj();
-		}
+		if (flags[useLtrTrajIDX] && (nullptr != curLetter)) {	curLetter->drawLetter(mRI);			}
+		else {													drawCurTraj();		}
 	}
 	drawEntities();
 	if (flags[debugIDX]) {
@@ -442,7 +522,7 @@ void MyWindow::draw() {
 	}
 	glEnable(GL_LIGHTING);
 	//cout << "draw end : " << (drawCnt++) << std::endl;
-}
+}//draw
 
 std::string MyWindow::getCurrQuatAsRot(int row) {
 	std::stringstream ss;
@@ -525,9 +605,9 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		for (int i = 0; i < letters.size(); ++i) { letters[i]->setTestLtrQual(flags[testLtrQualIDX]); }
 		std::cout << "Capture all letters with data type : "<< DataType2str[IKSolve->params->dataType] << std::endl;
 		break; }
-	case 'b': { // build lists of letters and random letters
+	case 'b': { // reload xml and build lists of letters and random letters
 		//reload params from xml 
-		IKSolve->loadIKParams();
+		reloadXml();
 		//read all letter files and build trajectories
 		buildLetterList();
 		break; }
@@ -638,7 +718,18 @@ void MyWindow::saveInitSkelVals() {
 		addSphereHand("h_hand_right");
 		addSphereHand("h_hand_left");
 	}
-}
+}//saveInitSkelVals
+
+//set motionBlurFreq based on motionblur quality specified in IKParams
+void MyWindow::setMotionBlurQual() {
+	flags[useMotionBlurIDX] = IKSolve->params->useMotionBlur();
+	//0 or OOB == no motion blur
+	motionBlurFreq = mDisplayTimeout / (mWorld->getTimeStep() * 1000);
+	if ((flags[useMotionBlurIDX]) && (IKSolve->params->motionBlurQual > 0) && (IKSolve->params->motionBlurQual <= 5)) { 
+		//varies from 1 to 5, with 1 == low motion blur and 5 == highest quality 
+		motionBlurFreq = std::min(motionBlurFreq, (1 << (5 - IKSolve->params->motionBlurQual)));
+	}
+}//setMotionBlurQual
 
 void MyWindow::setShapeSize(const std::string& nodeName, int visIDX, const Eigen::Ref<const Eigen::Vector3d>& _origSize) {
 	dart::dynamics::ShapePtr _bodyShape = skelPtr->getBodyNode(nodeName)->getVisualizationShape(0);
@@ -856,7 +947,7 @@ void MyWindow::trainSymDatManageCol() {
 	dataGenIters[curTraj]++;
 
 	//after transitioning to a different symbol, the following needs to be reset
-	if (dataGenIters[curTraj] > IKSolve->params->dataCapNumExamples) {
+	if (dataGenIters[curTraj] > IKSolve->params->numTotSymPerLtr) {
 		dataGenIters[curTraj] = 0;
 		setDrawLtrOrSmpl(false, (curTraj + 1) % trajNames.size());		//iterate to next trajectory if we've captured sufficient samples
 		dataGenIters[curTraj] = 0;

@@ -126,6 +126,8 @@ namespace gestureIKApp {
 	static std::array<Eigen::Vector3d, 7> const trajColors{ Eigen::Vector3d(0.1,0.1,0.1), Eigen::Vector3d(0.8,0.1,0.1), Eigen::Vector3d(0.1,0.8,0.1),Eigen::Vector3d(0.1,0.1,0.8),Eigen::Vector3d(0.1,0.8,0.8), Eigen::Vector3d(0.8,0.8,0.1),Eigen::Vector3d(0.8,0.1,0.8) };
 
 	//int, float , double, eigen vector3d to string utilities
+
+	//zero pad string up to numDigs in length from integer input val
 	static inline std::string buildStrFromInt(int val, int numDigs=5) {
 		std::stringstream ss;
 		if (val == 0) {
