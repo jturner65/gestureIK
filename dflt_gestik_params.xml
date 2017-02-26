@@ -95,10 +95,10 @@
 		<name>ltrIdxStSave</name>
 		<val>0</val> 
 	</parameter>
-<!-- quality of motion blur : int from 0 to 5 (0 disabled, 5 highest quality) must be between 0 and 5 inclusive -->
+<!-- quality of motion blur : int from 0 to 5 (0 : off, val builds blur over neighboring 2*val + 1 frames -->
 	<parameter>
 		<name>motionBlurQual</name>
-		<val>5</val>
+		<val>2</val>
 	</parameter>
 <!--random camera and skeleton values -->
 <!--+/- camera orientation uniform range in radians-->

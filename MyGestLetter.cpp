@@ -50,29 +50,29 @@ namespace gestureIKApp {
 		curIDX(_ltrNum), numFileSymbols(0), numTotSymbols(0), srcSymbols(0), exampleSymbols(0),
 		curSymbol(nullptr), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags)
 	{
-		std::stringstream ss;
-		ss.str("");
-		ss << lettersPath << "ltr_" << ltrName<<"/ltr_"<<ltrName<<".xml";
-		//name of xml file holding instances of this letter
-		fileName = ss.str();
-	}	
+std::stringstream ss;
+ss.str("");
+ss << lettersPath << "ltr_" << ltrName << "/ltr_" << ltrName << ".xml";
+//name of xml file holding instances of this letter
+fileName = ss.str();
+	}
 	MyGestLetter::~MyGestLetter() {	}
-	
+
 	//build file name used by screen capture
 	std::string MyGestLetter::getSymbolFileName() {
 		std::stringstream ss;
-		ss << IKSolve->params->dateFNameOffset << "_"<< curSymbol->name << "_" << DataType2strAbbrev[IKSolve->params->dataType];
+		ss << IKSolve->params->dateFNameOffset << "_" << curSymbol->name << "_" << DataType2strAbbrev[IKSolve->params->dataType];
 		return ss.str();
 	}
 
 	std::string MyGestLetter::buildSymbolName(int count) {
 		std::stringstream ss;
-		ss << ltrName << "_" << buildStrFromInt(count) ;
+		ss << ltrName << "_" << buildStrFromInt(count);
 		return ss.str();
 	}// buildSymbolName
 	//symbol file describing the trajectories that make up this symbol - called from xml parser
 	//per symbol list of trajectory file names
-	void MyGestLetter::buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames){
+	void MyGestLetter::buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames) {
 		exampleSymbols.clear();
 		srcSymbols.clear();
 		//std::stringstream ss;
@@ -81,12 +81,10 @@ namespace gestureIKApp {
 
 			//std::allocate_shared<MyGestSymbol>(Eigen::aligned_allocator <MyGestSymbol>(), name, i);
 			//symbols.push_back(std::make_shared<MyGestSymbol>(name, i));
-			exampleSymbols.push_back(std::allocate_shared<MyGestSymbol>(Eigen::aligned_allocator <MyGestSymbol>(), name, i));
+			exampleSymbols.push_back(std::allocate_shared<MyGestSymbol>(Eigen::aligned_allocator <MyGestSymbol>(), IKSolve, name, i));
 			//set shared ptr ref to self
 			exampleSymbols[i]->setSolver(IKSolve);
 			exampleSymbols[i]->buildTrajsFromFile(trajFileNames[i], exampleSymbols[i]);
-			//set random values for the file-based symbols
-			exampleSymbols[i]->setRandCamSkelVals();
 			//srcSymbols are only source trajectory symbols
 			srcSymbols.push_back(exampleSymbols[i]);
 		}
@@ -99,7 +97,7 @@ namespace gestureIKApp {
 	//TODO use this to only hold debug/example symbols intended to illustrate distributions - all actual symbols are generated on the fly
 	void MyGestLetter::buildRandExSymbolTrajs(int _totNumDesSymb) {
 		if (_totNumDesSymb <= numTotSymbols) {
-			std::cout << "Requested " << _totNumDesSymb << " random and file based symbols, but already have " << numTotSymbols << " made, so doing nothing."<< std::endl;
+			std::cout << "Requested " << _totNumDesSymb << " random and file based symbols, but already have " << numTotSymbols << " made, so doing nothing." << std::endl;
 			return;
 		}
 		std::shared_ptr<gestureIKApp::MyGestSymbol> tmpPtr;
@@ -125,7 +123,7 @@ namespace gestureIKApp {
 			srcSymbolIDX = (*uni)(mtrn_gen);						//random idx of source symbol
 			const std::string name = buildSymbolName(idx);
 			//tmpPtr = std::make_shared<MyGestSymbol>(name, srcSymbolIDX);
-			tmpPtr = std::allocate_shared<MyGestSymbol>(Eigen::aligned_allocator <MyGestSymbol>(), name, srcSymbolIDX);
+			tmpPtr = std::allocate_shared<MyGestSymbol>(Eigen::aligned_allocator <MyGestSymbol>(), IKSolve, name, srcSymbolIDX);
 			tmpPtr->setSolver(IKSolve);
 			//isDone returns false if there are issues with the random symbol build - i.e. if the source symbol has too many trajectories or other problems
 			isDone = tmpPtr->buildRandomSymbol(srcSymbols[srcSymbolIDX], tmpPtr, isFast);
@@ -134,26 +132,32 @@ namespace gestureIKApp {
 		} while (!isDone);
 		return tmpPtr;
 	}//buildRandSymbol
-	
-	//solve IK on current letter - get current symbol, cycle through all trajectories until drawn
-	bool MyGestLetter::solve() {
-		//solve current symbol IK
-		bool finished = curSymbol->solve();
-		if ((finished) && (flags[debugIDX])) {
-			std::cout << "Finished drawing letter : " << curSymbol->name << std::endl;
-		}
-		return finished;
-	}
+
+	////solve IK on current letter - get current symbol, cycle through all trajectories until drawn -- MOVED TO MyGestSymbol
+	//bool MyGestLetter::solve() {
+	//	//solve current symbol IK
+	//	bool finished = curSymbol->solve();
+	//	if ((finished) && (flags[debugIDX])) {
+	//		std::cout << "Finished drawing letter : " << curSymbol->name << std::endl;
+	//	}
+	//	return finished;
+	//}
 
 	//sets specific index in symbol list for letter to draw - used to let myWindow control which symbols to draw (for train and test data)
-	void MyGestLetter::setSymbolIdx(int symIdx, bool disp) {
-		//TODO replace with generating random symbol here - symIdx is only specified to determine if all symbols of this letter have been drawn - need to maintain a count instead
+	void MyGestLetter::buildSymbolAndSolveIK(int symIdx, bool solveIK, bool disp) {
+		//generating random symbol here - symIdx is only specified to determine if all symbols of this letter have been drawn - need to maintain a count instead
 		//curSymbol = symbols[symIdx];
 		curSymbol = buildRandSymbol(symIdx);
-
 		curSymbol->initSymbolIK();
-		if (disp) { std::cout << "MyGestLetter::setSymbolIdx : Specified " << symIdx << "th symbol to use for ltr idx : " << curIDX << " : " << ltrName << " with : "<< curSymbol->numTrajFrames <<" frames "<< std::endl; }
-	}
+		//if solveIK solve all IK frames here, initially, if we wish to enable motion blur, and save skel states in vector, so we can display buffer accumulated results 
+		if (solveIK) {//only solve for all frames if using motion blur
+			bool doneCurLetter = false;
+			while (!doneCurLetter) {
+				doneCurLetter = curSymbol->solve();
+			}
+		}
+		if (disp) { std::cout << "MyGestLetter::buildSymbolAndSolveIK : Specified " << symIdx << "th symbol to use for ltr idx : " << curIDX << " : " << ltrName << " with : "<< curSymbol->numTrajFrames <<" frames "<< std::endl; }
+	}//buildSymbolAndSolveIK
 
 	//draw all trajectory components of all symbols of current letter being used for IK
 	void MyGestLetter::drawSymbolTrajDist(dart::renderer::RenderInterface* mRI) {

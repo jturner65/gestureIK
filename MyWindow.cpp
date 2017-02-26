@@ -57,7 +57,7 @@ static int screenCapCnt = 0, trainSymDatCnt = 0, trainLtrtCnt = 0, displayTmrCnt
 
 MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_ikslvr), tVals(4), tBnds(4,1), tIncr(4,1), trainDataFileStrm(), 
 	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curClassName(trajNames[0]), curSymIDX(0),
-	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0), aspectRatio(1.0), motionBlurFreq(1),
+	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0), aspectRatio(1.0), motionBlurFrames(0),
 	skel_headSize(0,0,0), skel_headClr(0, 0, 0), skel_handSize(0, 0, 0), skel_handClr(0, 0, 0), curHandShape(0), flags(numFlags,false)
 {
 	//IKsolver instanced before window, so relevant components loaded into solver and then into window from solver TODO: change this?  
@@ -234,29 +234,29 @@ void MyWindow::trainLtrDatManageCol() {
 
 void MyWindow::setRandomValues() {
 	//randomize orientation
-	if (IKSolve->params->rndCamOrient()) { mTrackBall.setQuaternion(curLetter->curSymbol->cameraRot); }
+	if (IKSolve->params->rndCamOrient()) { mTrackBall.setQuaternion(curLetter->curSymbol->rndVals->cameraRot); }
 	if (IKSolve->params->rndCamLoc()) {
 		//get values from curLetter
-		mZoom = curLetter->curSymbol->cameraZoom;
+		mZoom = curLetter->curSymbol->rndVals->cameraZoom;
 		//set mTrans with symbol's cameraTans
-		mTrans = curLetter->curSymbol->cameraTrans;
+		mTrans = curLetter->curSymbol->rndVals->cameraTrans;
 	}
 	
 	//random head width/height (ellispoid)
 	if (IKSolve->params->rndHeadDims()) {
 		Eigen::Vector3d newHeadSize(skel_headSize);
 		for (unsigned int i = 0; i < 3; ++i) {
-			newHeadSize(i) += newHeadSize(i)*curLetter->curSymbol->rnd_headSize(i);
+			newHeadSize(i) += newHeadSize(i)*curLetter->curSymbol->rndVals->rnd_headSize(i);
 		}
 		setShapeSize("h_head", 0, newHeadSize);
 	}
 	//random head color (avoid colors close to gray)
 	if (IKSolve->params->rndHeadClr()) {
-		setShapeClr("h_head", 0, curLetter->curSymbol->rnd_headClr);
+		setShapeClr("h_head", 0, curLetter->curSymbol->rndVals->rnd_headClr);
 	}
 	//TODO random hand shape - ellipsoid or rectangular
 	if (IKSolve->params->rndHandShape()){
-		int hndShIdx = curLetter->curSymbol->rnd_handShape;
+		int hndShIdx = curLetter->curSymbol->rndVals->rnd_handShape;
 		if (curHandShape != hndShIdx) {//if different, hide current, unhide new
 			skelPtr->getBodyNode("h_hand_right")->getVisualizationShape(curHandShape)->setHidden(true);
 			skelPtr->getBodyNode("h_hand_left")->getVisualizationShape(curHandShape)->setHidden(true);
@@ -269,15 +269,15 @@ void MyWindow::setRandomValues() {
 	if (IKSolve->params->rndHandDims()){
 		Eigen::Vector3d newHandSize(skel_handSize);
 		for (unsigned int i = 0; i < 3; ++i) {
-			newHandSize(i) += newHandSize(i)*curLetter->curSymbol->rnd_handSize(i);
+			newHandSize(i) += newHandSize(i)*curLetter->curSymbol->rndVals->rnd_handSize(i);
 		}
 		setShapeSize("h_hand_right", curHandShape, newHandSize);
 		setShapeSize("h_hand_left", curHandShape, newHandSize);
 	}
 	//random hand color
 	if (IKSolve->params->rndHandClr()){
-		setShapeClr("h_hand_right", curHandShape, curLetter->curSymbol->rnd_handClr);
-		setShapeClr("h_hand_left", curHandShape, curLetter->curSymbol->rnd_handClr);
+		setShapeClr("h_hand_right", curHandShape, curLetter->curSymbol->rndVals->rnd_handClr);
+		setShapeClr("h_hand_left", curHandShape, curLetter->curSymbol->rndVals->rnd_handClr);
 	}
 }
 
@@ -292,7 +292,7 @@ void MyWindow::setDrawLtrOrSmpl(bool drawLtr, int idx, int symNum) {
 		}
 		curLtrIDX = idx;
 		curLetter = letters[idx];
-		curLetter->setSymbolIdx(symNum, !flags[debugIDX]);		//don't display if debugging only (other debug text makes it redundant)
+		curLetter->buildSymbolAndSolveIK(symNum, IKSolve->params->useMotionBlur(), !flags[debugIDX]);		//only pre-solve IK if using motion blur; don't display if debugging only (other debug text makes it redundant)
 		//set randomization values based on setting for current letter
 		setRandomValues();
 		//curSymIDX = curLetter->curSymbolIDX;
@@ -353,8 +353,6 @@ eignVecVecTyp MyWindow::buildTrajSeq(void (MyWindow::*trajFunc)(eignVecTyp&), in
 	return _trajAraAra;
 }
 
-
-
 static int pauseCount = 0;
 void MyWindow::timeStepping() {
 	if (flags[initTrnDatCapIDX]) {//initialize trajectories for training/testing data capture
@@ -374,9 +372,9 @@ void MyWindow::timeStepping() {
 				pauseCount = 0;
 			}
 		}
-		//cout << "TODO : IK on letter " << curLetter->ltrName << " symbol idx : "<< curLetter->curSymbol << std::endl;
 		//setup trajectories and then solve - executes IK to current trajectory location and returns true if done
-		flags[doneTrajIDX] = curLetter->solve();
+		//flags[doneTrajIDX] = curLetter->curSymbol->setIKSkelPose(0, true);
+		flags[doneTrajIDX] = curLetter->curSymbol->solve();
 		//if (flags[debugIDX]) { cout << "displayTimer : letter solve done : disp timr cnt" << (displayTmrCnt++) << " with draw count : " << drawCnt << std::endl; }
 	}
 	else {//IK on sample symbols
@@ -393,7 +391,8 @@ void MyWindow::timeStepping() {
 
 void MyWindow::displayTimer(int _val){
 	//timestepping calls managed in renderblur if using motion blur.  yuck
-	if (!flags[useMotionBlurIDX]) { timeStepping(); }
+	//TODO replace with pre-calculated IK solution for all trajectory points and then just draw individual results via skeleton dof setting
+	if (!(flags[useMotionBlurIDX] && flags[useLtrTrajIDX])) { timeStepping(); }
 	glutPostRedisplay();
 	glutTimerFunc(mDisplayTimeout, refreshTimer, _val);
 }//displayTimer
@@ -410,21 +409,20 @@ void MyWindow::drawCurTraj() {
 
 //render function for using motionblur - TODO can't do this here, need to figure blur externally
 void MyWindow::renderBlur() {
-	int numIter = mDisplayTimeout / (mWorld->getTimeStep() * 1000);
-	float numMotionBlurFrames = ceil(floor(mDisplayTimeout) / (mWorld->getTimeStep() * 1000 * motionBlurFreq));
-	for (int i = 0; i < numIter; i += motionBlurFreq) {
-		//for (int j = 0; j < motionBlurFreq; j++) {
-			//if (i + j < numIter) {
-			timeStepping();
-			//bake goes here
-
-		//	}
-		//}
-
+	if (flags[initTrnDatCapIDX]) {//initialize trajectories for training/testing data capture
+		flags[initTrnDatCapIDX] = false;
+		trainDatInitCol(flags[useLtrTrajIDX]);
+	}
+	if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); return; }			//check at end of trajectory if attempting to save screen shots	
+	float mult = 1.0f/(2.0f * motionBlurFrames + 1);
+	bool start = true;
+	for (int j = -motionBlurFrames; j <= motionBlurFrames; ++j) { //either 1 (motionBlurFrames == 0) motion blur frames, 3, 5, 7, 9, etc 
+		//instead of timestepping (solving IK), need to just iterate through pose state array being sent to skeleton with appropriate offest for motionBlur
+		flags[doneTrajIDX] = curLetter->curSymbol->setIKSkelPose(j, j == motionBlurFrames);
 		draw();
-		glAccum((i == 0 ? GL_LOAD : GL_ACCUM), 1.0f / numMotionBlurFrames);
-	} // for loop
-
+		glAccum((start ? GL_LOAD : GL_ACCUM), mult);
+		start = false;
+	}
 	// Draw trackball indicator
 	if (mRotate && !mCapture) { mTrackBall.draw(mWinWidth, mWinHeight); }
 
@@ -437,7 +435,7 @@ void MyWindow::renderBlur() {
 
 //override render originally in wind3d
 void MyWindow::render() {
-	if (flags[useMotionBlurIDX]) { renderBlur(); return; }
+	if (flags[useMotionBlurIDX] && flags[useLtrTrajIDX]){ renderBlur(); return; }
 	draw();
 
 	glAccum(GL_LOAD, 1.0f);
@@ -503,16 +501,13 @@ void MyWindow::draw() {
 
 	drawSkels();
 	//traw tracked markers
-	if (flags[drawTrkMrkrsIDX]) {
-		IKSolve->drawTrkMrkrs(mRI, true);
-	}
-	if (flags[showAllTrajsIDX] && flags[useLtrTrajIDX] && (nullptr != curLetter)) {//if show all trajs (show all symbols for a letter, for debugging) and showing letters and a current letter exists
-			curLetter->drawSymbolTrajDist(mRI);
-	} else if (flags[drawLtrTrajIDX]) {
-		if (flags[useLtrTrajIDX] && (nullptr != curLetter)) {	curLetter->drawLetter(mRI);			}
-		else {													drawCurTraj();		}
-	}
-	drawEntities();
+	if (flags[drawTrkMrkrsIDX]) {		IKSolve->drawTrkMrkrs(mRI, true);	}
+
+	if (flags[useLtrTrajIDX] && (nullptr != curLetter)) {
+		if (flags[showAllTrajsIDX]){		curLetter->drawSymbolTrajDist(mRI);} //if show all trajs (show all symbols for a letter, for debugging) and showing letters and a current letter exists
+		else if (flags[drawLtrTrajIDX]) {	curLetter->drawLetter(mRI);	}
+	} else if (flags[drawLtrTrajIDX]) {		drawCurTraj();		}
+
 	if (flags[debugIDX]) {
 		glColor3f(1.0f, 0.0f, 0.0f);
 		dart::gui::drawStringOnScreen(0.02f, 0.11f, getCurrQuatAsRot(0));
@@ -529,7 +524,6 @@ std::string MyWindow::getCurrQuatAsRot(int row) {
 	ss.str("");
 	ss << "Row " << row << " :  ["; //<< this->mTrackBall.getRotationMatrix().row(row) << "]";
 	Eigen::Vector3d matRow = this->mTrackBall.getRotationMatrix().row(row);
-
 	ss << std::fixed << std::setprecision(6) << matRow(0) << "   ";
 	ss << std::fixed << std::setprecision(6) << matRow(1) << "   ";
 	ss << std::fixed << std::setprecision(6) << matRow(2);
@@ -724,10 +718,11 @@ void MyWindow::saveInitSkelVals() {
 void MyWindow::setMotionBlurQual() {
 	flags[useMotionBlurIDX] = IKSolve->params->useMotionBlur();
 	//0 or OOB == no motion blur
-	motionBlurFreq = mDisplayTimeout / (mWorld->getTimeStep() * 1000);
-	if ((flags[useMotionBlurIDX]) && (IKSolve->params->motionBlurQual > 0) && (IKSolve->params->motionBlurQual <= 5)) { 
+	motionBlurFrames = 0;
+	if ((flags[useMotionBlurIDX]) && (IKSolve->params->motionBlurQual > 0)){// && (IKSolve->params->motionBlurQual <= 5)) { 
 		//varies from 1 to 5, with 1 == low motion blur and 5 == highest quality 
-		motionBlurFreq = std::min(motionBlurFreq, (1 << (5 - IKSolve->params->motionBlurQual)));
+		//motionBlurFreq = std::min(motionBlurFreq, (1 << (5 - IKSolve->params->motionBlurQual)));
+		motionBlurFrames = IKSolve->params->motionBlurQual;
 	}
 }//setMotionBlurQual
 

@@ -48,18 +48,49 @@
 namespace dart {
 	namespace renderer {
 		class RenderInterface;
-	}  // namespace renderer
-} // namespace dart
+	} 
+} 
 
 namespace gestureIKApp {
 	class MyGestTraj;
 	class IKSolver;
 
-	//collection of 1 or more trajectories making up a symbol
+	class SymbolRandVals {
+	public :
+		SymbolRandVals(std::shared_ptr<gestureIKApp::IKSolver> IKSolve);
+		virtual ~SymbolRandVals() {}
+
+		//set all random camera and environment values
+		void setRandCamSkelVals();
+		// To get byte-aligned Eigen vectors
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+		
+		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;
+		//each symbol needs to own all its randomization values, such as 
+		//	skeleton head : size variation (w/h), color; 
+		//	hand : color, shape (ellipse or rectangle), size (width, depth, length); 
+		//	skel body : size(w/h); 
+		//	camera : location, direction, look-at point(?)
+		//random camera rotation
+		Eigen::Quaterniond cameraRot;											//needs to be normalized, multiply current orientation quat in MyWindow
+																					//random camera displacment (mTrans and zoom)
+		Eigen::Vector3d cameraTrans;
+		float cameraZoom;
+		//random head and hand dimensions and color
+		Eigen::Vector3d rnd_headSize,
+			rnd_handSize,
+			rnd_headClr,
+			rnd_handClr;
+
+		unsigned int
+			rnd_handShape;													// 0: rectangular, 1: ellipsoid
+
+	};//SymbolRandVals
+
 	class MyGestSymbol {
 	public:
 		
-		MyGestSymbol(const std::string& name, int srcIDX);
+		MyGestSymbol(std::shared_ptr<gestureIKApp::IKSolver> IKSolve, const std::string& name, int srcIDX);
 		virtual ~MyGestSymbol();
 
 		//draw trajectories of this symbol - if set change color for each trajectory
@@ -67,8 +98,12 @@ namespace gestureIKApp {
 
 		//call when symbol first chosen to be IKed to
 		void initSymbolIK();
-		//solve IK for this symbol's current trajectory - returns true if finished
+		//solve IK for this symbol's current trajectory - returns true if finished - TODO call setSkelDofs from myWindow instead
 		bool solve();
+
+		//set skeleton results for current frame - return true if baseFrame == #frames
+		//bool setIKSkelPose() { return setIKSkelPose(0, true); }
+		bool setIKSkelPose(int offFrame, bool incrFrame);
 
 		//set flags of all subordinate symbols
 		void setFlags(int idx, bool val);
@@ -91,11 +126,6 @@ namespace gestureIKApp {
 		//process trajectories and build linking trajectories to connect disjoint trajectories
 		void buildTrajComponents();
 
-		//set all random camera and environment values
-		void setRandCamSkelVals();
-		//set random camera orientation
-		//void setRandCameraOrient();
-
 		//set symbol trajectory pointer and elbow centers and normal vectors of planes drawn on - planeNorm must be specified first
 		void setSymbolCenters(const Eigen::Ref<const Eigen::Vector3d>& ctPt);
 
@@ -107,29 +137,15 @@ namespace gestureIKApp {
 		// To get byte-aligned Eigen vectors
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	public:	//variables
+	public:	
+		//variables
 		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver
 		std::shared_ptr<MyGestSymbol> _self;									//ref to shared ptr to self, to be handed off to trajectories
+		std::shared_ptr<SymbolRandVals> rndVals;								//ref to the random values pertaining to the configuration and display of this symbol
 
-		//symbol needs to own all randomization values, such as 
-		//	skeleton head : size variation (w/h), color; 
-		//	hand : color, shape (ellipse or rectangle), size (width, depth, length); 
-		//	skel body : size(w/h); 
-		//	camera : location, direction, look-at point(?)
-		//random camera rotation
-		Eigen::Quaterniond cameraRot;											//needs to be normalized, multiply current orientation quat in MyWindow
-		//random camera displacment (mTrans and zoom)
-		Eigen::Vector3d cameraTrans;
-		float cameraZoom;
-		//random head and hand dimensions and color
-		Eigen::Vector3d rnd_headSize,
-			rnd_handSize,
-			rnd_headClr,
-			rnd_handClr;
-
+		std::vector<Eigen::VectorXd> IKPoses;									//all IK skel dofs for this symbol - results from IK, used for motion blur
 		unsigned int
-			rnd_handShape,														// 0: rectangular, 1: ellipsoid
-			curFrame,															//current frame of this letter being processed
+			curFrame,															//current frame of this letter being processed 
 			numTrajFrames,														//# of frames this symbol has
 			srcSymbolIDX;														//idx in owning letter symbols vector of source symbol for this symbol, or it's own idx if from a file
 

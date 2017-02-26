@@ -163,42 +163,39 @@ namespace gestureIKApp {
 		setTrkMrkrs(_tarPosAra);
 		solve();
 	}
-	//TODO change tarPos to vector of targets for trajectory?
+
 	//_tarPosAra is a frame's worth of target positions
 	void IKSolver::solve()	{
 		//update target positions from passed values
-		//TODO use below when trajectory implemented
-		//eignVecTyp _tarPosAra = trajectory->getTrajFrame()
-		//for (int i = 0; i < trkedMrkrNames.size(); ++i) {
-		//	(*trkMarkers)[trkedMrkrNames[i]]->setTarPos(_tarPosAra[i]);
-		//}
 		double poseError = 999, poseErrorLast = 1000, poseErrorLastGood;
-		int adaptTS;
+		//int adaptTS;
 		int i = 0;
 		Eigen::VectorXd modGrads;
 		while ((i < params->IK_solveIters) && (poseError > params->IK_maxSqError)){
 			grads = calcGradient();
-			adaptTS = 0; 
+			//adaptTS = 0; 
 			double mult = 10;
 			while (mult > .1) {
 				modGrads = mult * params->IK_alpha * grads;
 				do {
 					lastNewPose = newPose;
 					newPose = skelPtr->getPositions() - modGrads;
-					skelPtr->setPositions(newPose);
-					skelPtr->computeForwardKinematics(true, false, false);	// DART updates all the transformations based on newPose
+					setPoseAndCompSkelKin(newPose);
+					//skelPtr->setPositions(newPose);
+					//skelPtr->computeForwardKinematics(true, false, false);	// DART updates all the transformations based on newPose
 					poseErrorLastGood = poseErrorLast;						//the last good "last cycle" pose error (i.e. keeping track of the most recent "last pose error" that triggered an iteration)
 					poseErrorLast = poseError;
 					poseError = getPoseError();
 					//std::cout << "Iter : " << i << " adaptTS : "<< adaptTS <<" pose error : " << poseError << std::endl;
-					++adaptTS;
+					//++adaptTS;
 				} while (poseError < poseErrorLast);		//repeat while improving
 				//std::cout << "Iter : " << i << " adaptTS : " << adaptTS << " pose error : " << poseError << std::endl;
 				//after do-while, will have done 1 iteration too many (which had increased delta poseError)
 				mult *= .5;
 				newPose = lastNewPose;
-				skelPtr->setPositions(newPose);
-				skelPtr->computeForwardKinematics(true, false, false);		// DART updates all the transformations based on newPose
+				setPoseAndCompSkelKin(newPose);
+				//skelPtr->setPositions(newPose);
+				//skelPtr->computeForwardKinematics(true, false, false);	// DART updates all the transformations based on newPose
 				poseError = poseErrorLast;									//last cycle which was undone
 				poseErrorLast = poseErrorLastGood;							//last "last cycle" pose error which was > current cycle pose error
 			}// while (mult > .5);

@@ -74,8 +74,6 @@ namespace gestureIKApp {
 		//data needs to be projected only plane with normal pointing at shoulder, and scaled to fit desired circle.
 		//average location needs to be managed at symbol level.
 
-		//solve IK on the current Letter - returns true if finished
-		bool solve();
 		//build a uniform distribution engine to be able to select randomly from all the symbols that represent this letter (read from file and desired from random generation)
 		void buildUniDist() {
 			uni = std::make_shared< std::uniform_int_distribution<int> >(0, (numFileSymbols - 1));
@@ -84,6 +82,8 @@ namespace gestureIKApp {
 		void buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames);
 		//generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present
 		void buildRandExSymbolTrajs(int _totNumDesSymb);
+		//build a random symbol and solve all IK trajectories
+		void buildSymbolAndSolveIK(int symIdx, bool solveIK, bool disp);
 
 		//build a single random symbol for this letter
 		std::shared_ptr<gestureIKApp::MyGestSymbol> buildRandSymbol(int idx);
@@ -96,8 +96,6 @@ namespace gestureIKApp {
 		void setDebug(bool val) { setSymbolFlags(debugIDX, val); }
 		//turn on/off testing of letter quality
 		void setTestLtrQual(bool val) { setSymbolFlags(testLtrQualIDX, val); }
-		//set symbol and letter idx
-		void setSymbolIdx(int symIdx, bool disp);
 		//draw all letters to test range of values from randomization
 		void drawSymbolTrajDist(dart::renderer::RenderInterface* mRI);
 		//draw all components of trajectory of current symbol

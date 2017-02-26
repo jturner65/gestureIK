@@ -44,17 +44,77 @@
 #include "apps/gestureIK/IKSolver.h"
 
 namespace gestureIKApp {
+	SymbolRandVals::SymbolRandVals(std::shared_ptr<gestureIKApp::IKSolver> _IKSolve) : IKSolve(_IKSolve), cameraRot(origTrackBallQ), cameraTrans(0, 0, 0), cameraZoom(-1),//set when IKSolve is set
+		rnd_headClr(.9, .9, .9), rnd_handClr(.9, .9, .9), rnd_handShape(0) {
+		//zoom may vary based on randomization, if this symbol is randomized
+		cameraZoom = IKSolve->params->origZoom;
+		setRandCamSkelVals();
+	}
 
-	MyGestSymbol::MyGestSymbol(const std::string& _name, int _srcIDX) : IKSolve(nullptr), _self(nullptr),
+	void SymbolRandVals::setRandCamSkelVals() {
+		//build random camera orientation
+		//first pick random rot axis in y/z plane and normalize while find x direction deviation (default camera is in positive x looking toward negative x, so this should be small) - set as rotvec
+		double phi = IKSolve->getUniRandDbl(-DART_2PI, DART_2PI);
+		Eigen::Vector3d rotVec(IKSolve->getRandDbl(0, .0001), sin(phi), cos(phi));
+		rotVec.normalize();
+		//then find rotational amount thet around this axis, build quat as w == cos(thet/2); v == sin(thet/2) * rotvec
+		double thet = IKSolve->getUniRandDbl(-IKSolve->params->rnd_camThet, IKSolve->params->rnd_camThet);
+		thet *= .5;
+		Eigen::Vector3d tmpV(sin(thet) * rotVec);
+		Eigen::Quaterniond tmpRot(cos(thet), tmpV(0), tmpV(1), tmpV(2));
+		tmpRot.normalize();
+		cameraRot = tmpRot * cameraRot;
+		cameraRot.normalize();
+		//random zoom
+		//find variation amt 
+		cameraZoom = IKSolve->params->origZoom + static_cast<float>(IKSolve->getUniRandDbl(-IKSolve->params->rnd_camZoom, IKSolve->params->rnd_camZoom));
+		//std::cout << "Old Zoom : " << IKSolve->params->origZoom << "\t New Zoom : " << cameraZoom << std::endl;
+		//random camera location 
+		Eigen::Vector3d min(-IKSolve->params->rnd_camTrans, -IKSolve->params->rnd_camTrans, -IKSolve->params->rnd_camTrans),
+			max(IKSolve->params->rnd_camTrans, IKSolve->params->rnd_camTrans, IKSolve->params->rnd_camTrans);
+		cameraTrans = origMTrans + IKSolve->getUniRandVec(min, max);
+		//std::cout << "Base (original) Translation : (" << origMTrans(0)<<"," << origMTrans(1) << "," << origMTrans(2) << ")\tTranslation modification : (" << cameraTrans(0) << "," << cameraTrans(1) << "," << cameraTrans(2) <<")"<< std::endl;
+		//random skel head dims - pct of base +/- in each dim - y set to zero to not get smaller (separate from skel)
+		Eigen::Vector3d headMin(-IKSolve->params->rnd_headDimPct, 0, -IKSolve->params->rnd_headDimPct),
+			headMax(IKSolve->params->rnd_headDimPct, IKSolve->params->rnd_headDimPct, IKSolve->params->rnd_headDimPct);
+		rnd_headSize = IKSolve->getUniRandVec(headMin, headMax);
+
+		//random skel head color - color is grayscale so just 1 double 0-1, avoid values +/- bnd amt around background clr
+		float rndAmt;
+		do {
+			rndAmt = static_cast<float>(IKSolve->getUniRandDbl(0, 1));
+		} while ((rndAmt > (IKSolve->params->bkgR - IKSolve->params->rnd_headClrBnd)) && (rndAmt < (IKSolve->params->bkgR + IKSolve->params->rnd_headClrBnd)));//in gray range
+		rnd_headClr << rndAmt, rndAmt, rndAmt;
+		//random skel hand shape : 0: rectangular, 1: ellipsoid
+		rnd_handShape = (IKSolve->getUniRandDbl(0, 1) >= .5 ? 1 : 0);
+		//random skel hand dims - pct of base +/- in each dim - y set to zero to not get smaller (separate from skel)
+		Eigen::Vector3d handMin(-IKSolve->params->rnd_handDimPct, 0, -IKSolve->params->rnd_handDimPct),
+			handMax(IKSolve->params->rnd_handDimPct, IKSolve->params->rnd_handDimPct, IKSolve->params->rnd_handDimPct);
+		rnd_handSize = IKSolve->getUniRandVec(handMin, handMax);
+
+		//random skel hand color - color is grayscale so just 1 double 0-1, avoid values .33-.66
+		do {
+			rndAmt = static_cast<float>(IKSolve->getUniRandDbl(0, 1));
+		} while ((rndAmt >(IKSolve->params->bkgR - IKSolve->params->rnd_handClrBnd)) && (rndAmt < (IKSolve->params->bkgR + IKSolve->params->rnd_handClrBnd)));//in gray range
+		rnd_handClr << rndAmt, rndAmt, rndAmt;
+	}//setRandCamSkelVals
+
+
+	MyGestSymbol::MyGestSymbol(std::shared_ptr<gestureIKApp::IKSolver> _IKSolve, const std::string& _name, int _srcIDX) : IKSolve(_IKSolve), _self(nullptr), 
+		rndVals(std::allocate_shared<SymbolRandVals>(Eigen::aligned_allocator <SymbolRandVals>(), IKSolve)), IKPoses(0),
 		//cameraRot(0.5*sqrt(2), 0, -0.5*sqrt(2), 0),
-		cameraRot(origTrackBallQ), cameraTrans(0, 0, 0), cameraZoom(-1),//set when IKSolve is set
-		rnd_headClr(.9, .9, .9), rnd_handClr(.9, .9, .9), rnd_handShape(0),curFrame(0), numTrajFrames(0), srcSymbolIDX(_srcIDX), allTrajsLen(0), //trajVel(.03), 
+		curFrame(0), numTrajFrames(0), srcSymbolIDX(_srcIDX), allTrajsLen(0), //trajVel(.03), 
 		sclAmt(1.0), curTrajDist(0), trajectories(0), trajLens(0), trajFrameIncrs(0), name(_name), flags(numFlags,false),
 		avgLoc(0,0,0), ptrCtrPt(0,0,0), elbowCtrPt(0,0,0), ptrPlaneNorm(-1,0,0), elbowPlaneNorm(0,0,0), circleRad(0), curTraj(0)
 
 	{
 		//show connecting trajectories in debug output
 		flags[drawConnTrajIDX] = true;
+		circleRad = IKSolve->params->IK_drawRad;
+		ptrCtrPt << IKSolve->drawCrclCtr;
+		ptrPlaneNorm << (IKSolve->tstRShldrSt - ptrCtrPt).normalized();
+		elbowCtrPt << IKSolve->drawElbowCtr;
+		elbowPlaneNorm << IKSolve->elbowShldrNormal;
 	}
 	
 	MyGestSymbol::~MyGestSymbol() {}
@@ -112,18 +172,10 @@ namespace gestureIKApp {
 		trajectories = tmpTraj;
 		tmpTraj.clear();
 
-		//if (name.compare("b_12") == 0) {
-		//	std::cout << "letter b_12 about to check trajectories.size() : "<< trajectories.size() << std::endl;
-		//}
-
 		if (trajectories.size() > 1) {
 			bool unusedTraj = false;
-			//TODO for all trajectories link endpoints with virtual trajectories
 			eignVecTyp stFrame, endFrame;
 			tmpTraj.clear();
-			//if (name.compare("b_12") == 0) {
-			//	std::cout << "letter b_12 about to build intermediate trajs" << std::endl;
-			//}
 			//since we've gotten rid of all unused trajs by here, only potential trajectories we don't want are single-point trajs where the point overlaps a previous or next traj's end/start point
 			int stIdx = 0, endIdx = 1;
 			for (int i = 1; i < trajectories.size(); ++i) {
@@ -244,6 +296,8 @@ namespace gestureIKApp {
 		double trajStartLoc = (curTraj > 0) ? trajLens[curTraj - 1] : 0;
 		//std::cout << "Cur Traj Dist for " << name << " in solve : " << curTrajDist << " and start length : " << trajStartLoc << " and end length of this traj : " << trajLens[curTraj] << std::endl;
 		bool finishedCurTraj = trajectories[curTraj]->setTrkMrkrAndSolve(curTrajDist - trajStartLoc);
+		//save solved newPos from IKSolver
+		IKPoses.push_back(IKSolve->getNewPose());
 		//std::cout << "Frame : " << curFrame << " Name : "<<name<<" CurTrajDist : " << curTrajDist << " for traj of length : " << allTrajsLen << "\tdiff : "<< (curTrajDist - trajStartLoc) <<std::endl;
 		++curFrame;
 		if (flags[debugIDX]) {
@@ -273,6 +327,7 @@ namespace gestureIKApp {
 			//	std::cout << std::endl;
 			//}
 			flags[isDoneDrawingIDX] = true;
+			curFrame = 0;			//reset to 0 so can be used again for setIKSkelPose
 			return true;
 		}	//traversed entire length of trajectory
 
@@ -281,74 +336,26 @@ namespace gestureIKApp {
 			curTrajDist = allTrajsLen;
 		}
 		if (curTrajDist > trajLens[curTraj]) {//last trajLens element should be length of entire trajectory (allTrajsLen) - won't ever increment curTraj for last frame
-			curTraj++;
+			++curTraj;
 		}//		curTraj = idx;
 		return false;
 	}//solve
+	//set skeleton pose to be pose of curRndrFrame + offFrame
+	bool MyGestSymbol::setIKSkelPose(int offFrame, bool incrFrame) {
+		int poseIdx = curFrame + offFrame;
+		if (poseIdx < 0) { poseIdx = 0; }
+		else if(poseIdx >= IKPoses.size()){ poseIdx = IKPoses.size()-1; }
+		//set pose of skeleton
+		IKSolve->setPoseAndCompSkelKin(IKPoses[poseIdx]);
 
-	////build random camera orientation
-	//void MyGestSymbol::setRandCameraOrient() {
-	//	//first pick random rot axis in y/z plane and normalize while find x direction deviation (default camera is in positive x looking toward negative x, so this should be small) - set as rotvec
-	//	double phi = IKSolve->getUniRandDbl(-DART_2PI, DART_2PI);
-	//	Eigen::Vector3d rotVec(IKSolve->getRandDbl(0, .0001), sin(phi), cos(phi));
-	//	rotVec.normalize();
-	//	//then find rotational amount thet around this axis, build quat as w == cos(thet/2); v == sin(thet/2) * rotvec
-	//	double thet = IKSolve->getUniRandDbl(-IKSolve->params->rnd_camThet, IKSolve->params->rnd_camThet);
-	//	thet *= .5;
-	//	Eigen::Vector3d tmpV(sin(thet) * rotVec);
-	//	Eigen::Quaterniond tmpRot(cos(thet), tmpV(0), tmpV(1), tmpV(2));
-	//	tmpRot.normalize();
-	//	cameraRot = tmpRot * cameraRot;
-	//	cameraRot.normalize();
-	//}
+		if (incrFrame) { ++curFrame; }
+		if (curFrame == IKPoses.size()) {
+			curFrame = 0;
+			return true;
+		}
+		return false;
+	}//setIKSkelPose
 
-	void MyGestSymbol::setRandCamSkelVals() {
-		//build random camera orientation
-		//first pick random rot axis in y/z plane and normalize while find x direction deviation (default camera is in positive x looking toward negative x, so this should be small) - set as rotvec
-		double phi = IKSolve->getUniRandDbl(-DART_2PI, DART_2PI);
-		Eigen::Vector3d rotVec(IKSolve->getRandDbl(0, .0001), sin(phi), cos(phi));
-		rotVec.normalize();
-		//then find rotational amount thet around this axis, build quat as w == cos(thet/2); v == sin(thet/2) * rotvec
-		double thet = IKSolve->getUniRandDbl(-IKSolve->params->rnd_camThet, IKSolve->params->rnd_camThet);
-		thet *= .5;
-		Eigen::Vector3d tmpV(sin(thet) * rotVec);
-		Eigen::Quaterniond tmpRot(cos(thet), tmpV(0), tmpV(1), tmpV(2));
-		tmpRot.normalize();
-		cameraRot = tmpRot * cameraRot;
-		cameraRot.normalize();
-		//random zoom
-		//find variation amt 
-		cameraZoom = IKSolve->params->origZoom + static_cast<float>(IKSolve->getUniRandDbl(-IKSolve->params->rnd_camZoom, IKSolve->params->rnd_camZoom));
-		//std::cout << "Old Zoom : " << IKSolve->params->origZoom << "\t New Zoom : " << cameraZoom << std::endl;
-		//random camera location 
-		Eigen::Vector3d min(-IKSolve->params->rnd_camTrans, -IKSolve->params->rnd_camTrans, -IKSolve->params->rnd_camTrans),
-			max(IKSolve->params->rnd_camTrans, IKSolve->params->rnd_camTrans, IKSolve->params->rnd_camTrans);
-		cameraTrans = origMTrans + IKSolve->getUniRandVec(min, max);
-		//std::cout << "Base (original) Translation : (" << origMTrans(0)<<"," << origMTrans(1) << "," << origMTrans(2) << ")\tTranslation modification : (" << cameraTrans(0) << "," << cameraTrans(1) << "," << cameraTrans(2) <<")"<< std::endl;
-		//random skel head dims - pct of base +/- in each dim - y set to zero to not get smaller (separate from skel)
-		Eigen::Vector3d headMin(-IKSolve->params->rnd_headDimPct, 0, -IKSolve->params->rnd_headDimPct),
-			headMax(IKSolve->params->rnd_headDimPct, IKSolve->params->rnd_headDimPct, IKSolve->params->rnd_headDimPct);
-		rnd_headSize = IKSolve->getUniRandVec(headMin, headMax);
-
-		//random skel head color - color is grayscale so just 1 double 0-1, avoid values +/- bnd amt around background clr
-		float rndAmt;
-		do {
-			rndAmt = static_cast<float>(IKSolve->getUniRandDbl(0, 1));
-		} while ((rndAmt > (IKSolve->params->bkgR - IKSolve->params->rnd_headClrBnd)) && (rndAmt < (IKSolve->params->bkgR + IKSolve->params->rnd_headClrBnd)));//in gray range
-		rnd_headClr << rndAmt, rndAmt, rndAmt;
-		//random skel hand shape : 0: rectangular, 1: ellipsoid
-		rnd_handShape = (IKSolve->getUniRandDbl(0, 1) >= .5 ? 1 : 0);
-		//random skel hand dims - pct of base +/- in each dim - y set to zero to not get smaller (separate from skel)
-		Eigen::Vector3d handMin(-IKSolve->params->rnd_handDimPct, 0, -IKSolve->params->rnd_handDimPct),
-			handMax(IKSolve->params->rnd_handDimPct, IKSolve->params->rnd_handDimPct, IKSolve->params->rnd_handDimPct);
-		rnd_handSize = IKSolve->getUniRandVec(handMin, handMax);
-
-		//random skel hand color - color is grayscale so just 1 double 0-1, avoid values .33-.66
-		do {
-			rndAmt = static_cast<float>(IKSolve->getUniRandDbl(0, 1));
-		} while ((rndAmt >(IKSolve->params->bkgR - IKSolve->params->rnd_handClrBnd)) && (rndAmt < (IKSolve->params->bkgR + IKSolve->params->rnd_handClrBnd)));//in gray range
-		rnd_handClr << rndAmt, rndAmt, rndAmt;
-	}//setRandCamSkelVals
 
 	//make this symbol a randomized version of the passed symbol - 
 	bool MyGestSymbol::buildRandomSymbol(std::shared_ptr<MyGestSymbol> _src, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast) {
@@ -360,11 +367,7 @@ namespace gestureIKApp {
 		} while (sclAmt <= 0);
 		//trajVel = IKSolve->params->trajDesiredVel;
 		flags[isFastDrawnIDX] = isFast;
-		//derive all random camera and skeleton quantites
-		setRandCamSkelVals();
-		//if (isFast) {
-		//	trajVel *= IKSolve->params->IK_fastTrajMult;
-		//}
+
 		Eigen::Vector3d stdVec(IKSolve->params->trajRandCtrStdScale_X*IKSolve->params->trajRandCtrStd, IKSolve->params->trajRandCtrStdScale_Y*IKSolve->params->trajRandCtrStd, IKSolve->params->trajRandCtrStdScale_Z*IKSolve->params->trajRandCtrStd);
 		ptrCtrPt << IKSolve->getRandVec(_src->ptrCtrPt, stdVec);				//
 		setSymbolCenters(ptrCtrPt);				//need to set this before interacting with trajectories
@@ -435,14 +438,13 @@ namespace gestureIKApp {
 
 	 //set reference to IK solver - set in all trajectories
 	void MyGestSymbol::setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv) {
-		IKSolve = _slv;
-		//zoom may vary based on randomization, if this symbol is randomized
-		cameraZoom = IKSolve->params->origZoom;
-		circleRad = IKSolve->params->IK_drawRad;
-		ptrCtrPt << IKSolve->drawCrclCtr;
-		ptrPlaneNorm << (IKSolve->tstRShldrSt - ptrCtrPt).normalized();
-		elbowCtrPt << IKSolve->drawElbowCtr;
-		elbowPlaneNorm << IKSolve->elbowShldrNormal;
+		//IKSolve = _slv;
+
+		//circleRad = IKSolve->params->IK_drawRad;
+		//ptrCtrPt << IKSolve->drawCrclCtr;
+		//ptrPlaneNorm << (IKSolve->tstRShldrSt - ptrCtrPt).normalized();
+		//elbowCtrPt << IKSolve->drawElbowCtr;
+		//elbowPlaneNorm << IKSolve->elbowShldrNormal;
 	//	trajVel = IKSolve->params->trajDesiredVel;
 
 		for (int i = 0; i<trajectories.size(); ++i) { trajectories[i]->setSolver(IKSolve); }

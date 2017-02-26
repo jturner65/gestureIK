@@ -80,7 +80,6 @@ public:
 		if (drawLtr) {																//drawing a letter trajectory and not a sample symbol trajectory
 			if (flags[collectDataIDX]) { //finished complete letter trajectory, performing screen capture, set up next letter
 				trainLtrDatManageCol();
-
 				return; 
 			}				//manage transitions for automated training data capture whenever letter is finished
 		}
@@ -247,8 +246,8 @@ protected :
 	double aspectRatio;
 
 	///Motion Blur
-	//motion blur frequency  
-	int motionBlurFreq;
+	//motion blur + / - frames 
+	int motionBlurFrames;
 
 	///letter trajectories
 	//structure holding all letters
