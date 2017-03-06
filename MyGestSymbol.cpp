@@ -327,7 +327,7 @@ namespace gestureIKApp {
 			//	std::cout << std::endl;
 			//}
 			flags[isDoneDrawingIDX] = true;
-			curFrame = 0;			//reset to 0 so can be used again for setIKSkelPose
+			//curFrame = 0;			//reset to 0 so can be used again for setIKSkelPose
 			return true;
 		}	//traversed entire length of trajectory
 

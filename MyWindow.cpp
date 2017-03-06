@@ -148,11 +148,6 @@ std::string MyWindow::getCurTrajFileDir(int dataIterVal) {
 //this will entail building trajectories for triangle, square and star, starting at each vertex,
 //with and without random shifts in end points,  [and moving in clockwise or ccw direction (TODO)]
 void MyWindow::trainDatInitCol(bool isLtr) {
-	if ((flags[useLtrTrajIDX]) && ((!IKSolve->params->regenNotAppend()) && (!IKSolve->params->genRandLtrs()))) {
-			std::cout << "XML specifies to not save sequences of file based letters(IDX_regenNotAppend == false), and to not make any random letters(IDX_genRandLtrs == false), and so there's nothing to save."<< std::endl;
-			resetCurVars();
-			return;
-	}	
 	flags[useLtrTrajIDX] = isLtr;
 	flags[collectDataIDX] = true;
 	//turn off all markers and trajectory displays
@@ -397,15 +392,6 @@ void MyWindow::displayTimer(int _val){
 	glutTimerFunc(mDisplayTimeout, refreshTimer, _val);
 }//displayTimer
 
-void MyWindow::drawCurTraj() {
-	eignVecTyp drawPoints(7);
-	switch (curTraj) {
-	case 0: {		break;		}
-	case 1: {	for (double t = 0; t < 1.0; t += .01) { calcTrajPoints(drawPoints, triCrnrs, 3, t); drawPoint(drawPoints[0]);	}	break;		}
-	case 2: {	for (double t = 0; t < 1.0; t += .01) { calcTrajPoints(drawPoints, sqrCrnrs, 4, t); drawPoint(drawPoints[0]); }		break;		}
-	case 3: {	for (double t = 0; t < 1.0; t += .01) { calcTrajPoints(drawPoints, starCrnrs, 5, t);  drawPoint(drawPoints[0]); }	break;		}
-	}
-}
 
 //render function for using motionblur - TODO can't do this here, need to figure blur externally
 void MyWindow::renderBlur() {
@@ -506,7 +492,7 @@ void MyWindow::draw() {
 	if (flags[useLtrTrajIDX] && (nullptr != curLetter)) {
 		if (flags[showAllTrajsIDX]){		curLetter->drawSymbolTrajDist(mRI);} //if show all trajs (show all symbols for a letter, for debugging) and showing letters and a current letter exists
 		else if (flags[drawLtrTrajIDX]) {	curLetter->drawLetter(mRI);	}
-	} else if (flags[drawLtrTrajIDX]) {		drawCurTraj();		}
+	} else if (flags[drawLtrTrajIDX]) {		drawCurTraj();		}//draw trajectory for sample symbol
 
 	if (flags[debugIDX]) {
 		glColor3f(1.0f, 0.0f, 0.0f);
@@ -922,6 +908,15 @@ void MyWindow::calcCircleTrajPoints(eignVecTyp& _trajPts) {
 	}
 }//calcCircleTrajPoints
 
+void MyWindow::drawCurTraj() {
+	eignVecTyp drawPoints(7);
+	switch (curTraj) {
+	case 0: {		break;		}
+	case 1: {	for (double t = 0; t < 1.0; t += .01) { calcTrajPoints(drawPoints, triCrnrs, 3, t); drawPoint(drawPoints[0]); }	break;		}
+	case 2: {	for (double t = 0; t < 1.0; t += .01) { calcTrajPoints(drawPoints, sqrCrnrs, 4, t); drawPoint(drawPoints[0]); }		break;		}
+	case 3: {	for (double t = 0; t < 1.0; t += .01) { calcTrajPoints(drawPoints, starCrnrs, 5, t);  drawPoint(drawPoints[0]); }	break;		}
+	}
+}
  //manage the process of writing all training and testing data - call whenever a trajectory has been captured (from checkCapture() )
  //ONLY FOR SAMPLE SYMBOLS (triangle, square, star) that consist of single trajectories!
 void MyWindow::trainSymDatManageCol() {

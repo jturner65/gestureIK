@@ -43,7 +43,7 @@ namespace gestureIKApp {
 		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), IK_elbowScale(0.36), IK_fastTrajMult(1.5), IK_ctrYOffset(0),
 		trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1), trajRandCtrStdScale_X(1), trajRandCtrStdScale_Y(1), trajRandCtrStdScale_Z(1),
 		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), rnd_camThet(.35), rnd_camZoom(.05), rnd_camTrans(.25), rnd_headClrBnd(.2), rnd_headDimPct(.1), rnd_handClrBnd(.2),rnd_handDimPct(.1),
-		win_Width(800), win_Height(800), numTotSymPerLtr(0), fixedClipLen(16), motionBlurQual(0), origZoom(.65f),	dataType(MULT_8), bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""),
+		win_Width(800), win_Height(800), numTotSymPerLtr(0), fixedClipLen(16), motionBlurQual(0), origZoom(.65f),	dataType(MULT_8), bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""), baseOutDir(""),
 		flags(numFlags, false)
 	{
 		std::cout << "GestIK params ctor"<<std::endl;
@@ -103,13 +103,11 @@ namespace gestureIKApp {
 		if (_name.compare("origZoom") == 0) { origZoom = stof(s);			return; }
 
 		//strings
-		//if (_name.compare("skelFileName") == 0) { skelFileName = std::string(s);	return; }
+		if (_name.compare("baseOutDir") == 0) { baseOutDir = std::string(s);	return; }
 		//boolean
 		//std::string sDest(s);
 		//std::transform(s.begin(), s.end(), sDest.begin(), toupper);
 		if (_name.compare("IDX_useLeftHand") == 0) { flags[IDX_useLeftHand] = (s.compare("TRUE") == 0 ? true : false);        return; }
-		if (_name.compare("IDX_genRandLtrs") == 0) { flags[IDX_genRandLtrs] = (s.compare("TRUE") == 0 ? true : false);        return; }
-		if (_name.compare("IDX_regenNotAppend") == 0) { flags[IDX_regenNotAppend] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_chgTrajDbgClrs") == 0) { flags[IDX_chgTrajDbgClrs] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_rndCamOrient") == 0) {	flags[IDX_rndCamOrient] = (s.compare("TRUE") == 0 ? true : false);        return; }          
 		if (_name.compare("IDX_rndCamLoc") == 0) {		flags[IDX_rndCamLoc] = (s.compare("TRUE") == 0 ? true : false);        return; }
@@ -119,6 +117,7 @@ namespace gestureIKApp {
 		if (_name.compare("IDX_rndHandDims") == 0) {	flags[IDX_rndHandDims] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_rndHandClr") == 0) { flags[IDX_rndHandClr] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_useMotionBlur") == 0) { flags[IDX_useMotionBlur] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_useOutputDir") == 0) { flags[IDX_useOutputDir] = (s.compare("TRUE") == 0 ? true : false);        return; }
 
 	}	//setParamValFromXMLStr
 
@@ -173,17 +172,10 @@ namespace gestureIKApp {
 		bkgB = 1.0;
 		bkgA = 1.0;
 
-		flags[IDX_useLeftHand] = false;
-		flags[IDX_regenNotAppend] = true;
-		flags[IDX_genRandLtrs] = true;
-		flags[IDX_chgTrajDbgClrs] = false;
-		flags[IDX_rndCamOrient] = false;
-		flags[IDX_rndCamLoc] = false;
-		flags[IDX_rndHeadDims] = false;
-		flags[IDX_rndHeadClr] = false;
-		flags[IDX_rndHandShape] = false;
-		flags[IDX_rndHandDims] = false;
-		flags[IDX_rndHandClr] = false;
+		baseOutDir = "";
+		
+		for (int i = 0; i < numFlags; ++i) { flags[i] = false; }
+
 		defaultVals = accumulateVals();			//set default values as current param vals
 	}//setDefaultVals
 	//set current date as file name offset to keep files unique
@@ -191,6 +183,7 @@ namespace gestureIKApp {
 		std::stringstream ss;
 		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 		std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+		//TODO change to include minute, exlude year?
 		ss << std::put_time(std::localtime(&now_c), "%y%m%d%H");
 		dateFNameOffset = ss.str();
 		std::cout << "dateFNameOffset : " << dateFNameOffset << std::endl;
@@ -302,6 +295,7 @@ namespace gestureIKApp {
 		//represent boolean flags as vals
 		for (int i = 0; i < numFlags; ++i) {flags[i] = (vals[idx++] == 1.0);}
 	}//distributeVals
+
 	void GestIKParams::resetValues() {//set some reasonable defaults in here that we can return to them if not loaded from file 
 		distributeVals(defaultVals);
 	}
@@ -316,10 +310,10 @@ namespace gestureIKApp {
 		out <<"\t| traj rand scale x,y,z ("   << p.trajRandCtrStdScale_X<<", "<<p.trajRandCtrStdScale_Y << ", " << p.trajRandCtrStdScale_Z <<")\t| bkg clr (rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")"<< std::endl;
 		out << "Generate left hand data : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False") << "\tRecord Motion Blur : " << (p.flags[p.IDX_useMotionBlur] ? "True" : "False");
 		if (p.flags[p.IDX_useMotionBlur]) { out << " : Quality of motion blur (0 - off, 5 - highest) : "<< (p.motionBlurQual); }
-		out << "\tGenerate Random Letters : " << (p.flags[p.IDX_genRandLtrs] ? "True" : "False") << "\tSave Non-random (File-based) letter IK (set to false to ignore these to add more random sequences): " << (p.flags[p.IDX_regenNotAppend] ? "True" : "False") << std::endl;
-		out << "Display trajectories with different colors : " << (p.flags[p.IDX_chgTrajDbgClrs] ? "True" : "False")  << std::endl;
+		out << "\tUse XML-Specified Output Dir : " << (p.flags[p.IDX_useOutputDir] ? "True : Dir Specified : " : "False") << (p.flags[p.IDX_useOutputDir] ? p.baseOutDir : "") << std::endl;
+		out << "\tDisplay trajectories with different colors : " << (p.flags[p.IDX_chgTrajDbgClrs] ? "True" : "False") << std::endl;
 		out << "Randomize :" << std::endl;
-		out<<"\tCamera Orientation : " << (p.flags[p.IDX_rndCamOrient] ? "True" : "False") << "\t Camera Location / Zoom : " << (p.flags[p.IDX_rndCamLoc] ? "True" : "False") << "\t  Head Dimensions: " << (p.flags[p.IDX_rndHeadDims] ? "True" : "False") << "\t  Head Color: " << (p.flags[p.IDX_rndHeadClr] ? "True" : "False") << std::endl;
+		out << "\tCamera Orientation : " << (p.flags[p.IDX_rndCamOrient] ? "True" : "False") << "\t Camera Location / Zoom : " << (p.flags[p.IDX_rndCamLoc] ? "True" : "False") << "\t  Head Dimensions: " << (p.flags[p.IDX_rndHeadDims] ? "True" : "False") << "\t  Head Color: " << (p.flags[p.IDX_rndHeadClr] ? "True" : "False") << std::endl;
 		out << "\tHand Shape : " << (p.flags[p.IDX_rndHandShape] ? "True" : "False") << "\t  Hand Dimensions : " << (p.flags[p.IDX_rndHandDims] ? "True" : "False") << "\t Hand Color : " << (p.flags[p.IDX_rndHandClr] ? "True" : "False") << std::endl;
 		return out;
 	}

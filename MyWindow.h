@@ -146,9 +146,11 @@ public:
 	//return string of full path to where the screen cap files will be written
 	inline std::string getFullBasePath() {
 		std::stringstream ss;
-		ss << framesFilePath;
-		if (flags[useLtrTrajIDX]) {	ss << "letters_" << DataType2strAbbrev[IKSolve->params->dataType] <<"_"<< IKSolve->params->dateFNameOffset << "/";}
-		else {		ss <<"samples/";	}		
+		ss << IKSolve->params->getOutputDir();  //uses framesFilePath if not using custom path dest
+		//ss<< framesFilePath; 
+		//if (flags[useLtrTrajIDX]) { ss << "letters_" << DataType2strAbbrev[IKSolve->params->dataType] << "_" << IKSolve->params->dateFNameOffset << "/"; }
+		if (flags[useLtrTrajIDX]) { ss << DataType2strAbbrev[IKSolve->params->dataType] << "_" << IKSolve->params->dateFNameOffset << "/"; }
+		else {		ss <<"samples/";	}
 		return ss.str();
 	}
 

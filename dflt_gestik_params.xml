@@ -89,7 +89,7 @@
 	</parameter>
 	<parameter>
 		<name>numTotSymPerLtr</name>
-		<val>1000</val> 
+		<val>10</val> 
 	</parameter>
 	<parameter>
 		<name>ltrIdxStSave</name>
@@ -140,7 +140,7 @@
 <!--Set dataType 0 == const vel for all ltrs, 1 == fixed 16, 2 == mult8 train/test -->
 	<parameter>
 		<name>dataType</name>
-		<val>0</val> 
+		<val>1</val> 
 	</parameter>
 	<parameter>
 		<name>bkgR</name>
@@ -158,6 +158,11 @@
 		<name>bkgA</name>
 		<val>1.0</val> 
 	</parameter>
+<!-- output directory to write results to - defaults to dart\apps\gestureIK\frames if unspecified -->
+	<parameter>
+		<name>baseOutDir</name>
+		<val>E:/Dropbox/Public/GestureIK/frames/</val>
+	</parameter>
 	<parameter>
 		<name>fixedClipLen</name>
 		<val>16</val>
@@ -166,18 +171,14 @@
 		<name>IDX_useLeftHand</name>
 		<val>FALSE</val> 
 	</parameter>
+<!-- whether or not to use xml-specified output directory -->
+	<parameter>
+		<name>IDX_useOutputDir</name>
+		<val>TRUE</val> 
+	</parameter>
 	<parameter>
 		<name>IDX_useMotionBlur</name>
 		<val>FALSE</val> 
-	</parameter>
-	<!-- setting this to true will include the original omniglot trajectories -->
-	<parameter>
-		<name>IDX_regenNotAppend</name>
-		<val>FALSE</val> 
-	</parameter>
-	<parameter>
-		<name>IDX_genRandLtrs</name>
-		<val>TRUE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_chgTrajDbgClrs</name>

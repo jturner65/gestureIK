@@ -76,7 +76,8 @@ namespace gestureIKApp {
 	//mult_8 uses multiple of 8 (but no less than 16) frame training and testing data
 	enum DataType { CONST_VEL, FIXED_16, MULT_8};
 	static const char* DataType2str[] = { "Constant Velocity", "16-frame", "Mult-8 Train, Mult-8 Test" };
-	static const char* DataType2strAbbrev[] = { "CONST_VEL", "FIXED_16", "MULT_8" };
+	//static const char* DataType2strAbbrev[] = { "CONST_VEL", "FIXED_16", "MULT_8" };
+	static const char* DataType2strAbbrev[] = { "CVEL", "F16", "ML8" };
 
 	//////////////////////////
 	//for randomization stuff

@@ -107,7 +107,6 @@ namespace gestureIKApp {
 					finCurTraj = (!flags[closeTrajIDX]) && (frame1 == trajPtDistFromSt.size() - 2) && (frame2 == trajPtDistFromSt.size() - 1) &&( abs(t - 1.0) < DART_EPSILON);
 				}
 			}
-
 			//if ((flags[debugIDX]) && (t == 1)){ std::cout << "Traj : " << name << " finCurTraj : " << (finCurTraj ? "True " : "False ") << "\tt : " << t << "\tlenFromStTraj : " << lenFromStTraj << "\t# trajPtDistFromSt " << trajPtDistFromSt.size() << "\ttrajPtDistFromSt[" << frame1 << "] = " << trajPtDistFromSt[frame1] << "\ttrajPtDistFromSt[" << frame2 << "] = " << trajPtDistFromSt[frame2] << std::endl; }
 			if (t > 1) {
 				std::cout << "\n!!!!!!Traj : " << name << " t greater than 1 for t : " << t << "\tlenFromStTraj : " << lenFromStTraj << "\t# trajPtDistFromSt " << trajPtDistFromSt.size() << "\ttrajPtDistFromSt[" << frame1 << "] = " << trajPtDistFromSt[frame1] << "\ttrajPtDistFromSt[" << frame2 << "] = " << trajPtDistFromSt[frame2] << "\n" << std::endl;

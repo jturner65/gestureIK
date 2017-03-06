@@ -65,10 +65,6 @@ namespace gestureIKApp {
 		inline bool useLeftHand() { return flags[IDX_useLeftHand]; } 
 		//whether or not to use motion blur to render frames
 		inline bool useMotionBlur() {		return flags[IDX_useMotionBlur]; }
-		//whether or not to generate randomized versions of loaded letters - note numTotSymPerLtr still needs to be specified to be greater than # of file-based samples to get any random samples
-		inline bool genRandLtrs() {		return flags[IDX_genRandLtrs]; }
-		//whether or not to make img sequences of the non-random-generated (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
-		inline bool regenNotAppend() {	return flags[IDX_regenNotAppend]; }
 		//whether or not to change colors of trajectories for debug display
 		inline bool chgTrajClrs() {		return flags[IDX_chgTrajDbgClrs]; }
 		//random skel or camera checks
@@ -93,8 +89,9 @@ namespace gestureIKApp {
 		void resetValues();
 		//set current date as date-based file name offset
 		void setDateFNameOffset();
-		//get the string that will be used to offset a particular generation of letters - this will add some date-based string to each generated dataset
-		std::string getGenOffsetStr() { return dateFNameOffset; }
+
+		//returns output directory, if used
+		inline std::string getOutputDir() { 	return (flags[IDX_useOutputDir] ? baseOutDir : framesFilePath);	}
 
 		friend std::ostream& operator<<(std::ostream& out, GestIKParams& GestIK);
 
@@ -176,35 +173,36 @@ namespace gestureIKApp {
 		std::string dateFNameOffset;
 
 	private :
+		//base output directory to write results in, if not default
+		std::string baseOutDir;
+
 		std::vector<bool> flags;									//various boolean flags used to drive GestIK
 		static const int
 			//whether or not to add the possibility of using the left hand to draw to random letter gen
 			IDX_useLeftHand = 0,  //TODO not implemented yet
-			//whether or not to generate randomized versions of loaded letters - note numTotSymPerLtr still needs to be specified to be greater than # of file-based samples to get any random samples
-			IDX_genRandLtrs = 1,
-			//whether or not to regenerate the original non-randomized (i.e. file based) letters.  this will speed up processing if only added more letters to test/train
-			IDX_regenNotAppend = 2,
 			//whether or not to change colors per trajectory for debug display
-			IDX_chgTrajDbgClrs = 3,
+			IDX_chgTrajDbgClrs = 1,
 			//randomization settings - whether or not to turn on randomization for camera or skeleton dimensions
 			//random camera orientation
-			IDX_rndCamOrient = 4,
+			IDX_rndCamOrient = 2,
 			//random camera location (translate)
-			IDX_rndCamLoc = 5,
+			IDX_rndCamLoc = 3,
 			//random head width/height
-			IDX_rndHeadDims = 6,
+			IDX_rndHeadDims = 4,
 			//random head color(near black or near white) - always ellipsoid
-			IDX_rndHeadClr = 7,
+			IDX_rndHeadClr = 5,
 			//randomize hand shape - either block or ellipsoid
-			IDX_rndHandShape = 8,
+			IDX_rndHandShape = 6,
 			//randomize hand width/depth/length
-			IDX_rndHandDims = 9,
+			IDX_rndHandDims = 7,
 			//randomize hand color
-			IDX_rndHandClr = 10,
+			IDX_rndHandClr = 8,
 			//use motion blur
-			IDX_useMotionBlur = 11;
+			IDX_useMotionBlur = 9,
+			//whether or not to use xml-specified output dir
+			IDX_useOutputDir = 10;
 
-		static const int numFlags = 12;
+		static const int numFlags = 11;
 	};
 
 }//namespace gestureIKApp 

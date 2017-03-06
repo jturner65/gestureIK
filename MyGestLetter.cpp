@@ -155,6 +155,7 @@ fileName = ss.str();
 			while (!doneCurLetter) {
 				doneCurLetter = curSymbol->solve();
 			}
+			curSymbol->curFrame = 0;		//reset to 0 so can be used again for setIKSkelPose
 		}
 		if (disp) { std::cout << "MyGestLetter::buildSymbolAndSolveIK : Specified " << symIdx << "th symbol to use for ltr idx : " << curIDX << " : " << ltrName << " with : "<< curSymbol->numTrajFrames <<" frames "<< std::endl; }
 	}//buildSymbolAndSolveIK
