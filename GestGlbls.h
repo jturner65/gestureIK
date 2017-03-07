@@ -161,7 +161,6 @@ namespace gestureIKApp {
 	}//buildLabel
 	static inline std::string buildStrFrmEigV3d(const Eigen::Ref<const Eigen::Vector3d>& vec, int numDigs = 4) {
 		std::stringstream ss;
-		ss.str("");
 		ss << "%." << numDigs << "f\0";
 		const std::string tmp = ss.str();
 		const char * fmt = tmp.c_str();

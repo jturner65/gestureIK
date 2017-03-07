@@ -95,9 +95,14 @@
 		<name>ltrIdxStSave</name>
 		<val>0</val> 
 	</parameter>
-<!-- quality of motion blur : int from 0 to 5 (0 : off, val builds blur over neighboring 2*val + 1 frames -->
+<!-- # of frames before and after current frame to use for motion blur -->
+<!-- both positive, >0 pre, 0 post would give trails, 0 pre, >0 post would blur into motion -->
 	<parameter>
-		<name>motionBlurQual</name>
+		<name>mBlurPreFrames</name>
+		<val>2</val>
+	</parameter>
+	<parameter>
+		<name>mBlurPostFrames</name>
 		<val>2</val>
 	</parameter>
 <!--random camera and skeleton values -->
@@ -158,7 +163,7 @@
 		<name>bkgA</name>
 		<val>1.0</val> 
 	</parameter>
-<!-- output directory to write results to - defaults to dart\apps\gestureIK\frames if unspecified -->
+<!-- output directory to write results to - defaults to dart\apps\gestureIK\frames if unspecified - needs trailing '/' -->
 	<parameter>
 		<name>baseOutDir</name>
 		<val>E:/Dropbox/Public/GestureIK/frames/</val>

@@ -104,7 +104,6 @@ namespace gestureIKApp {
 	void IKSolver::loadIKParams() {
 		//read parameters in from xml file  "dflt_gestik_params.xml"
 		std::stringstream ss;
-		ss.str("");
 		ss << appFilePath << "dflt_gestik_params.xml";
 		GestIKParser::readGestIKXML(ss.str(), params);
 		std::cout << "Loaded params : " << *params << std::endl;

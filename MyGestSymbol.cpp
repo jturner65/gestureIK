@@ -239,9 +239,9 @@ namespace gestureIKApp {
 		numTrajFrames = 0 ;
 		double trajIncrAmt = IKSolve->params->trajDesiredVel;
 
-		if (IKSolve->params->useFixedGlblVel()) {//make all trajectories fixed per-frame velocity
+		if (IKSolve->params->useFixedGlblVel()) {//make all trajectories fixed per-frame speed
 			trajIncrAmt = IKSolve->params->trajDesiredVel;
-			numTrajFrames = (int)(allTrajsLen / trajIncrAmt)+1;
+			numTrajFrames = (int)(ceil(allTrajsLen / trajIncrAmt))+1;
 		}
 		else if (IKSolve->params->limitTo16Frames()){
 				numTrajFrames = 16;

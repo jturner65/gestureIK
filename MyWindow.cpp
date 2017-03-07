@@ -57,7 +57,7 @@ static int screenCapCnt = 0, trainSymDatCnt = 0, trainLtrtCnt = 0, displayTmrCnt
 
 MyWindow::MyWindow(std::shared_ptr<IKSolver> _ikslvr) : SimWindow(),  IKSolve(_ikslvr), tVals(4), tBnds(4,1), tIncr(4,1), trainDataFileStrm(), 
 	curTrajDirName(""),  mTrajPoints(7), letters(0), curTraj(0), curClassName(trajNames[0]), curSymIDX(0),
-	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0), aspectRatio(1.0), motionBlurFrames(0),
+	triCrnrs(0),  sqrCrnrs(0), starCrnrs(0),captCount(4,0), curStIdx(4,0), dataGenIters(4, 0), aspectRatio(1.0),
 	skel_headSize(0,0,0), skel_headClr(0, 0, 0), skel_handSize(0, 0, 0), skel_handClr(0, 0, 0), curHandShape(0), flags(numFlags,false)
 {
 	//IKsolver instanced before window, so relevant components loaded into solver and then into window from solver TODO: change this?  
@@ -111,7 +111,7 @@ MyWindow::~MyWindow() {}
 //set window size based on params value loaded from xml
 void MyWindow::initCustWindow(std::string _winTtl) {
 	//set motionblur flag and quality - needs to be called after mWorld is set
-	setMotionBlurQual();
+	//setMotionBlurQual();
 
 	initWindow(IKSolve->params->win_Width, IKSolve->params->win_Height, _winTtl.c_str());
 	aspectRatio = static_cast<double>(mWinWidth) / static_cast<double>(mWinHeight);
@@ -195,7 +195,6 @@ void MyWindow::trainLtrDatManageCol() {
 		//in case any camera or skeleton settings have changed for randomization
 		setCameraVals(origTrackBallQ, IKSolve->params->origZoom, origMTrans);
 		resetSkelVals();
-		//curSymIDX = IKSolve->params->regenNotAppend() ? 0 : letters[curLtrIDX]->numFileSymbols;		//either start at beginning or start saving only randomized letters - get rid of this when moving to each letter to control symbols drawn
 		curSymIDX = 0;
 		if (!flags[testLtrQualIDX]) {//not testing, so close training data filename listing file
 			trainDataFileStrm.close();
@@ -217,12 +216,11 @@ void MyWindow::trainLtrDatManageCol() {
 
 	//for next iteration
 	//TODO get rid of curSymIDX - let each letter maintain count of how many symbols have been drawn
-	curSymIDX += 1;
+	++curSymIDX;
 	bool doneWithLetter = (curSymIDX >= IKSolve->params->numTotSymPerLtr);// (curSymIDX >= curLetter->getNumSymbols());
 	//finished all symbols of this letter
 	if (doneWithLetter) {
-		curLtrIDX += 1;
-		//curSymIDX = (IKSolve->params->regenNotAppend() || (curLtrIDX >= letters.size())) ? 0 : letters[curLtrIDX]->numFileSymbols;			//either start at beginning or start saving only randomized letters - set to 0 after all letters finished
+		++curLtrIDX;
 		curSymIDX = 0;
 	}
 }//trainLtrDatManageCol
@@ -287,10 +285,10 @@ void MyWindow::setDrawLtrOrSmpl(bool drawLtr, int idx, int symNum) {
 		}
 		curLtrIDX = idx;
 		curLetter = letters[idx];
-		curLetter->buildSymbolAndSolveIK(symNum, IKSolve->params->useMotionBlur(), !flags[debugIDX]);		//only pre-solve IK if using motion blur; don't display if debugging only (other debug text makes it redundant)
+		//only pre-solve IK if using motion blur; don't display if debugging only (other debug text makes it redundant)
+		curLetter->buildSymbolAndSolveIK(symNum, IKSolve->params->useMotionBlur(), !flags[debugIDX]);		
 		//set randomization values based on setting for current letter
 		setRandomValues();
-		//curSymIDX = curLetter->curSymbolIDX;
 		curClassName = std::string(curLetter->ltrName);				//class name for test/train index file - use letter name not symbol name
 	}
 	else {														//drawing triangle/square/star example symbols
@@ -307,7 +305,6 @@ void MyWindow::setDrawLtrOrSmpl(bool drawLtr, int idx, int symNum) {
 //write line in index/label text file for each example
 void MyWindow::trainDatWriteIndexFile(std::ofstream& outFile, const std::string& fileDir, int cls) {
 	std::stringstream ss;
-	ss.str("");
 	ss << curClassName <<"/"<<fileDir << " " << cls << std::endl;
 	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
 	outFile << ss.str();
@@ -355,7 +352,7 @@ void MyWindow::timeStepping() {
 		trainDatInitCol(flags[useLtrTrajIDX]);
 	}
 	//if last time around we finished trajectory, reset values/recapture, etc, for next trajectory
-	if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }			//check at end of trajectory if attempting to save screen shots																										//if (flags[debugIDX]) { cout << "displayTimer : IKSolve start"<< std::endl; }
+	if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); }		//check at end of trajectory if attempting to save screen shot
 	if (flags[useLtrTrajIDX]) {
 		if (flags[pauseIKLtrIDX]) {//wait for 20 frames between draw frames			
 			pauseCount = pauseCount + 1;
@@ -385,13 +382,12 @@ void MyWindow::timeStepping() {
 }//timeStepping
 
 void MyWindow::displayTimer(int _val){
-	//timestepping calls managed in renderblur if using motion blur.  yuck
-	//TODO replace with pre-calculated IK solution for all trajectory points and then just draw individual results via skeleton dof setting
-	if (!(flags[useMotionBlurIDX] && flags[useLtrTrajIDX])) { timeStepping(); }
+	//If motion blur, all skel poses are precalculated, and set during rendering to build blur image	
+	//if (!(flags[useMotionBlurIDX] && flags[useLtrTrajIDX])) { timeStepping(); }
+	if (!(IKSolve->params->useMotionBlur() && flags[useLtrTrajIDX])) { timeStepping(); }
 	glutPostRedisplay();
 	glutTimerFunc(mDisplayTimeout, refreshTimer, _val);
 }//displayTimer
-
 
 //render function for using motionblur - TODO can't do this here, need to figure blur externally
 void MyWindow::renderBlur() {
@@ -399,29 +395,34 @@ void MyWindow::renderBlur() {
 		flags[initTrnDatCapIDX] = false;
 		trainDatInitCol(flags[useLtrTrajIDX]);
 	}
-	if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); return; }			//check at end of trajectory if attempting to save screen shots	
-	float mult = 1.0f/(2.0f * motionBlurFrames + 1);
-	bool start = true;
-	for (int j = -motionBlurFrames; j <= motionBlurFrames; ++j) { //either 1 (motionBlurFrames == 0) motion blur frames, 3, 5, 7, 9, etc 
+	//check at end of trajectory if attempting to save screen shots	
+	if (flags[doneTrajIDX]) { flags[doneTrajIDX] = false; checkCapture(flags[useLtrTrajIDX]); return; }			
+	float mult = 1.0f/(IKSolve->params->mBlurPreFrames + IKSolve->params->mBlurPostFrames + 1);
+	//motionblur frames is treated as offset to whichever current frame is being rendered to build blur
+	//avoid if check - 1st pass is GL_LOAD
+	flags[doneTrajIDX] = curLetter->curSymbol->setIKSkelPose(-IKSolve->params->mBlurPreFrames, false);
+	draw();
+	glAccum(GL_LOAD, mult);
+
+	for (int j = 1-IKSolve->params->mBlurPreFrames; j <= IKSolve->params->mBlurPostFrames; ++j) { //either 1 (motionBlurFrames == 0) motion blur frames, 3, 5, 7, 9, etc 
 		//instead of timestepping (solving IK), need to just iterate through pose state array being sent to skeleton with appropriate offest for motionBlur
-		flags[doneTrajIDX] = curLetter->curSymbol->setIKSkelPose(j, j == motionBlurFrames);
+		flags[doneTrajIDX] = curLetter->curSymbol->setIKSkelPose(j, j == IKSolve->params->mBlurPostFrames);
 		draw();
-		glAccum((start ? GL_LOAD : GL_ACCUM), mult);
-		start = false;
+		glAccum(GL_ACCUM, mult);
 	}
 	// Draw trackball indicator
 	if (mRotate && !mCapture) { mTrackBall.draw(mWinWidth, mWinHeight); }
-
 	// Clear and return the buffer
 	glAccum(GL_RETURN, 1.0f);
 	if (mCapture) { screenshot(); }
-	//need to swap after capture
+	//need to swap after capture TODO verify
 	glutSwapBuffers();
 }//renderBlur
 
 //override render originally in wind3d
-void MyWindow::render() {
-	if (flags[useMotionBlurIDX] && flags[useLtrTrajIDX]){ renderBlur(); return; }
+void MyWindow::render() {	
+	//if (flags[useMotionBlurIDX] && flags[useLtrTrajIDX]) { renderBlur(); return; }
+	if (IKSolve->params->useMotionBlur() && flags[useLtrTrajIDX]) { renderBlur(); return; }
 	draw();
 
 	glAccum(GL_LOAD, 1.0f);
@@ -490,7 +491,8 @@ void MyWindow::draw() {
 	if (flags[drawTrkMrkrsIDX]) {		IKSolve->drawTrkMrkrs(mRI, true);	}
 
 	if (flags[useLtrTrajIDX] && (nullptr != curLetter)) {
-		if (flags[showAllTrajsIDX]){		curLetter->drawSymbolTrajDist(mRI);} //if show all trajs (show all symbols for a letter, for debugging) and showing letters and a current letter exists
+		//if show all trajs (show all symbols for a letter, for debugging) and showing letters and a current letter exists
+		if (flags[showAllTrajsIDX]){		curLetter->drawSymbolTrajDist(mRI);} 
 		else if (flags[drawLtrTrajIDX]) {	curLetter->drawLetter(mRI);	}
 	} else if (flags[drawLtrTrajIDX]) {		drawCurTraj();		}//draw trajectory for sample symbol
 
@@ -507,7 +509,6 @@ void MyWindow::draw() {
 
 std::string MyWindow::getCurrQuatAsRot(int row) {
 	std::stringstream ss;
-	ss.str("");
 	ss << "Row " << row << " :  ["; //<< this->mTrackBall.getRotationMatrix().row(row) << "]";
 	Eigen::Vector3d matRow = this->mTrackBall.getRotationMatrix().row(row);
 	ss << std::fixed << std::setprecision(6) << matRow(0) << "   ";
@@ -519,8 +520,8 @@ std::string MyWindow::getCurrQuatAsRot(int row) {
 
 std::string MyWindow::getCurrLocAndQuat() {
 	std::stringstream ss;
-	ss.str("");
-	ss << "Loc : " << buildStrFrmEigV3d(this->mTrans) << "     Zoom : "<<(this->mZoom)<<"     Quat : w:" << this->mTrackBall.getCurrQuat().w() << " | vec : (" << buildStrFrmEigV3d(this->mTrackBall.getCurrQuat().vec()) << ")"<< std::endl;
+	ss << "Loc : " << buildStrFrmEigV3d(this->mTrans) << "     Zoom : " << (this->mZoom) << "     Quat : w:";
+	ss << this->mTrackBall.getCurrQuat().w() << " | vec : (" << buildStrFrmEigV3d(this->mTrackBall.getCurrQuat().vec()) << ")" << std::endl;
 	return ss.str();
 }
 
@@ -573,13 +574,8 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		ss << getFullBasePath();
 		const std::string tmp = ss.str();
 		bool made = makeDirectory(tmp);
-		if (!made) {
-			std::cout << "Failed to make base letter directory : " << tmp << std::endl;
-			return;
-		}
-		else {
-			std::cout << "Made base letter directory : " << tmp << std::endl;
-		}
+		if (!made) {	std::cout << "Failed to make base letter directory : " << tmp << std::endl;	return;}
+		else {			std::cout << "Made base letter directory : " << tmp << std::endl;	}
 		//turn off any tests that may have been initiated
 		flags[testLtrQualIDX] = false;
 		for (int i = 0; i < letters.size(); ++i) { letters[i]->setTestLtrQual(flags[testLtrQualIDX]); }
@@ -651,7 +647,6 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
   glutPostRedisplay();
 }
 
-
 //save initial value for particular shape
 void MyWindow::saveInitShapeVals(const std::string& nodeName, int visIDX, Eigen::Ref<Eigen::Vector3d> _destSize, Eigen::Ref<Eigen::Vector3d> _destClr) {
 	Eigen::Vector3d tmp(0, 0, 0);
@@ -700,17 +695,17 @@ void MyWindow::saveInitSkelVals() {
 	}
 }//saveInitSkelVals
 
-//set motionBlurFreq based on motionblur quality specified in IKParams
-void MyWindow::setMotionBlurQual() {
-	flags[useMotionBlurIDX] = IKSolve->params->useMotionBlur();
-	//0 or OOB == no motion blur
-	motionBlurFrames = 0;
-	if ((flags[useMotionBlurIDX]) && (IKSolve->params->motionBlurQual > 0)){// && (IKSolve->params->motionBlurQual <= 5)) { 
-		//varies from 1 to 5, with 1 == low motion blur and 5 == highest quality 
-		//motionBlurFreq = std::min(motionBlurFreq, (1 << (5 - IKSolve->params->motionBlurQual)));
-		motionBlurFrames = IKSolve->params->motionBlurQual;
-	}
-}//setMotionBlurQual
+////set motionBlurFreq based on motionblur quality specified in IKParams
+//void MyWindow::setMotionBlurQual() {
+//	flags[useMotionBlurIDX] = IKSolve->params->useMotionBlur();
+//	//0 or OOB == no motion blur
+//	motionBlurFrames = 0;
+//	if ((flags[useMotionBlurIDX]) && (IKSolve->params->motionBlurQual > 0)){// && (IKSolve->params->motionBlurQual <= 5)) { 
+//		//varies from 1 to 5, with 1 == low motion blur and 5 == highest quality 
+//		//motionBlurFreq = std::min(motionBlurFreq, (1 << (5 - IKSolve->params->motionBlurQual)));
+//		motionBlurFrames = IKSolve->params->motionBlurQual;
+//	}
+//}//setMotionBlurQual
 
 void MyWindow::setShapeSize(const std::string& nodeName, int visIDX, const Eigen::Ref<const Eigen::Vector3d>& _origSize) {
 	dart::dynamics::ShapePtr _bodyShape = skelPtr->getBodyNode(nodeName)->getVisualizationShape(0);
@@ -959,7 +954,6 @@ void MyWindow::trainSymDatManageCol() {
 void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajAraAra) {
 	int numRows = _trajAraAra.size(), numCols = _trajAraAra[0].size();
 	std::stringstream ss;
-	ss.str("");
 	ss << csvFilePath << _fname << "Traj.csv";
 	std::ofstream outFile;
 	if (flags[debugIDX]) { std::cout << "Fully Qualified File name : " << ss.str() << "\tnumRows : " << numRows << "\tnumCols : " << numCols << std::endl; }
@@ -1001,7 +995,6 @@ void MyWindow::writeTrajCSVFileRow(std::ofstream& outFile, eignVecTyp& _trajAra)
 	int numCols = _trajAra.size();
 	int numSigDigs = 9;
 	std::stringstream ss;
-	ss.str("");
 	ss << buildStrFrmEigV3d(_trajAra[0], numSigDigs);
 	for (int col = 1; col < numCols; ++col) { ss << "," << buildStrFrmEigV3d(_trajAra[col], numSigDigs); }
 	ss << std::endl;

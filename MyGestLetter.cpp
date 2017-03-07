@@ -50,11 +50,10 @@ namespace gestureIKApp {
 		curIDX(_ltrNum), numFileSymbols(0), numTotSymbols(0), srcSymbols(0), exampleSymbols(0),
 		curSymbol(nullptr), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags)
 	{
-std::stringstream ss;
-ss.str("");
-ss << lettersPath << "ltr_" << ltrName << "/ltr_" << ltrName << ".xml";
-//name of xml file holding instances of this letter
-fileName = ss.str();
+		std::stringstream ss;
+		ss << lettersPath << "ltr_" << ltrName << "/ltr_" << ltrName << ".xml";
+		//name of xml file holding instances of this letter
+		fileName = ss.str();
 	}
 	MyGestLetter::~MyGestLetter() {	}
 

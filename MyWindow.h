@@ -128,8 +128,8 @@ public:
 	//reload all xml-based parameters, and reset values derived from these parameters
 	void reloadXml() {
 		IKSolve->loadIKParams();
-		//rebuild motionBlurFreq if used
-		setMotionBlurQual();
+		//set up motionblur quantities if used
+		//setMotionBlurQual();
 	}//
 
 	//override glutwindow screenshot function
@@ -138,20 +138,18 @@ public:
 	//setup each letter or sample trajectory
 	void setDrawLtrOrSmpl(bool drawLtr, int idx, int symIdx = 0);
 
-	//set motionBlurFreq based on motionblur quality specified in IKParams
-	void setMotionBlurQual();
-
 	bool makeDirectory(const std::string& tmp);
 
 	//return string of full path to where the screen cap files will be written
 	inline std::string getFullBasePath() {
-		std::stringstream ss;
-		ss << IKSolve->params->getOutputDir();  //uses framesFilePath if not using custom path dest
-		//ss<< framesFilePath; 
-		//if (flags[useLtrTrajIDX]) { ss << "letters_" << DataType2strAbbrev[IKSolve->params->dataType] << "_" << IKSolve->params->dateFNameOffset << "/"; }
-		if (flags[useLtrTrajIDX]) { ss << DataType2strAbbrev[IKSolve->params->dataType] << "_" << IKSolve->params->dateFNameOffset << "/"; }
-		else {		ss <<"samples/";	}
-		return ss.str();
+		if (flags[useLtrTrajIDX]) {
+			return IKSolve->params->getDataOutputDir();
+		} 
+		else {
+			std::stringstream ss;
+			ss << IKSolve->params->getOutputBaseDir() << "samples/";
+			return ss.str();
+		}
 	}
 
 	//initialize state to automate training data collection
@@ -247,10 +245,6 @@ protected :
 	//precalced based on window dims set from IKSolve->params
 	double aspectRatio;
 
-	///Motion Blur
-	//motion blur + / - frames 
-	int motionBlurFrames;
-
 	///letter trajectories
 	//structure holding all letters
 	std::vector<std::shared_ptr<MyGestLetter>> letters;
@@ -272,10 +266,10 @@ protected :
 		pauseIKLtrIDX = 8,						//pause between IK frames - for debugging purposes
 		testLtrQualIDX = 9,						//iterate through all letters without screen cap to test traj quality
 		showAllTrajsIDX = 10,					//show all trajectories of letters, to show distribution results - debug
-		debugLtrsBuiltIDX = 11,					//set of debug letters built for visualization
-		useMotionBlurIDX = 12;					//use motion blur when capturing/rendering
+		debugLtrsBuiltIDX = 11;					//set of debug letters built for visualization
+		//useMotionBlurIDX = 12;					//use motion blur when capturing/rendering
 
-	static const unsigned int numFlags = 13;
+	static const unsigned int numFlags = 12;
 };
 
 //calc total length of combined trajectories

@@ -90,8 +90,10 @@ namespace gestureIKApp {
 		//set current date as date-based file name offset
 		void setDateFNameOffset();
 
-		//returns output directory, if used
-		inline std::string getOutputDir() { 	return (flags[IDX_useOutputDir] ? baseOutDir : framesFilePath);	}
+		//returns base output directory, if used, otherwise default relative path set in GestGlbls - must have '/' as final char
+		inline std::string getOutputBaseDir() { 	return (flags[IDX_useOutputDir] ? baseOutDir : framesFilePath);	}
+		//returns directory letters are stored in
+		std::string getDataOutputDir();
 
 		friend std::ostream& operator<<(std::ostream& out, GestIKParams& GestIK);
 
@@ -152,7 +154,11 @@ namespace gestureIKApp {
 		//end randomization control vars
 
 		//quality of motion blur - 0-5 from xml file
-		int motionBlurQual;
+		//int motionBlurQual;
+		//# of motion blur frames before current frame to use 
+		int mBlurPreFrames;
+		//# of motion blur frames after current frame to use 
+		int mBlurPostFrames;
 
 		//int width/height of windows
 		int win_Width, win_Height;
@@ -161,6 +167,7 @@ namespace gestureIKApp {
 
 		//size of window for LSTM in training - make clips fixed to multples of this length to prevent image paddings
 		int fixedClipLen;
+
 		//initial zoom
 		float origZoom;
 		//letter type to be generated - either constant velocity, 16-frame long train/mult8 test, or mult8 train/mult8 test
