@@ -140,7 +140,7 @@
 <!--Set dataType 0 == const vel for all ltrs, 1 == fixed 16, 2 == mult8 train/test -->
 	<parameter>
 		<name>dataType</name>
-		<val>1</val> 
+		<val>0</val> 
 	</parameter>
 	<parameter>
 		<name>bkgR</name>
@@ -178,7 +178,7 @@
 	</parameter>
 	<parameter>
 		<name>IDX_useMotionBlur</name>
-		<val>FALSE</val> 
+		<val>TRUE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_chgTrajDbgClrs</name>

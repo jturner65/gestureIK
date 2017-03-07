@@ -350,7 +350,7 @@ namespace gestureIKApp {
 
 		if (incrFrame) { ++curFrame; }
 		if (curFrame == IKPoses.size()) {
-			curFrame = 0;
+			//curFrame = 0;
 			return true;
 		}
 		return false;
