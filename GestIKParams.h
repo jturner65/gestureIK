@@ -49,6 +49,26 @@
 
 
 namespace gestureIKApp {
+	//simple struct holding name strings and vector of vals for offset for marker info read in from xml
+	class markerXMLData {
+	public:
+		markerXMLData(const std::string& bName, const std::string& offsetStr, const std::string& mName) : offset(), bnodeName(bName), markerName(mName) {
+			std::istringstream iss(offsetStr);
+			std::vector<double> offsetVals = std::vector<double>{std::istream_iterator<double>(iss),std::istream_iterator<double>()};
+			offset << offsetVals[0], offsetVals[1], offsetVals[2];
+		}
+		virtual ~markerXMLData() {}
+		
+		friend std::ostream& operator<<(std::ostream& out, markerXMLData& m) {
+			out << "BNodeName : " << m.bnodeName << "\t MarkerName : " << m.markerName << " \tOffset : (" << m.offset(0) << ", "<< m.offset(1) << ", "<< m.offset(2) << ")" << std::endl;
+			return out;
+		}
+		//vars
+		Eigen::Vector3d offset;
+		std::string bnodeName;
+		std::string markerName;
+	};
+
 	//any necessary hyperparams needed to be loaded from XML file
 	class GestIKParams {
 	public:
@@ -60,6 +80,8 @@ namespace gestureIKApp {
 		void setDefaultVals();
 		void setCurrentValsAsDefault();
 		void setParamValFromXMLStr(const std::string& _name, const std::string& s);
+		//read in marker values/locations
+		void setMarkerLocVals(const std::string& bName, const std::string& offsetStr, const std::string& mName);
 
 		//whether or not to add the possibility of using the left hand to draw to random letter gen - needs to move active shoulder as camera target
 		inline bool useLeftHand() { return flags[IDX_useLeftHand]; } 
@@ -99,6 +121,10 @@ namespace gestureIKApp {
 
 	public:	//variables
 		std::vector<double> defaultVals;
+		//marker location information
+		std::vector<markerXMLData> markerLocs;
+		//marker location xml file name
+		std::string markerXMLFileName;
 		
 		//IK solver and skel configuration parameters
 		//% of full reach to set up imaginary writing plane

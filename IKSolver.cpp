@@ -58,7 +58,9 @@ namespace gestureIKApp {
 		loadIKParams();
 
 		// Create markers
-		createMarkers();
+		//createMarkers();
+		//create markers from XML file
+		createMarkersXML();
 		trkMarkers = std::make_shared<trkMrkMap>();
 		//approx distance skel can reach without changing posture too much (rest dist from scap to ptrFinger_r) - depends on skeleton arm being straight to start
 		reach = (skelPtr->getMarker("ptrFinger_r")->getWorldPosition() - skelPtr->getMarker("right_scapula")->getWorldPosition()).norm(); //only works because arm is straight
@@ -107,8 +109,27 @@ namespace gestureIKApp {
 		ss << appFilePath << "dflt_gestik_params.xml";
 		GestIKParser::readGestIKXML(ss.str(), params);
 		std::cout << "Loaded params : " << *params << std::endl;
+		loadMarkerLocs();
 	}
 	
+	void IKSolver::loadMarkerLocs() {
+		//read marker locations from file defined in IK_params file
+		std::stringstream ss;
+		ss << appFilePath << params->markerXMLFileName;
+		GestIKParser::readMarkerLocsXML(ss.str(), params);
+		std::cout << "Markers loaded from file name : " << ss.str() << std::endl;
+	}//loadMarkerLocs
+
+	//set marker names and locations on skeleton from xml file
+	void IKSolver::createMarkersXML() {
+		for (std::vector<markerXMLData>::iterator it = params->markerLocs.begin(); it != params->markerLocs.end(); ++it) {
+			BodyNode* bNode = skelPtr->getBodyNode(it->bnodeName);
+			Marker* m = new Marker(it->markerName, it->offset, bNode);
+			bNode->addMarker(m);
+		}
+	}//createMarkersXML
+
+
 	//set default values for pointer finger avg loc and elbow avg loc, and plane normals for ptr finger inscribed circle and elbow inscribed circle
 	void IKSolver::setSampleCenters() {
 		//build pointer center and guess at elbow center
@@ -252,108 +273,6 @@ namespace gestureIKApp {
 	void IKSolver::drawTrkMrkrs(dart::renderer::RenderInterface* mRI, bool onlyTraj) {
 		if (onlyTraj) {	for (trkMrkMap::iterator it = trkMarkers->begin(); it != trkMarkers->end(); ++it) { if (!it->second->IsFixed()) { it->second->draw(mRI); } }}
 		else {			for (trkMrkMap::iterator it = trkMarkers->begin(); it != trkMarkers->end(); ++it) { it->second->draw(mRI); }	}
-	}
-
-	void IKSolver::createMarkers() {
-		Eigen::Vector3d offset(0.2, 0.0, 0.0);
-		BodyNode* bNode = skelPtr->getBodyNode("h_heel_right");
-		Marker* m = new Marker("right_foot", offset, bNode);
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.2, 0.0, 0.0);
-		bNode = skelPtr->getBodyNode("h_heel_left");
-		m = new Marker("left_foot", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.065, -0.3, 0.0);
-		bNode = skelPtr->getBodyNode("h_thigh_right");
-		m = new Marker("right_thigh", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.065, -0.3, 0.0);
-		bNode = skelPtr->getBodyNode("h_thigh_left");
-		m = new Marker("left_thigh", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.0, 0.0, 0.13);
-		bNode = skelPtr->getBodyNode("h_pelvis");
-		m = new Marker("pelvis_right", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.0, 0.0, -0.13);
-		bNode = skelPtr->getBodyNode("h_pelvis");
-		m = new Marker("pelvis_left", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.075, 0.1, 0.0);
-		bNode = skelPtr->getBodyNode("h_abdomen");
-		m = new Marker("abdomen", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.0, 0.18, 0.075);
-		bNode = skelPtr->getBodyNode("h_head");
-		m = new Marker("head_right", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.0, 0.18, -0.075);
-		bNode = skelPtr->getBodyNode("h_head");
-		m = new Marker("head_left", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.0, 0.22, 0.0);
-		bNode = skelPtr->getBodyNode("h_scapula_right");
-		m = new Marker("right_scapula", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.0, 0.22, 0.0);
-		bNode = skelPtr->getBodyNode("h_scapula_left");
-		m = new Marker("left_scapula", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.0, -0.2, 0.05);
-		bNode = skelPtr->getBodyNode("h_bicep_right");
-		m = new Marker("right_bicep", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.0, -0.28, 0);
-		bNode = skelPtr->getBodyNode("h_bicep_right");
-		m = new Marker("ptrElbow_r", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.0, -0.2, -0.05);
-		bNode = skelPtr->getBodyNode("h_bicep_left");
-		m = new Marker("left_bicep", offset, bNode);		
-		bNode->addMarker(m);	
-
-		offset = Eigen::Vector3d(0.0, 0.0, 0.025);
-		bNode = skelPtr->getBodyNode("h_hand_right");
-		m = new Marker("right_wrist", offset, bNode);
-		bNode->addMarker(m);
-
-		offset = Eigen::Vector3d(0.0, 0.0, 0.0);
-		bNode = skelPtr->getBodyNode("h_hand_right");
-		m = new Marker("ptrWrist_r", offset, bNode);
-		bNode->addMarker(m);
-
-		offset = Eigen::Vector3d(0.0, -0.1, 0.025);
-		bNode = skelPtr->getBodyNode("h_hand_right");
-		m = new Marker("right_hand", offset, bNode);		
-		bNode->addMarker(m);		
-
-		offset = Eigen::Vector3d(0.0, -0.14, 0.0);
-		bNode = skelPtr->getBodyNode("h_hand_right");
-		m = new Marker("ptrFinger_r", offset, bNode);		
-		bNode->addMarker(m);
-
-		offset = Eigen::Vector3d(0.0, 0.0, -0.025);
-		bNode = skelPtr->getBodyNode("h_hand_left");
-		m = new Marker("left_wrist", offset, bNode);
-		bNode->addMarker(m);
-
-		offset = Eigen::Vector3d(0.0, -0.1, -0.025);
-		bNode = skelPtr->getBodyNode("h_hand_left");
-		m = new Marker("left_hand", offset, bNode);
-		bNode->addMarker(m);
 	}
 
 ////////////////////

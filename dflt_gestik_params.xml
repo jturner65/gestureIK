@@ -168,6 +168,11 @@
 		<name>baseOutDir</name>
 		<val>E:/Dropbox/Public/GestureIK/frames/</val>
 	</parameter>
+<!--file name of xml file specifying marker names, bodynode names, and offsets for placement-->
+	<parameter>
+		<name>markerXMLFileName</name>
+		<val>dflt_gestik_mrkrlocs.xml</val>
+	</parameter>
 	<parameter>
 		<name>fixedClipLen</name>
 		<val>16</val>

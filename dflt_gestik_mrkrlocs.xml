@@ -1,0 +1,103 @@
+<?xml version="1.0" ?>
+<GestIKSkelMrkrLocs version="1.0">
+	<marker>
+		<bnode>h_heel_right</bnode>
+		<offset>0.2 0.0 0.0</offset>
+		<name>right_foot</name>
+	</marker>
+	<marker>
+		<offset>0.2 0.0 0.0</offset>
+		<bnode>h_heel_left</bnode>
+		<name>left_foot</name>
+	</marker>
+	<marker>
+		<offset>0.065 -0.3 0.0</offset>
+		<bnode>h_thigh_right</bnode>
+		<name>right_thigh</name>
+	</marker>
+	<marker>
+		<offset>0.065 -0.3 0.0</offset>
+		<bnode>h_thigh_left</bnode>
+		<name>left_thigh</name>
+	</marker>
+	<marker>
+		<offset>0.0 0.0 0.13</offset>
+		<bnode>h_pelvis</bnode>
+		<name>pelvis_right</name>
+	</marker>
+	<marker>
+		<offset>0.0 0.0 -0.13</offset>
+		<bnode>h_pelvis</bnode>
+		<name>pelvis_left</name>
+	</marker>
+	<marker>
+		<offset>0.075 0.1 0.0</offset>
+		<bnode>h_abdomen</bnode>
+		<name>abdomen</name>
+	</marker>
+	<marker>
+		<offset>0.0 0.18 0.075</offset>
+		<bnode>h_head</bnode>
+		<name>head_right</name>
+	</marker>
+	<marker>
+		<offset>0.0 0.18 -0.075</offset>
+		<bnode>h_head</bnode>
+		<name>head_left</name>
+	</marker>
+	<marker>
+		<offset>0.0 0.22 0.0</offset>
+		<bnode>h_scapula_right</bnode>
+		<name>right_scapula</name>
+	</marker>
+	<marker>
+		<offset>0.0 0.22 0.0</offset>
+		<bnode>h_scapula_left</bnode>
+		<name>left_scapula</name>
+	</marker>
+	<marker>
+		<offset>0.0 -0.2 0.05</offset>
+		<bnode>h_bicep_right</bnode>
+		<name>right_bicep</name>
+	</marker>
+	<marker>
+		<offset>0.0 -0.28 0</offset>
+		<bnode>h_bicep_right</bnode>
+		<name>ptrElbow_r</name>
+	</marker>
+	<marker>
+		<offset>0.0 -0.2 -0.05</offset>
+		<bnode>h_bicep_left</bnode>
+		<name>left_bicep</name>
+	</marker>
+	<marker>
+		<offset>0.0 0.0 0.025</offset>
+		<bnode>h_hand_right</bnode>
+		<name>right_wrist</name>
+	</marker>
+	<marker>
+		<offset>0.0 0.0 0.0</offset>
+		<bnode>h_hand_right</bnode>
+		<name>ptrWrist_r</name>
+	</marker>
+	<marker>
+		<offset>0.0 -0.1 0.025</offset>
+		<bnode>h_hand_right</bnode>
+		<name>right_hand</name>
+	</marker>
+	<marker>
+		<offset>0.0 -0.14 0.0</offset>
+		<bnode>h_hand_right</bnode>
+		<name>ptrFinger_r</name>
+	</marker>
+	<marker>
+		<offset>0.0 0.0 -0.025</offset>
+		<bnode>h_hand_left</bnode>
+		<name>left_wrist</name>
+	</marker>
+	<marker>
+		<offset>0.0 -0.1 -0.025</offset>
+		<bnode>h_hand_left</bnode>
+		<name>left_hand</name>
+	</marker>	
+</GestIKSkelMrkrLocs>

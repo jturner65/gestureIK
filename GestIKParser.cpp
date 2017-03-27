@@ -45,7 +45,7 @@ namespace gestureIKApp {
 		// Load xml and create Document
 		tinyxml2::XMLDocument _configFile;
 		try { dart::utils::openXMLFile(_configFile, _filename.c_str()); }
-		catch (std::exception const& e) { std::cout << "readGestIKXML: LoadFile  " << _filename << " Fails: " << e.what() << "."<< std::endl; }
+		catch (std::exception const& e) { std::cout << "readGestIKXML: LoadFile  " << _filename << " Fails: " << e.what() << "." << std::endl; return; }
 
 		std::string pname;
 		tinyxml2::XMLElement* paramElem = NULL;
@@ -121,4 +121,34 @@ namespace gestureIKApp {
 		}//for each symbol
 		_ltr->buildFileSymbolTrajs(trajFileNames);
 	}
+	//read in marker locations from xml file _filename
+	void GestIKParser::readMarkerLocsXML(const std::string& _filename, std::shared_ptr<GestIKParams> params) {
+		//_filename includes path
+		std::cout << "Read marker locations from file name : " << _filename << std::endl;
+		// Load xml and create Document
+		tinyxml2::XMLDocument _mrkrLocs;
+		try { dart::utils::openXMLFile(_mrkrLocs, _filename.c_str()); }
+		catch (std::exception const& e) { std::cout << "readMarkerLocsXML: LoadFile  " << _filename << " Fails: " << e.what() << "." << std::endl; return; }
+
+		std::string bName, offsetStr, mName;
+		tinyxml2::XMLElement* markerElem = _mrkrLocs.FirstChildElement("GestIKSkelMrkrLocs");
+		if (markerElem == NULL) { std::cout << "readMarkerLocsXML:Markers location file " << _filename << " does not contain <GestIKSkelMrkrLocs> as an element." << std::endl;				return; }
+		else {//read in configuration params
+			ElementEnumerator parameters(markerElem, "marker");
+			while (parameters.next()) {
+				tinyxml2::XMLElement* pElem = parameters.get();
+				assert(pElem != NULL);
+				bName = getValueString(pElem, "bnode");
+				offsetStr = getValueString(pElem, "offset");
+				mName = getValueString(pElem, "name");
+
+				params->setMarkerLocVals(bName, offsetStr, mName);
+			}
+			params->setCurrentValsAsDefault();			//initializes important values and sets defaults
+		}
+		params->setDateFNameOffset();
+
+
+
+	}//readMarkerLocsXML
 }

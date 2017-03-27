@@ -39,12 +39,12 @@
 
 namespace gestureIKApp {
 
-	GestIKParams::GestIKParams() : defaultVals(), 
+	GestIKParams::GestIKParams() : defaultVals(), markerLocs(),
 		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), IK_elbowScale(0.36), IK_fastTrajMult(1.5), IK_ctrYOffset(0),
 		trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1), trajRandCtrStdScale_X(1), trajRandCtrStdScale_Y(1), trajRandCtrStdScale_Z(1),
 		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), rnd_camThet(.35), rnd_camZoom(.05), rnd_camTrans(.25), rnd_headClrBnd(.2), rnd_headDimPct(.1), rnd_handClrBnd(.2),rnd_handDimPct(.1),
 		win_Width(800), win_Height(800), numTotSymPerLtr(0), fixedClipLen(16), mBlurPreFrames(2), mBlurPostFrames(2),  origZoom(.65f),	
-		dataType(MULT_8), bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""), baseOutDir(""),
+		dataType(MULT_8), bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""), baseOutDir(""), markerXMLFileName(""),
 		flags(numFlags, false)
 	{
 		std::cout << "GestIK params ctor"<<std::endl;
@@ -106,6 +106,7 @@ namespace gestureIKApp {
 
 		//strings
 		if (_name.compare("baseOutDir") == 0) { baseOutDir = std::string(s);	return; }
+		if (_name.compare("markerXMLFileName") == 0) { markerXMLFileName = std::string(s);	return; }
 		//boolean
 		//std::string sDest(s);
 		//std::transform(s.begin(), s.end(), sDest.begin(), toupper);
@@ -132,6 +133,10 @@ namespace gestureIKApp {
 		ss << DataType2strAbbrev[dataType] << "_" << dateFNameOffset << "/"; 		
 		return ss.str();
 	}//getDataOutputDir
+
+	void GestIKParams::setMarkerLocVals(const std::string& bName, const std::string& offsetStr, const std::string& mName) {
+		markerLocs.push_back(markerXMLData(bName, offsetStr, mName));
+	}
 
 	//set up reasonable default values to be used if XML is unavailable or unused.  the default values will be used whenever reset is called
 	void GestIKParams::setDefaultVals() {
@@ -186,6 +191,7 @@ namespace gestureIKApp {
 		bkgA = 1.0;
 
 		baseOutDir = "";
+		markerXMLFileName = "";
 		
 		for (int i = 0; i < numFlags; ++i) { flags[i] = false; }
 
@@ -332,6 +338,7 @@ namespace gestureIKApp {
 			out << " : Postframes used to build blur : " << (p.mBlurPostFrames) << std::endl;
 		}
 		out << "\tUse XML-Specified Output Dir : " << (p.flags[p.IDX_useOutputDir] ? "True : Dir Specified : " : "False") << (p.flags[p.IDX_useOutputDir] ? p.baseOutDir : "") << std::endl;
+		out << "\tFile to use for marker locations specification : " << p.markerXMLFileName << std::endl;
 		out << "Generate data focused on left hand (TODO) : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False") << "\tDisplay trajs with different colors : " << (p.flags[p.IDX_chgTrajDbgClrs] ? "True" : "False") << std::endl;
 		out << "Randomize :" << std::endl;
 		out << "\tCamera Orientation : " << (p.flags[p.IDX_rndCamOrient] ? "True" : "False") << "\t Camera Location / Zoom : " << (p.flags[p.IDX_rndCamLoc] ? "True" : "False");

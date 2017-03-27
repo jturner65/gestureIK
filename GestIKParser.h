@@ -59,6 +59,8 @@ namespace gestureIKApp {
 		static void readGestLetterXML(std::shared_ptr<MyGestLetter> _ltr);
 		//read symbol trajectory files
 		static void readGestSymbolsXML(std::shared_ptr<MyGestLetter> _ltr, tinyxml2::XMLElement* _xmlElement);
+		//read in marker mappings for skeleton
+		static void readMarkerLocsXML(const std::string& _filename, std::shared_ptr<GestIKParams> params);
 	};
 
 }//namespace gestureIKApp 

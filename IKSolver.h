@@ -101,6 +101,8 @@ namespace gestureIKApp {
 
 		//load/reload all xml-based sim parameters
 		void loadIKParams();
+		//load/reload xml-based marker locations - in case marker locs change or using different skeleton
+		void loadMarkerLocs();
 		
 		//set tracked marker positions - call this or something like it before solve
 		void setTrkMrkrs(eignVecTyp& _tarPos);
@@ -177,7 +179,7 @@ namespace gestureIKApp {
 
 		std::shared_ptr<gestureIKApp::GestIKParams> params;
 	protected:
-		void createMarkers();
+		void createMarkersXML();
 
 		Eigen::VectorXd calcGradient();
 
