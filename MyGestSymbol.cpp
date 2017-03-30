@@ -115,9 +115,9 @@ namespace gestureIKApp {
 		ptrPlaneNorm << (IKSolve->tstRShldrSt - ptrCtrPt).normalized();
 		elbowCtrPt << IKSolve->drawElbowCtr;
 		elbowPlaneNorm << IKSolve->elbowShldrNormal;
-	}
+	}//ctor
 	
-	MyGestSymbol::~MyGestSymbol() {}
+	MyGestSymbol::~MyGestSymbol() {}//dtor
 	
 	//list of trajectory file names composing this symbol
 	void MyGestSymbol::buildTrajsFromFile(std::vector< std::string >& trajFileNames, std::shared_ptr<MyGestSymbol> _thisSP){
@@ -340,22 +340,17 @@ namespace gestureIKApp {
 		}//		curTraj = idx;
 		return false;
 	}//solve
-	//set skeleton pose to be pose of curRndrFrame + offFrame
+
+	//set skeleton pose to be pose of curRndrFrame + offFrame (using precalced dofs ara IKPoses)
 	bool MyGestSymbol::setIKSkelPose(int offFrame, bool incrFrame) {
 		int poseIdx = curFrame + offFrame;
 		if (poseIdx < 0) { poseIdx = 0; }
 		else if(poseIdx >= IKPoses.size()){ poseIdx = IKPoses.size()-1; }
-		//set pose of skeleton
+		//set pose of skeleton from precalculated poses - used in motion blur
 		IKSolve->setPoseAndCompSkelKin(IKPoses[poseIdx]);
-
 		if (incrFrame) { ++curFrame; }
-		if (curFrame == IKPoses.size()) {
-			//curFrame = 0;
-			return true;
-		}
-		return false;
+		return (curFrame == IKPoses.size());//if done or not
 	}//setIKSkelPose
-
 
 	//make this symbol a randomized version of the passed symbol - 
 	bool MyGestSymbol::buildRandomSymbol(std::shared_ptr<MyGestSymbol> _src, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast) {

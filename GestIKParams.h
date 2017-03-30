@@ -103,7 +103,11 @@ namespace gestureIKApp {
 		//random hand width/depth/length
 		inline bool rndHandDims() {		return flags[IDX_rndHandDims]; }
 		//random hand color
-		inline bool rndHandClr() {		return flags[IDX_rndHandClr]; }
+		inline bool rndHandClr() { return flags[IDX_rndHandClr]; }
+		//save hand and elbow com-related values
+		inline bool saveHandCOMVals() { return flags[IDX_saveHandCOMVals]; }
+
+
 		//whether or not to force training data to be 16 frames long
 		inline bool limitTo16Frames() { return (dataType == FIXED_16); }
 		//whether or not to use fixed global velocity for all trajectories
@@ -115,7 +119,7 @@ namespace gestureIKApp {
 		//returns base output directory, if used, otherwise default relative path set in GestGlbls - must have '/' as final char
 		inline std::string getOutputBaseDir() { 	return (flags[IDX_useOutputDir] ? baseOutDir : framesFilePath);	}
 		//returns directory letters are stored in
-		std::string getDataOutputDir();
+		std::string getDataOutputDir(bool isCSV);
 
 		friend std::ostream& operator<<(std::ostream& out, GestIKParams& GestIK);
 
@@ -233,9 +237,11 @@ namespace gestureIKApp {
 			//use motion blur
 			IDX_useMotionBlur = 9,
 			//whether or not to use xml-specified output dir
-			IDX_useOutputDir = 10;
+			IDX_useOutputDir = 10,
+			//whether or not to save COM-related values (hand COM, COM vel, elbow COM, COM vel) in screen coords
+			IDX_saveHandCOMVals = 11;
 
-		static const int numFlags = 11;
+		static const int numFlags = 12;
 	};
 
 }//namespace gestureIKApp 

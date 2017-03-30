@@ -186,13 +186,19 @@
 		<name>IDX_useOutputDir</name>
 		<val>TRUE</val> 
 	</parameter>
+<!-- enable/disable motion blur -->
 	<parameter>
 		<name>IDX_useMotionBlur</name>
-		<val>TRUE</val> 
+		<val>FALSE</val> 
 	</parameter>
 	<parameter>
 		<name>IDX_chgTrajDbgClrs</name>
 		<val>FALSE</val> 
+	</parameter>
+<!-- whether or not to save the COM and COM Vel of the hand in screen space coords - IGNORED IF MOTION BLUR ON -->
+	<parameter>
+		<name>IDX_saveHandCOMVals</name>
+		<val>TRUE</val> 
 	</parameter>
 <!-- randomization flags - which aspects of skeleton and environment to randomize -->
 	<parameter>

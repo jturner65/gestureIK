@@ -62,7 +62,7 @@ namespace gestureIKApp {
 		//create markers from XML file
 		createMarkersXML();
 		trkMarkers = std::make_shared<trkMrkMap>();
-		//approx distance skel can reach without changing posture too much (rest dist from scap to ptrFinger_r) - depends on skeleton arm being straight to start
+		//approx distance skel can reach without changing posture too much (rest dist from scap to ptrFinger_r) - !!!depends on skeleton arm being straight to start!!!
 		reach = (skelPtr->getMarker("ptrFinger_r")->getWorldPosition() - skelPtr->getMarker("right_scapula")->getWorldPosition()).norm(); //only works because arm is straight
 		bicepLen = (skelPtr->getMarker("ptrElbow_r")->getWorldPosition() - skelPtr->getMarker("right_scapula")->getWorldPosition()).norm();
 		frArmLen = (skelPtr->getMarker("ptrWrist_r")->getWorldPosition() - skelPtr->getMarker("ptrElbow_r")->getWorldPosition()).norm();
@@ -171,8 +171,6 @@ namespace gestureIKApp {
 
 	void IKSolver::setTrkMrkrs(eignVecTyp& _tarPosAra) {
 		//update target positions from passed values
-		//TODO use below when trajectory implemented
-		//eignVecTyp _tarPosAra = trajectory->getTrajFrame()
 		for (int i = 0; i < trkedMrkrNames.size(); ++i) {
 			(*trkMarkers)[trkedMrkrNames[i]]->setTarPos(_tarPosAra[i]);
 		}
@@ -193,16 +191,13 @@ namespace gestureIKApp {
 		Eigen::VectorXd modGrads;
 		while ((i < params->IK_solveIters) && (poseError > params->IK_maxSqError)){
 			grads = calcGradient();
-			//adaptTS = 0; 
-			double mult = 10;
+			double mult = 10.0;
 			while (mult > .1) {
 				modGrads = mult * params->IK_alpha * grads;
 				do {
 					lastNewPose = newPose;
 					newPose = skelPtr->getPositions() - modGrads;
 					setPoseAndCompSkelKin(newPose);
-					//skelPtr->setPositions(newPose);
-					//skelPtr->computeForwardKinematics(true, false, false);	// DART updates all the transformations based on newPose
 					poseErrorLastGood = poseErrorLast;						//the last good "last cycle" pose error (i.e. keeping track of the most recent "last pose error" that triggered an iteration)
 					poseErrorLast = poseError;
 					poseError = getPoseError();
@@ -214,8 +209,6 @@ namespace gestureIKApp {
 				mult *= .5;
 				newPose = lastNewPose;
 				setPoseAndCompSkelKin(newPose);
-				//skelPtr->setPositions(newPose);
-				//skelPtr->computeForwardKinematics(true, false, false);	// DART updates all the transformations based on newPose
 				poseError = poseErrorLast;									//last cycle which was undone
 				poseErrorLast = poseErrorLastGood;							//last "last cycle" pose error which was > current cycle pose error
 			}// while (mult > .5);

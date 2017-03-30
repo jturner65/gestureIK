@@ -160,11 +160,6 @@ namespace gestureIKApp {
 			skelPtr->computeForwardKinematics(true, false, false);	// DART updates all the transformations based on newPose
 		}
 		inline Eigen::VectorXd getNewPose() { return newPose; }
-		inline Eigen::Vector3d getPtrPos() { return  skelPtr->getMarker("ptrFinger_r")->getWorldPosition(); }
-		inline Eigen::Vector3d getElbowPos() { return  skelPtr->getMarker("ptrElbow_r")->getWorldPosition(); }
-
-		inline Eigen::Vector3d getPtrCenter() { return  skelPtr->getMarker("ptrElbow_r")->getWorldPosition(); }
-
 
 		std::shared_ptr<trkMrkMap> trkMarkers;										//all tracked markers in this skeleton
 
