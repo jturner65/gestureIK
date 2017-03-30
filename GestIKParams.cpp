@@ -97,13 +97,10 @@ namespace gestureIKApp {
 		if (_name.compare("fixedClipLen") == 0) { fixedClipLen = stoi(s);			return; }
 		if (_name.compare("mBlurPreFrames") == 0) { mBlurPreFrames = stoi(s);			return; }
 		if (_name.compare("mBlurPostFrames") == 0) { mBlurPostFrames = stoi(s);			return; }
-
 		//enum
 		if (_name.compare("dataType") == 0) {	dataType = static_cast<DataType>(stoi(s)); return;	}
-
 		//floats 
 		if (_name.compare("origZoom") == 0) { origZoom = stof(s);			return; }
-
 		//strings
 		if (_name.compare("baseOutDir") == 0) { baseOutDir = std::string(s);	return; }
 		if (_name.compare("markerXMLFileName") == 0) { markerXMLFileName = std::string(s);	return; }
@@ -121,19 +118,31 @@ namespace gestureIKApp {
 		if (_name.compare("IDX_rndHandClr") == 0) { flags[IDX_rndHandClr] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_useMotionBlur") == 0) { flags[IDX_useMotionBlur] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_useOutputDir") == 0) { flags[IDX_useOutputDir] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_saveHandCOMVals") == 0) { flags[IDX_saveHandCOMVals] = (s.compare("TRUE") == 0 ? true : false);        return; }
 
 	}	//setParamValFromXMLStr
-
-	std::string GestIKParams::getDataOutputDir() {
+	//construct and return name of directory holding letter sequences or csv's of com locations in screen space
+	std::string GestIKParams::getDataOutputDir(bool isCSV) {
 		std::stringstream ss;
 		ss << getOutputBaseDir(); 
-		if (flags[IDX_useMotionBlur]) {
-			ss << "blur_";
-		}
+		if (flags[IDX_useMotionBlur]) {			ss << "blur_";		}
+		else if (isCSV) { ss << "COMVals_"; }
 		ss << DataType2strAbbrev[dataType] << "_" << dateFNameOffset << "/"; 		
 		return ss.str();
 	}//getDataOutputDir
 
+	 //set current date as file name offset to keep files unique
+	void GestIKParams::setDateFNameOffset() {
+		std::stringstream ss;
+		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+		std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+		//changed to include minute, exlude year
+		ss << std::put_time(std::localtime(&now_c), "%m%d%H%M");
+		dateFNameOffset = ss.str();
+		std::cout << "dateFNameOffset : " << dateFNameOffset << std::endl;
+	}//setDateFNameOffset
+
+	//save values of marker locations and body nodes they are attached to from XML - this will be then applied to loaded skeleton in IKSolver 
 	void GestIKParams::setMarkerLocVals(const std::string& bName, const std::string& offsetStr, const std::string& mName) {
 		markerLocs.push_back(markerXMLData(bName, offsetStr, mName));
 	}
@@ -141,10 +150,6 @@ namespace gestureIKApp {
 	//set up reasonable default values to be used if XML is unavailable or unused.  the default values will be used whenever reset is called
 	void GestIKParams::setDefaultVals() {
 		//use as template - set any class variables to reasonable defaults
-		//fMaxSDMult = 4;						//fMaxSDMult is magic number from Unity code that multiples the sd for the per-step priors for the force limits- UI enterable? hardcoded to 4.0 in unity code
-		//dataCapNumExamples = 100;
-		//dataCapTestTrainThresh = .5;
-
 		IK_reachPct = .75;
 		IK_solveIters = 100;
 		IK_alpha = 0.01;
@@ -197,24 +202,14 @@ namespace gestureIKApp {
 
 		defaultVals = accumulateVals();			//set default values as current param vals
 	}//setDefaultVals
-	//set current date as file name offset to keep files unique
-	void GestIKParams::setDateFNameOffset() {
-		std::stringstream ss;
-		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-		std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-		//changed to include minute, exlude year
-		ss << std::put_time(std::localtime(&now_c), "%m%d%H%M");
-		dateFNameOffset = ss.str();
-		std::cout << "dateFNameOffset : " << dateFNameOffset << std::endl;
-	}
-
 
 	//allow current values from UI to be set as defaults 
 	void GestIKParams::setCurrentValsAsDefault() {
 		defaultVals = accumulateVals();
 	}//setCurrentValsAsDefault
 
-	std::vector<double> GestIKParams::accumulateVals() {		//grab all locals that are modifiable by UI or used elsewhere
+	//save all param vals into single array
+	std::vector<double> GestIKParams::accumulateVals() {		
 		std::vector<double> res;
 
 		res.push_back(IK_reachPct);
@@ -340,11 +335,12 @@ namespace gestureIKApp {
 		out << "\tUse XML-Specified Output Dir : " << (p.flags[p.IDX_useOutputDir] ? "True : Dir Specified : " : "False") << (p.flags[p.IDX_useOutputDir] ? p.baseOutDir : "") << std::endl;
 		out << "\tFile to use for marker locations specification : " << p.markerXMLFileName << std::endl;
 		out << "Generate data focused on left hand (TODO) : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False") << "\tDisplay trajs with different colors : " << (p.flags[p.IDX_chgTrajDbgClrs] ? "True" : "False") << std::endl;
+		out << "Save COM-related values of hand and elbow : " << (p.flags[p.IDX_saveHandCOMVals] ? "True" : "False") << std::endl;
 		out << "Randomize :" << std::endl;
 		out << "\tCamera Orientation : " << (p.flags[p.IDX_rndCamOrient] ? "True" : "False") << "\t Camera Location / Zoom : " << (p.flags[p.IDX_rndCamLoc] ? "True" : "False");
 		out << "\tHead Dimensions: " << (p.flags[p.IDX_rndHeadDims] ? "True" : "False") << "\t  Head Color: " << (p.flags[p.IDX_rndHeadClr] ? "True" : "False") << std::endl;
 		out << "\tHand Shape : " << (p.flags[p.IDX_rndHandShape] ? "True" : "False") << "\t  Hand Dimensions : " << (p.flags[p.IDX_rndHandDims] ? "True" : "False");
-		out << "\t Hand Color : " << (p.flags[p.IDX_rndHandClr] ? "True" : "False") << std::endl;
+		out << "\tHand Color : " << (p.flags[p.IDX_rndHandClr] ? "True" : "False") << std::endl;
 		return out;
 	}
 

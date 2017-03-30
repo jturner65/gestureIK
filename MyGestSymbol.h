@@ -102,7 +102,6 @@ namespace gestureIKApp {
 		bool solve();
 
 		//set skeleton results for current frame - return true if baseFrame == #frames
-		//bool setIKSkelPose() { return setIKSkelPose(0, true); }
 		bool setIKSkelPose(int offFrame, bool incrFrame);
 
 		//set flags of all subordinate symbols
@@ -137,8 +136,8 @@ namespace gestureIKApp {
 		// To get byte-aligned Eigen vectors
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	public:	
-		//variables
+	public:	//variables
+
 		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;						//ref to ik solver
 		std::shared_ptr<MyGestSymbol> _self;									//ref to shared ptr to self, to be handed off to trajectories
 		std::shared_ptr<SymbolRandVals> rndVals;								//ref to the random values pertaining to the configuration and display of this symbol

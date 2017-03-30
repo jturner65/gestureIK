@@ -74,8 +74,8 @@ public:
 
 	void calcCircleTrajPoints(eignVecTyp& _trajPts);
 	void calcTrajPoints(eignVecTyp& _trajPts, eignVecVecTyp& arr, int numPts, double& globT);
-	//check capturing state upon reset of indexes (always start capturing at beginning of trajectory TODO change this to manage automated multi-capture also)
-	void checkCapture(bool drawLtr) {//should only be called when t transitions to 0, at the end of a trajectory
+	//called when a trajectory has been completely rendered - transitions to next trajectory
+	void endCapture(bool drawLtr) {//should only be called when t transitions to 0, at the end of a trajectory
 		mCapture = false;			//turn off capturing - will turn back on if necessary
 		if (drawLtr) {																//drawing a letter trajectory and not a sample symbol trajectory
 			if (flags[collectDataIDX]) { //finished complete letter trajectory, performing screen capture, set up next letter
@@ -101,6 +101,13 @@ public:
 	void renderBlur();
 	//override render from win3d
 	virtual void render() override;
+	//finish up render (shared post draw render functions)
+	void endRender();
+	//record current skel's com/comvel values in screen space coords to array
+	void recSkelCOMVals();
+	//save com/comvel values in screen space coords to disk
+	void saveSkelCOMVals();
+
 	//override draw function in SimWindow
 	virtual void draw();
 	void drawAxes(const Eigen::Ref<const Eigen::Vector3d>& axesLoc, float len, bool altColor);
@@ -108,7 +115,6 @@ public:
 	void drawJointAxis(dart::dynamics::BodyNode* node);
 	void drawJointAxes();
 	void drawPoint(const Eigen::Ref<const Eigen::Vector3d>& pt);
-	virtual void drawSkels();
 
 	//get file directory for current trajectory - only for SYMBOLS
 	std::string getCurTrajFileDir(int dataIterVal);
@@ -128,9 +134,24 @@ public:
 	//reload all xml-based parameters, and reset values derived from these parameters
 	void reloadXml() {
 		IKSolve->loadIKParams();
+		setValsFromXml();
 		//set up motionblur quantities if used
 		//setMotionBlurQual();
 	}//
+
+	//set local values that are dependent on params in xml file
+	void setValsFromXml() {
+		mBackground[0] = IKSolve->params->bkgR;
+		mBackground[1] = IKSolve->params->bkgG;
+		mBackground[2] = IKSolve->params->bkgB;
+		mBackground[3] = IKSolve->params->bkgA;
+		//set initial camera values
+		setCameraVals(origTrackBallQ, IKSolve->params->origZoom, origMTrans);
+		//set values used to map out trajectories to draw - needs to be owned by each symbol
+		IKSolve->setSampleCenters();
+		std::cout << "Per Frame ptr distance travelled calculated : " << IKSolve->params->trajDesiredVel << std::endl;
+
+	}
 
 	//override glutwindow screenshot function
 	virtual bool screenshot();
@@ -141,9 +162,9 @@ public:
 	bool makeDirectory(const std::string& tmp);
 
 	//return string of full path to where the screen cap files will be written
-	inline std::string getFullBasePath() {
+	inline std::string getFullBasePath(bool isCSV) {
 		if (flags[useLtrTrajIDX]) {
-			return IKSolve->params->getDataOutputDir();
+			return IKSolve->params->getDataOutputDir(isCSV);
 		} 
 		else {
 			std::stringstream ss;
@@ -205,7 +226,7 @@ protected :
 	//save size and color vals for particular shape
 	void saveInitShapeVals(const std::string& nodeName, int visIDX, Eigen::Ref<Eigen::Vector3d> _destSize, Eigen::Ref<Eigen::Vector3d> _destClr);
 	//add a spherical visualization shape to each hand
-	void MyWindow::addSphereHand(const std::string& nodeName);
+	void addSphereHand(const std::string& nodeName);
 
 	///////////////////////////
 	//variables 
@@ -228,6 +249,14 @@ protected :
 	std::string curTrajDirName;
 	//IK solver
 	std::shared_ptr<IKSolver> IKSolve;
+	///////
+	//open gl matrices for projecting point to screen space
+	//////
+	GLdouble model_view[16];			//model view matrix
+	GLdouble projection[16];			//projection matrix
+	GLint viewport[4];					//viewport matrix
+	//screen coords of hand and forearm com/comvel
+	std::vector<Eigen::VectorXd> saveCOMVals;
 
 	//current trajectory name as string, current class name as string - for letters curTrajStr will be e.g a_12 and curClassName will be e.g. a
 	std::string curClassName;
@@ -253,6 +282,9 @@ protected :
 	//current letter in list of shrd ptrs of ltrs, current symbol in list of symbols in letter, start idx of symbols - either 0 or the # of file-loaded symbols for a letter (if specified to regen only random and not file-built sequences)
 	int curLtrIDX, curSymIDX;
 
+	//color of markers
+	Eigen::Vector4d mrkrClr;
+
 	//state flags 
 	std::vector<bool> flags;				
 	static const unsigned int debugIDX = 0,				//debug mode
@@ -267,7 +299,6 @@ protected :
 		testLtrQualIDX = 9,						//iterate through all letters without screen cap to test traj quality
 		showAllTrajsIDX = 10,					//show all trajectories of letters, to show distribution results - debug
 		debugLtrsBuiltIDX = 11;					//set of debug letters built for visualization
-		//useMotionBlurIDX = 12;					//use motion blur when capturing/rendering
 
 	static const unsigned int numFlags = 12;
 };

@@ -60,6 +60,7 @@
 		<bnode>h_bicep_right</bnode>
 		<name>right_bicep</name>
 	</marker>
+<!--TODO : add capability to customize to use left hand instead of right -->
 	<marker>
 		<offset>0.0 -0.28 0</offset>
 		<bnode>h_bicep_right</bnode>

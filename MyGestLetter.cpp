@@ -132,20 +132,9 @@ namespace gestureIKApp {
 		return tmpPtr;
 	}//buildRandSymbol
 
-	////solve IK on current letter - get current symbol, cycle through all trajectories until drawn -- MOVED TO MyGestSymbol
-	//bool MyGestLetter::solve() {
-	//	//solve current symbol IK
-	//	bool finished = curSymbol->solve();
-	//	if ((finished) && (flags[debugIDX])) {
-	//		std::cout << "Finished drawing letter : " << curSymbol->name << std::endl;
-	//	}
-	//	return finished;
-	//}
-
 	//sets specific index in symbol list for letter to draw - used to let myWindow control which symbols to draw (for train and test data)
 	void MyGestLetter::buildSymbolAndSolveIK(int symIdx, bool solveIK, bool disp) {
 		//generating random symbol here - symIdx is only specified to determine if all symbols of this letter have been drawn - need to maintain a count instead
-		//curSymbol = symbols[symIdx];
 		curSymbol = buildRandSymbol(symIdx);
 		curSymbol->initSymbolIK();
 		//if solveIK solve all IK frames here, initially, if we wish to enable motion blur, and save skel states in vector, so we can display buffer accumulated results 
