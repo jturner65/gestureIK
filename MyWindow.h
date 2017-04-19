@@ -67,6 +67,9 @@ public:
 
 	void initCustWindow(std::string _winTtl);
 
+	//override refresh as callback - TODO need to render to frame buffer
+	//static void myRefresh();
+
 	void buildLetterList();
 	//build debug letters
 	void buildRandDbugLetterList();
@@ -125,7 +128,7 @@ public:
 	Eigen::Vector3d getCirclEndPoint(const Eigen::Ref<const Eigen::Vector3d>& ctrPt, double theta, double rad);
 
 	//open index file for current data collection, either training or testing idx
-	void openIndexFile(std::ofstream& strm, bool append);
+	void openIndexFile(std::ofstream& strm, bool isCSV, bool append);
 
 	virtual void keyboard(unsigned char _key, int _x, int _y);
 	//regenerate sample object trajectories with or without randomization
@@ -149,8 +152,7 @@ public:
 		setCameraVals(origTrackBallQ, IKSolve->params->origZoom, origMTrans);
 		//set values used to map out trajectories to draw - needs to be owned by each symbol
 		IKSolve->setSampleCenters();
-		std::cout << "Per Frame ptr distance travelled calculated : " << IKSolve->params->trajDesiredVel << std::endl;
-
+		std::cout << "Per Frame ptr distance travelled calculated : " << IKSolve->params->trajDesiredVel << "\n";
 	}
 
 	//override glutwindow screenshot function
@@ -178,7 +180,7 @@ public:
 	//manage the process of writing all training and testing data
 	void trainSymDatManageCol();
 	//write line in text file to 
-	void trainDatWriteIndexFile(std::ofstream& outFile, const std::string& fileDir, int cls);
+	void trainDatWriteIndexFile(std::ofstream& outFile, const std::string& fileDir, bool isCSV, int cls);
 	//update the time click after each IK iteration
 	//void updateTVals(int traj);
 	//write csv trajectory file
@@ -194,7 +196,7 @@ protected :
 		double mu = 0;
 		for (int i = 0; i < 1000; ++i) {
 			auto rnd = IKSolve->getRandDbl(mu, .00001);
-			std::cout << "i : " << i << "\tgetRandDbl with mu : " << mu << " : " << rnd << std::endl;
+			std::cout << "i : " << i << "\tgetRandDbl with mu : " << mu << " : " << rnd << "\n";
 		}
 	}
 
@@ -243,7 +245,7 @@ protected :
 	//ticks for sample traj drawing
 	std::vector<double> tVals, tBnds, tIncr;
 	//file stream for test and train index files - remove distinction, have python script handle partition
-	std::ofstream trainDataFileStrm;
+	std::ofstream trainDataFileStrm, comValsDataFileStrm;
 	//strings for file names and directories
 	//name of directory of current trajectory
 	std::string curTrajDirName;
@@ -329,7 +331,7 @@ eignVecVecTyp MyWindow::regenCorners(std::array<double, SIZE>const & arr, bool r
 		for (int i = 0; i < numCrnrs; ++i) {
 			eignVecTyp crnrVec(0);
 			int arrIdx = ((i%SIZE) + stCrnr) % SIZE;
-			if (flags[debugIDX]) { std::cout << "Obj size : " << SIZE << "\tRandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << std::endl; }
+			if (flags[debugIDX]) { std::cout << "Obj size : " << SIZE << "\tRandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << "\n"; }
 			randThet = IKSolve->getRandDbl(arr[arrIdx],  .09);
 			randRad = IKSolve->getRandDbl(rad, .04);
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawCrclCtr, randThet, randRad));
@@ -342,7 +344,7 @@ eignVecVecTyp MyWindow::regenCorners(std::array<double, SIZE>const & arr, bool r
 		for (int i = 0; i < numCrnrs; ++i) {
 			eignVecTyp crnrVec(0);
 			int arrIdx = ((i%SIZE) + stCrnr) % SIZE;
-			if (flags[debugIDX]) { std::cout << "Obj size : " << SIZE << "\tNonrandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << std::endl; }
+			if (flags[debugIDX]) { std::cout << "Obj size : " << SIZE << "\tNonrandom i : " << i << " start corner : " << stCrnr << "arr Idx : " << arrIdx << "\n"; }
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawCrclCtr, arr[arrIdx], rad));
 			crnrVec.push_back(getCirclEndPoint(IKSolve->drawElbowCtr, arr[arrIdx], .25 * rad));
 			crnrs.push_back(std::move(crnrVec));

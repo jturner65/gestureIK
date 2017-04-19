@@ -96,7 +96,7 @@ namespace gestureIKApp {
 	//TODO use this to only hold debug/example symbols intended to illustrate distributions - all actual symbols are generated on the fly
 	void MyGestLetter::buildRandExSymbolTrajs(int _totNumDesSymb) {
 		if (_totNumDesSymb <= numTotSymbols) {
-			std::cout << "Requested " << _totNumDesSymb << " random and file based symbols, but already have " << numTotSymbols << " made, so doing nothing." << std::endl;
+			std::cout << "Requested " << _totNumDesSymb << " random and file based symbols, but already have " << numTotSymbols << " made, so doing nothing.\n";
 			return;
 		}
 		std::shared_ptr<gestureIKApp::MyGestSymbol> tmpPtr;
@@ -159,8 +159,8 @@ namespace gestureIKApp {
 	}
 
 	std::ostream& operator<<(std::ostream& out, MyGestLetter& ltr) {
-		out << "Letter :" << ltr.ltrName << "\tfile name : " << ltr.fileName << std::endl;
-		out << "\t# symbol files present : " << ltr.numFileSymbols << "\t total # symbols of this letter present : " << ltr.numTotSymbols << std::endl;
+		out << "Letter :" << ltr.ltrName << "\tfile name : " << ltr.fileName << "\n";
+		out << "\t# symbol files present : " << ltr.numFileSymbols << "\t total # symbols of this letter present : " << ltr.numTotSymbols << "\n";
 		return out;
 	}
 

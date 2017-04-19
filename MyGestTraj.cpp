@@ -62,7 +62,7 @@ namespace gestureIKApp {
 		bool finCurTraj = false;
 		if (1 == trajPtDistFromSt.size()) {//only 1 point in this trajectory
 			finCurTraj = true;
-			//if (flags[debugIDX]) { std::cout << "Single Point Traj : " << name << " finCurTraj : " << (finCurTraj ? "True " : "False ") << "\tt : " << 1 << "\tlenFromStTraj : " << lenFromStTraj << "\t# trajPtDistFromSt " << trajPtDistFromSt.size() << "\ttrajPtDistFromSt[" << 0 << "] = "<< trajPtDistFromSt[0] << std::endl; }
+			//if (flags[debugIDX]) { std::cout << "Single Point Traj : " << name << " finCurTraj : " << (finCurTraj ? "True " : "False ") << "\tt : " << 1 << "\tlenFromStTraj : " << lenFromStTraj << "\t# trajPtDistFromSt " << trajPtDistFromSt.size() << "\ttrajPtDistFromSt[" << 0 << "] = "<< trajPtDistFromSt[0] << "\n"; }
 			//set targets for IK
 			for (int i = 0; i < trkedMrkrNames.size(); ++i) {
 				Eigen::Vector3d vec = trajTargets[0][i];
@@ -74,7 +74,7 @@ namespace gestureIKApp {
 			//clip len from st traj to be limited to max len of this traj if this is not closed
 			if (lenFromStTraj > trajPtDistFromSt[trajPtDistFromSt.size() - 1]) {
 				if (flags[closeTrajIDX]) {
-					std::cout << "Closed traj : " << name << std::endl;
+					std::cout << "Closed traj : " << name << "\n";
 					frame1 = trajPtDistFromSt.size() - 1;
 					frame2 = 0;
 					t = (lenFromStTraj - trajPtDistFromSt[frame1]) / (trajPtDistFromSt[frame2] - trajPtDistFromSt[frame1]);
@@ -107,9 +107,9 @@ namespace gestureIKApp {
 					finCurTraj = (!flags[closeTrajIDX]) && (frame1 == trajPtDistFromSt.size() - 2) && (frame2 == trajPtDistFromSt.size() - 1) &&( abs(t - 1.0) < DART_EPSILON);
 				}
 			}
-			//if ((flags[debugIDX]) && (t == 1)){ std::cout << "Traj : " << name << " finCurTraj : " << (finCurTraj ? "True " : "False ") << "\tt : " << t << "\tlenFromStTraj : " << lenFromStTraj << "\t# trajPtDistFromSt " << trajPtDistFromSt.size() << "\ttrajPtDistFromSt[" << frame1 << "] = " << trajPtDistFromSt[frame1] << "\ttrajPtDistFromSt[" << frame2 << "] = " << trajPtDistFromSt[frame2] << std::endl; }
+			//if ((flags[debugIDX]) && (t == 1)){ std::cout << "Traj : " << name << " finCurTraj : " << (finCurTraj ? "True " : "False ") << "\tt : " << t << "\tlenFromStTraj : " << lenFromStTraj << "\t# trajPtDistFromSt " << trajPtDistFromSt.size() << "\ttrajPtDistFromSt[" << frame1 << "] = " << trajPtDistFromSt[frame1] << "\ttrajPtDistFromSt[" << frame2 << "] = " << trajPtDistFromSt[frame2] << "\n"; }
 			if (t > 1) {
-				std::cout << "\n!!!!!!Traj : " << name << " t greater than 1 for t : " << t << "\tlenFromStTraj : " << lenFromStTraj << "\t# trajPtDistFromSt " << trajPtDistFromSt.size() << "\ttrajPtDistFromSt[" << frame1 << "] = " << trajPtDistFromSt[frame1] << "\ttrajPtDistFromSt[" << frame2 << "] = " << trajPtDistFromSt[frame2] << "\n" << std::endl;
+				std::cout << "\n!!!!!!Traj : " << name << " t greater than 1 for t : " << t << "\tlenFromStTraj : " << lenFromStTraj << "\t# trajPtDistFromSt " << trajPtDistFromSt.size() << "\ttrajPtDistFromSt[" << frame1 << "] = " << trajPtDistFromSt[frame1] << "\ttrajPtDistFromSt[" << frame2 << "] = " << trajPtDistFromSt[frame2] << "\n\n";
 				t = 1;
 			}
 			//set targets for IK
@@ -173,7 +173,7 @@ namespace gestureIKApp {
 		}
 		if(convTrajPts.size() > 1){
 			if ((trajLen > 0) && (trajLen < IKSolve->params->trajLenThresh)) {
-				//cout << "Traj len for traj : " << name << " smaller than threshold so traj will be ignored. |\t# conv pts : " << convTrajPts.size() << "|\t traj len : " << trajLen << std::endl;
+				//cout << "Traj len for traj : " << name << " smaller than threshold so traj will be ignored. |\t# conv pts : " << convTrajPts.size() << "|\t traj len : " << trajLen << "\n";
 				flags[useTrajIDX] = false;
 			}
 			else {
@@ -183,7 +183,7 @@ namespace gestureIKApp {
 					numObjs = 2; 
 				//	cout << "\tDesired Size is small - setting to 2 : traj Len : "<< trajLen; 
 				}
-				//cout << std::endl;
+				//cout << "\n";
 				processPts(numObjs);
 				//set actual conv traj points
 				setPts(debugTrajPts);
@@ -472,18 +472,18 @@ namespace gestureIKApp {
 			//debug output below : 
 			if (flags[debugIDX]) {
 				tmpDat << 0, dat(1), dat(2);
-				std::cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastDat).norm()) << "\ttiming:" << srtTrajTiming.back() << " timing diff " << (srtTrajTiming.back() - lastTime) << std::endl;
+				std::cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastDat).norm()) << "\ttiming:" << srtTrajTiming.back() << " timing diff " << (srtTrajTiming.back() - lastTime) << "\n";
 				lastTime = srtTrajTiming.back();
 				lastDat << tmpDat;
 			}
 		}
 		flags[loadedIDX] = true;
 		//cout << "Finished Reading :" << filename << " trajectory file.   srcTrajData holds : "<< srcTrajData.size()<<" points."<< std::endl;
-		//cout << std::endl;
+		//cout << "\n";
 	}//readTrajFile
 
 	std::ostream& operator<<(std::ostream& out, MyGestTraj& traj) {
-		out << "Traj name " << traj.name << "\t# src traj points : " << traj.srcTrajData.size() << std::endl;
+		out << "Traj name " << traj.name << "\t# src traj points : " << traj.srcTrajData.size() << "\n";
 		return out;
 	}
 }  // namespace gestureIKApp

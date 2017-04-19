@@ -68,7 +68,7 @@ namespace gestureIKApp {
 		frArmLen = (skelPtr->getMarker("ptrWrist_r")->getWorldPosition() - skelPtr->getMarker("ptrElbow_r")->getWorldPosition()).norm();
 		handLen = (skelPtr->getMarker("ptrFinger_r")->getWorldPosition() - skelPtr->getMarker("ptrWrist_r")->getWorldPosition()).norm();
 		//double sum = (bicepLen + frArmLen + handLen);
-		//cout << "Reach : " << reach << " bicep len : " << bicepLen << " forearm len : " << frArmLen << " hand len : " << handLen << " sum of lengths : " << sum << " diffs : " << (reach - sum) << std::endl;
+		//cout << "Reach : " << reach << " bicep len : " << bicepLen << " forearm len : " << frArmLen << " hand len : " << handLen << " sum of lengths : " << sum << " diffs : " << (reach - sum) << "\n";
 		//start location of shoulder in world
 		tstRShldrSt = skelPtr->getMarker("right_scapula")->getWorldPosition();	
 		////set values used to map out trajectories to draw - needs to be owned by each symbol
@@ -108,7 +108,7 @@ namespace gestureIKApp {
 		std::stringstream ss;
 		ss << appFilePath << "dflt_gestik_params.xml";
 		GestIKParser::readGestIKXML(ss.str(), params);
-		std::cout << "Loaded params : " << *params << std::endl;
+		std::cout << "Loaded params : " << *params << "\n";
 		loadMarkerLocs();
 	}
 	
@@ -117,7 +117,7 @@ namespace gestureIKApp {
 		std::stringstream ss;
 		ss << appFilePath << params->markerXMLFileName;
 		GestIKParser::readMarkerLocsXML(ss.str(), params);
-		std::cout << "Markers loaded from file name : " << ss.str() << std::endl;
+		std::cout << "Markers loaded from file name : " << ss.str() << "\n";
 	}//loadMarkerLocs
 
 	//set marker names and locations on skeleton from xml file
@@ -143,13 +143,13 @@ namespace gestureIKApp {
 		drawElbowCtr(1) -= (reach * params->IK_elbowScale);
 		//normal point from elbow to shoulder as arm is extended to ~average position
 		elbowShldrNormal = (tstRShldrSt - drawElbowCtr).normalized();
-		std::cout << "In IKSolve : Right arm reach : " << reach << " elbow scale : "<< params->IK_elbowScale<<"\tcenter " << buildStrFrmEigV3d(drawCrclCtr) << " elbow center " << buildStrFrmEigV3d(drawElbowCtr) << " and rad of test circle " << params->IK_drawRad << std::endl;
+		std::cout << "In IKSolve : Right arm reach : " << reach << " elbow scale : "<< params->IK_elbowScale<<"\tcenter " << buildStrFrmEigV3d(drawCrclCtr) << " elbow center " << buildStrFrmEigV3d(drawElbowCtr) << " and rad of test circle " << params->IK_drawRad << "\n";
 		(*trkMarkers)[trkedMrkrNames[0]]->setTarPos(drawCrclCtr);
 		(*trkMarkers)[trkedMrkrNames[1]]->setTarPos(drawElbowCtr);
 		solve();
 		//recalc elbow center after IKing ptr to circle center location
 		drawElbowCtr = skelPtr->getMarker("ptrElbow_r")->getWorldPosition();
-		std::cout << "Sample Elbow Location being updated after IKing to Ctr point in IKSolver" << buildStrFrmEigV3d(drawElbowCtr) << std::endl;
+		std::cout << "Sample Elbow Location being updated after IKing to Ctr point in IKSolver" << buildStrFrmEigV3d(drawElbowCtr) << "\n";
 		//normal point from elbow to shoulder as arm is extended to ~average position
 		elbowShldrNormal = (tstRShldrSt - drawElbowCtr).normalized();
 	}//setSampleCenters
@@ -201,10 +201,10 @@ namespace gestureIKApp {
 					poseErrorLastGood = poseErrorLast;						//the last good "last cycle" pose error (i.e. keeping track of the most recent "last pose error" that triggered an iteration)
 					poseErrorLast = poseError;
 					poseError = getPoseError();
-					//std::cout << "Iter : " << i << " adaptTS : "<< adaptTS <<" pose error : " << poseError << std::endl;
+					//std::cout << "Iter : " << i << " adaptTS : "<< adaptTS <<" pose error : " << poseError << "\n";
 					//++adaptTS;
 				} while (poseError < poseErrorLast);		//repeat while improving
-				//std::cout << "Iter : " << i << " adaptTS : " << adaptTS << " pose error : " << poseError << std::endl;
+				//std::cout << "Iter : " << i << " adaptTS : " << adaptTS << " pose error : " << poseError << "\n";
 				//after do-while, will have done 1 iteration too many (which had increased delta poseError)
 				mult *= .5;
 				newPose = lastNewPose;
@@ -214,7 +214,7 @@ namespace gestureIKApp {
 			}// while (mult > .5);
 			++i;
 		}
-		//std::cout << "Total Iters : " << i << " pose error : " << poseError << std::endl;
+		//std::cout << "Total Iters : " << i << " pose error : " << poseError << "\n";
 	}//solve
 
 	//only want to solve constraint eqs for single hierarchical branch from ptrFinger_r to root
@@ -283,8 +283,8 @@ namespace gestureIKApp {
 	}
 
 	std::ostream& operator<<(std::ostream& out, trackedMarker& tmrk) {
-		out << "Trked M ID :" << tmrk.ID << "\tM Name : " << tmrk.m->getName() << "\tBody Node name : " << tmrk.m->getBodyNode()->getName() << std::endl;
-		out << "\tIs Fixed : " << (tmrk.isFixed ? "True " : "False") << "\tOrig Pos : " << buildStrFrmEigV3d(tmrk.origPos) << "\tCurrent Target Pos : " << buildStrFrmEigV3d(tmrk.tarPos) << std::endl;
+		out << "Trked M ID :" << tmrk.ID << "\tM Name : " << tmrk.m->getName() << "\tBody Node name : " << tmrk.m->getBodyNode()->getName() << "\n";
+		out << "\tIs Fixed : " << (tmrk.isFixed ? "True " : "False") << "\tOrig Pos : " << buildStrFrmEigV3d(tmrk.origPos) << "\tCurrent Target Pos : " << buildStrFrmEigV3d(tmrk.tarPos) << "\n";
 		return out;
 	}
 

@@ -89,7 +89,7 @@
 	</parameter>
 	<parameter>
 		<name>numTotSymPerLtr</name>
-		<val>10</val> 
+		<val>1000</val> 
 	</parameter>
 	<parameter>
 		<name>ltrIdxStSave</name>
@@ -199,6 +199,11 @@
 	<parameter>
 		<name>IDX_saveHandCOMVals</name>
 		<val>TRUE</val> 
+	</parameter>
+<!-- whether or not to save screenshots -->
+	<parameter>
+		<name>IDX_alwaysSaveImgs</name>
+		<val>FALSE</val> 
 	</parameter>
 <!-- randomization flags - which aspects of skeleton and environment to randomize -->
 	<parameter>

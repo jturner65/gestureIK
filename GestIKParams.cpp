@@ -54,7 +54,7 @@ namespace gestureIKApp {
 	GestIKParams::~GestIKParams() {}
 
 	void GestIKParams::setParamValFromXMLStr(const std::string& _name, const std::string& s) {
-		//cout << "Setting value : " << s << " from xml for " << _name << std::endl;
+		//cout << "Setting value : " << s << " from xml for " << _name << "\n";
 		//doubles
 		if (_name.compare("IK_alpha") == 0) { IK_alpha = stod(s);      return; }
 		if (_name.compare("IK_maxSqError") == 0) { IK_maxSqError = stod(s);      return; }
@@ -119,6 +119,7 @@ namespace gestureIKApp {
 		if (_name.compare("IDX_useMotionBlur") == 0) { flags[IDX_useMotionBlur] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_useOutputDir") == 0) { flags[IDX_useOutputDir] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_saveHandCOMVals") == 0) { flags[IDX_saveHandCOMVals] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_alwaysSaveImgs") == 0) { flags[IDX_alwaysSaveImgs] = (s.compare("TRUE") == 0 ? true : false);        return; }
 
 	}	//setParamValFromXMLStr
 	//construct and return name of directory holding letter sequences or csv's of com locations in screen space
@@ -139,7 +140,7 @@ namespace gestureIKApp {
 		//changed to include minute, exlude year
 		ss << std::put_time(std::localtime(&now_c), "%m%d%H%M");
 		dateFNameOffset = ss.str();
-		std::cout << "dateFNameOffset : " << dateFNameOffset << std::endl;
+		std::cout << "dateFNameOffset : " << dateFNameOffset << "\n";
 	}//setDateFNameOffset
 
 	//save values of marker locations and body nodes they are attached to from XML - this will be then applied to loaded skeleton in IKSolver 
@@ -199,6 +200,7 @@ namespace gestureIKApp {
 		markerXMLFileName = "";
 		
 		for (int i = 0; i < numFlags; ++i) { flags[i] = false; }
+		flags[IDX_alwaysSaveImgs] = true;//default this to true
 
 		defaultVals = accumulateVals();			//set default values as current param vals
 	}//setDefaultVals
@@ -318,29 +320,27 @@ namespace gestureIKApp {
 
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
 		out << "GestIK Params values : "<<"\tdateFNameOffset : "<< p.dateFNameOffset<< std::endl;
-		out << "Letter data type : " << DataType2str[p.dataType] << "\t# total Symbols per letter : " << p.numTotSymPerLtr << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << std::endl;
-		out << "Random Env/Skel vals : rnd_camThet : " << p.rnd_camThet << "\t rnd_camZoom : " << p.rnd_camZoom << "\t rnd_camTrans : " << p.rnd_camTrans << std::endl;
-		out << "\t rnd_headClrBnd : " << p.rnd_headClrBnd << "\t rnd_headDimPct : " << p.rnd_headDimPct << "\t rnd_handClrBnd : " << p.rnd_handClrBnd << "\t rnd_handDimPct : " << p.rnd_handDimPct << std::endl;
+		out << "Letter data type : " << DataType2str[p.dataType] << "\t# total Symbols per letter : " << p.numTotSymPerLtr << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << "\n";
+		out << "Random Env/Skel vals : rnd_camThet : " << p.rnd_camThet << "\t rnd_camZoom : " << p.rnd_camZoom << "\t rnd_camTrans : " << p.rnd_camTrans << "\n";
+		out << "\t rnd_headClrBnd : " << p.rnd_headClrBnd << "\t rnd_headDimPct : " << p.rnd_headDimPct << "\t rnd_handClrBnd : " << p.rnd_handClrBnd << "\t rnd_handDimPct : " << p.rnd_handDimPct << "\n";
 		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| IK_fastTrajMult  : ";
-		out << p.IK_fastTrajMult << "\t| IK_ctrYOffset  : " << p.IK_ctrYOffset << std::endl;
+		out << p.IK_fastTrajMult << "\t| IK_ctrYOffset  : " << p.IK_ctrYOffset << "\n";
 		out << "trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult << "\ttrajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct;
-		out << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << std::endl;
+		out << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << "\n";
 		out << "\t| traj rand scale x,y,z (" << p.trajRandCtrStdScale_X << ", " << p.trajRandCtrStdScale_Y << ", " << p.trajRandCtrStdScale_Z << ")";
-		out << "\t| bkg clr(rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")" << std::endl;
-		out << "Record Motion Blur : " << (p.flags[p.IDX_useMotionBlur] ? "True" : "False");
-		if (p.flags[p.IDX_useMotionBlur]) { 
-			out << " : Preframes used to build blur : " << (p.mBlurPreFrames);
-			out << " : Postframes used to build blur : " << (p.mBlurPostFrames) << std::endl;
-		}
-		out << "\tUse XML-Specified Output Dir : " << (p.flags[p.IDX_useOutputDir] ? "True : Dir Specified : " : "False") << (p.flags[p.IDX_useOutputDir] ? p.baseOutDir : "") << std::endl;
-		out << "\tFile to use for marker locations specification : " << p.markerXMLFileName << std::endl;
-		out << "Generate data focused on left hand (TODO) : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False") << "\tDisplay trajs with different colors : " << (p.flags[p.IDX_chgTrajDbgClrs] ? "True" : "False") << std::endl;
-		out << "Save COM-related values of hand and elbow : " << (p.flags[p.IDX_saveHandCOMVals] ? "True" : "False") << std::endl;
-		out << "Randomize :" << std::endl;
+		out << "\t| bkg clr(rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")\n";
+		out << "Motion Blur : " << (p.flags[p.IDX_useMotionBlur] ? "True" : "False");
+		if (p.flags[p.IDX_useMotionBlur]) { 	out << " : Preframes used to build blur : " << (p.mBlurPreFrames) << " : Postframes used to build blur : " << (p.mBlurPostFrames) << "\n";	}
+		out << "\tUse XML-Specified Output Dir : " << (p.flags[p.IDX_useOutputDir] ? "True : Dir Specified : " : "False") << (p.flags[p.IDX_useOutputDir] ? p.baseOutDir : "") << "\n";
+		out << "\tFile to use for marker locations specification : " << p.markerXMLFileName << "\n\n";
+		out << "Always Save Screenshots : " << (p.flags[p.IDX_alwaysSaveImgs] ? "True" : "False") << "\n\n";
+		out << "Generate data focused on left hand (TODO) : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False") << "\tDisplay trajs with different colors : " << (p.flags[p.IDX_chgTrajDbgClrs] ? "True\n" : "False\n") ;
+		out << "Save COM-related values of hand and elbow : " << (p.flags[p.IDX_saveHandCOMVals] ? "True\n" : "False\n") ;
+		out << "Randomize :\n";
 		out << "\tCamera Orientation : " << (p.flags[p.IDX_rndCamOrient] ? "True" : "False") << "\t Camera Location / Zoom : " << (p.flags[p.IDX_rndCamLoc] ? "True" : "False");
-		out << "\tHead Dimensions: " << (p.flags[p.IDX_rndHeadDims] ? "True" : "False") << "\t  Head Color: " << (p.flags[p.IDX_rndHeadClr] ? "True" : "False") << std::endl;
+		out << "\tHead Dimensions: " << (p.flags[p.IDX_rndHeadDims] ? "True" : "False") << "\t  Head Color: " << (p.flags[p.IDX_rndHeadClr] ? "True\n" : "False\n") ;
 		out << "\tHand Shape : " << (p.flags[p.IDX_rndHandShape] ? "True" : "False") << "\t  Hand Dimensions : " << (p.flags[p.IDX_rndHandDims] ? "True" : "False");
-		out << "\tHand Color : " << (p.flags[p.IDX_rndHandClr] ? "True" : "False") << std::endl;
+		out << "\tHand Color : " << (p.flags[p.IDX_rndHandClr] ? "True\n" : "False\n") ;
 		return out;
 	}
 

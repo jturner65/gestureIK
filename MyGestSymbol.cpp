@@ -68,7 +68,7 @@ namespace gestureIKApp {
 		//random zoom
 		//find variation amt 
 		cameraZoom = IKSolve->params->origZoom + static_cast<float>(IKSolve->getUniRandDbl(-IKSolve->params->rnd_camZoom, IKSolve->params->rnd_camZoom));
-		//std::cout << "Old Zoom : " << IKSolve->params->origZoom << "\t New Zoom : " << cameraZoom << std::endl;
+		//std::cout << "Old Zoom : " << IKSolve->params->origZoom << "\t New Zoom : " << cameraZoom << "\n";
 		//random camera location 
 		Eigen::Vector3d min(-IKSolve->params->rnd_camTrans, -IKSolve->params->rnd_camTrans, -IKSolve->params->rnd_camTrans),
 			max(IKSolve->params->rnd_camTrans, IKSolve->params->rnd_camTrans, IKSolve->params->rnd_camTrans);
@@ -162,10 +162,10 @@ namespace gestureIKApp {
 					|| (((i>0) && (trajectories[i - 1]->getLastFrame()[0] - trajectories[i]->getFirstFrame()[0]).norm() > DART_EPSILON) &&
 					((i < trajectories.size()-1) && (trajectories[i]->getLastFrame()[0] - trajectories[i+1]->getFirstFrame()[0]).norm() > DART_EPSILON))) {			//middle of list, further than eps from both prev and next
 					tmpTraj.push_back(trajectories[i]);			//in middle of list of trajectories and further than epsilon from other trajs in list
-					//std::cout << "Keeping 1-point traj :" << trajectories[i]->name << " since not redundant" << std::endl;
+					//std::cout << "Keeping 1-point traj :" << trajectories[i]->name << " since not redundant\n";
 				}
 				else {
-					std::cout << "Tossing traj :" << trajectories[i]->name << " due to having only 1 redundant point" << std::endl;
+					std::cout << "Tossing traj :" << trajectories[i]->name << " due to having only 1 redundant point\n";
 				}
 			}
 		}
@@ -212,7 +212,7 @@ namespace gestureIKApp {
 				allTrajsLen += trajectories[i]->trajLen;
 			}
 			else {
-				std::cout<<"Nonused trajectory  for " << name << " idx : "<<i <<" of len "<< trajectories[i]->trajLen << std::endl;
+				std::cout<<"Nonused trajectory  for " << name << " idx : "<<i <<" of len "<< trajectories[i]->trajLen << "\n";
 			}
 			if (i < trajectories.size()-1) {//add distance between endpoints
 				stFrame = trajectories[i]->getLastFrame();
@@ -267,9 +267,9 @@ namespace gestureIKApp {
 		}
 		//if (flags[isFastDrawnIDX]) {
 		//double trajLen = 0;
-		//std::cout << "numTrajFrames : " << numTrajFrames << std::endl;
+		//std::cout << "numTrajFrames : " << numTrajFrames << "\n";
 		//for (int i = 0; i < numTrajFrames; ++i) {
-		//	std::cout<<"\ttraj incr "<<i<<" for symbol "<<name<<" based on src idx "<< srcSymbolIDX << ": "<< trajFrameIncrs[i]<<" len by here : "<< trajLen <<"\ttotal len : "<< allTrajsLen << std::endl;
+		//	std::cout<<"\ttraj incr "<<i<<" for symbol "<<name<<" based on src idx "<< srcSymbolIDX << ": "<< trajFrameIncrs[i]<<" len by here : "<< trajLen <<"\ttotal len : "<< allTrajsLen << "\n";
 		//	trajLen += trajFrameIncrs[i];
 		//}
 		//}
@@ -289,42 +289,43 @@ namespace gestureIKApp {
 
 	 //returns true if finished with trajectories
 	bool MyGestSymbol::solve() {
-		if (allTrajsLen == 0) { std::cout << "Error : trying to IK to length 0 trajectory." << std::endl; return true; }
+		if (allTrajsLen == 0) { std::cout << "Error : trying to IK to length 0 trajectory.\n"; return true; }
 		if (flags[isDoneDrawingIDX]) {//perform here so that we cover final point and don't change curFrame until after image is rendered
 			initSymbolIK();
 		}
 		double trajStartLoc = (curTraj > 0) ? trajLens[curTraj - 1] : 0;
-		//std::cout << "Cur Traj Dist for " << name << " in solve : " << curTrajDist << " and start length : " << trajStartLoc << " and end length of this traj : " << trajLens[curTraj] << std::endl;
+		//std::cout << "Cur Traj Dist for " << name << " in solve : " << curTrajDist << " and start length : " << trajStartLoc << " and end length of this traj : " << trajLens[curTraj] << "\n";
+		//below calls IKSolver->solve(), solves IK
 		bool finishedCurTraj = trajectories[curTraj]->setTrkMrkrAndSolve(curTrajDist - trajStartLoc);
 		//save solved newPos from IKSolver
 		IKPoses.push_back(IKSolve->getNewPose());
 		//std::cout << "Frame : " << curFrame << " Name : "<<name<<" CurTrajDist : " << curTrajDist << " for traj of length : " << allTrajsLen << "\tdiff : "<< (curTrajDist - trajStartLoc) <<std::endl;
 		++curFrame;
 		if (flags[debugIDX]) {
-			if (finishedCurTraj) { std::cout << "finishedCurTraj is true for " << name << " #trajs : " << trajLens.size() << " curTraj : " << curTraj << " curTrajDist : allTrajsLen : trajStartLoc " << curTrajDist << " : " << allTrajsLen << " : " << trajStartLoc << "\t frame count : " << curFrame << std::endl; }
+			if (finishedCurTraj) { std::cout << "finishedCurTraj is true for " << name << " #trajs : " << trajLens.size() << " curTraj : " << curTraj << " curTrajDist : allTrajsLen : trajStartLoc " << curTrajDist << " : " << allTrajsLen << " : " << trajStartLoc << "\t frame count : " << curFrame << "\n"; }
 			if (curTrajDist >= allTrajsLen) {
-				std::cout << std::endl;
+				std::cout << "\n";
 				if (!finishedCurTraj) {
-					std::cout << "!!!finishedCurTraj is false for " << name << " #trajs : " << trajLens.size() << " when ending - frame count : " << curFrame << std::endl;
+					std::cout << "!!!finishedCurTraj is false for " << name << " #trajs : " << trajLens.size() << " when ending - frame count : " << curFrame << "\n";
 				}
-				//std::cout << "Return from solve for " << name << " made " << curFrame << " frames.  finishedCurTraj : " << finishedCurTraj << std::endl;
+				//std::cout << "Return from solve for " << name << " made " << curFrame << " frames.  finishedCurTraj : " << finishedCurTraj << "\n";
 				if ((!IKSolve->params->useFixedGlblVel()) && (curFrame % IKSolve->params->fixedClipLen != 0)) {//don't check if not setting to be multiple of 16
-					std::cout << "!!!! Non-mult of specified fixed clip length " << IKSolve->params->fixedClipLen << " : Frame count for symbol : " << name << " count : " << curFrame << std::endl;
+					std::cout << "!!!! Non-mult of specified fixed clip length " << IKSolve->params->fixedClipLen << " : Frame count for symbol : " << name << " count : " << curFrame << "\n";
 				}
-				std::cout << std::endl;
+				std::cout << "\n";
 			}
 		}
 		if (curTrajDist >= allTrajsLen) {
 			//if (flags[debugIDX]) {
-			//	std::cout << std::endl;
+			//	std::cout << "\n";
 			//	if (!finishedCurTraj) {
-			//		std::cout << "!!!finishedCurTraj is false for " << name << " #trajs : " << trajLens.size() << " when ending - frame count : " << curFrame << std::endl;
+			//		std::cout << "!!!finishedCurTraj is false for " << name << " #trajs : " << trajLens.size() << " when ending - frame count : " << curFrame << "\n";
 			//	}
-			//	//std::cout << "Return from solve for " << name << " made " << curFrame << " frames.  finishedCurTraj : " << finishedCurTraj << std::endl;
+			//	//std::cout << "Return from solve for " << name << " made " << curFrame << " frames.  finishedCurTraj : " << finishedCurTraj << "\n";
 			//	if ((!IKSolve->params->useFixedGlblVel()) && (curFrame % IKSolve->params->fixedClipLen != 0)) {//don't check if not setting to be multiple of 16
-			//		std::cout << "!!!! Non-mult of specified fixed clip length " << IKSolve->params->fixedClipLen <<" : Frame count for symbol : " << name << " count : " << curFrame << std::endl;
+			//		std::cout << "!!!! Non-mult of specified fixed clip length " << IKSolve->params->fixedClipLen <<" : Frame count for symbol : " << name << " count : " << curFrame << "\n";
 			//	}
-			//	std::cout << std::endl;
+			//	std::cout << "\n";
 			//}
 			flags[isDoneDrawingIDX] = true;
 			//curFrame = 0;			//reset to 0 so can be used again for setIKSkelPose
@@ -411,7 +412,7 @@ namespace gestureIKApp {
 			if (trajectories[i]->lenMaxSrcDisp > maxDist) { maxDist = trajectories[i]->lenMaxSrcDisp; }	
 		}
 
-		//std::cout << "Max Loc for symbol : " << (this->name) << " with # of trajs : " << trajectories.size() << " and total # of pts : " << totPts << " : (" << buildStrFrmEigV3d(maxLoc) << ") and Min Dist : " << maxDist << std::endl;
+		//std::cout << "Max Loc for symbol : " << (this->name) << " with # of trajs : " << trajectories.size() << " and total # of pts : " << totPts << " : (" << buildStrFrmEigV3d(maxLoc) << ") and Min Dist : " << maxDist << "\n";
 		//find scale amount by using params->IK_drawRad and maxDist - scales all std::vectors by this amount to fit within proscribed circle
 		sclAmt = circleRad / maxDist;
 	}//calcTransformPts
@@ -456,7 +457,7 @@ namespace gestureIKApp {
 		//normal point from elbow to shoulder as arm is extended to ~average position
 		elbowPlaneNorm = (IKSolve->tstRShldrSt - elbowCtrPt).normalized();
 		if (flags[debugIDX]) {
-			std::cout << "In Symbol " << name << " : Right arm reach : " << IKSolve->reach << " center " << buildStrFrmEigV3d(ptrCtrPt) << " elbow center " << buildStrFrmEigV3d(elbowCtrPt) << " and rad of test circle " << IKSolve->params->IK_drawRad << std::endl;
+			std::cout << "In Symbol " << name << " : Right arm reach : " << IKSolve->reach << " center " << buildStrFrmEigV3d(ptrCtrPt) << " elbow center " << buildStrFrmEigV3d(elbowCtrPt) << " and rad of test circle " << IKSolve->params->IK_drawRad << "\n";
 		}
 		(*IKSolve->trkMarkers)[trkedMrkrNames[0]]->setTarPos(ptrCtrPt);
 		(*IKSolve->trkMarkers)[trkedMrkrNames[1]]->setTarPos(elbowCtrPt);

@@ -41,11 +41,11 @@ namespace gestureIKApp {
 	//read info from filename, set params value controlling IK sim and data collection variables
 	void GestIKParser::readGestIKXML(const std::string& _filename, std::shared_ptr<GestIKParams> params) {
 		//_filename includes path
-		std::cout << "Read params from file name : " << _filename << std::endl;
+		std::cout << "Read params from file name : " << _filename << "\n";
 		// Load xml and create Document
 		tinyxml2::XMLDocument _configFile;
 		try { dart::utils::openXMLFile(_configFile, _filename.c_str()); }
-		catch (std::exception const& e) { std::cout << "readGestIKXML: LoadFile  " << _filename << " Fails: " << e.what() << "." << std::endl; return; }
+		catch (std::exception const& e) { std::cout << "readGestIKXML: LoadFile  " << _filename << " Fails: " << e.what() << ".\n"; return; }
 
 		std::string pname;
 		tinyxml2::XMLElement* paramElem = NULL;
@@ -113,7 +113,7 @@ namespace gestureIKApp {
 			numTrajsElem = numTrajsElem->NextSiblingElement("trajectory");
 			for (int j = 0; j < numTrajs; ++j) {
 				tmpSymbolTrajs[j] = numTrajsElem->GetText();
-				//std::cout << "\tRead " << i << "th symbol's " << j << "th trajectory : " << tmpSymbolTrajs[j] << std::endl;
+				//std::cout << "\tRead " << i << "th symbol's " << j << "th trajectory : " << tmpSymbolTrajs[j] << "\n";
 				numTrajsElem = numTrajsElem->NextSiblingElement("trajectory");
 			}
 			trajFileNames.push_back(std::move(tmpSymbolTrajs));
@@ -124,15 +124,15 @@ namespace gestureIKApp {
 	//read in marker locations from xml file _filename
 	void GestIKParser::readMarkerLocsXML(const std::string& _filename, std::shared_ptr<GestIKParams> params) {
 		//_filename includes path
-		std::cout << "Read marker locations from file name : " << _filename << std::endl;
+		std::cout << "Read marker locations from file name : " << _filename << "\n";
 		// Load xml and create Document
 		tinyxml2::XMLDocument _mrkrLocs;
 		try { dart::utils::openXMLFile(_mrkrLocs, _filename.c_str()); }
-		catch (std::exception const& e) { std::cout << "readMarkerLocsXML: LoadFile  " << _filename << " Fails: " << e.what() << "." << std::endl; return; }
+		catch (std::exception const& e) { std::cout << "readMarkerLocsXML: LoadFile  " << _filename << " Fails: " << e.what() << ".\n"; return; }
 
 		std::string bName, offsetStr, mName;
 		tinyxml2::XMLElement* markerElem = _mrkrLocs.FirstChildElement("GestIKSkelMrkrLocs");
-		if (markerElem == NULL) { std::cout << "readMarkerLocsXML:Markers location file " << _filename << " does not contain <GestIKSkelMrkrLocs> as an element." << std::endl;				return; }
+		if (markerElem == NULL) { std::cout << "readMarkerLocsXML:Markers location file " << _filename << " does not contain <GestIKSkelMrkrLocs> as an element.\n";				return; }
 		else {//read in configuration params
 			ElementEnumerator parameters(markerElem, "marker");
 			while (parameters.next()) {

@@ -60,7 +60,7 @@ namespace gestureIKApp {
 		virtual ~markerXMLData() {}
 		
 		friend std::ostream& operator<<(std::ostream& out, markerXMLData& m) {
-			out << "BNodeName : " << m.bnodeName << "\t MarkerName : " << m.markerName << " \tOffset : (" << m.offset(0) << ", "<< m.offset(1) << ", "<< m.offset(2) << ")" << std::endl;
+			out << "BNodeName : " << m.bnodeName << "\t MarkerName : " << m.markerName << " \tOffset : (" << m.offset(0) << ", "<< m.offset(1) << ", "<< m.offset(2) << ")\n";
 			return out;
 		}
 		//vars
@@ -106,7 +106,8 @@ namespace gestureIKApp {
 		inline bool rndHandClr() { return flags[IDX_rndHandClr]; }
 		//save hand and elbow com-related values
 		inline bool saveHandCOMVals() { return flags[IDX_saveHandCOMVals]; }
-
+		//save screenshots - true if either not saving hand com vals or if IDX_alwaysSaveImgs is specified as true
+		inline bool saveScreenShots() { return (!flags[IDX_saveHandCOMVals] || flags[IDX_alwaysSaveImgs]); }
 
 		//whether or not to force training data to be 16 frames long
 		inline bool limitTo16Frames() { return (dataType == FIXED_16); }
@@ -239,9 +240,11 @@ namespace gestureIKApp {
 			//whether or not to use xml-specified output dir
 			IDX_useOutputDir = 10,
 			//whether or not to save COM-related values (hand COM, COM vel, elbow COM, COM vel) in screen coords
-			IDX_saveHandCOMVals = 11;
+			IDX_saveHandCOMVals = 11,
+			//whether or not to always save screen shots - should only be false if saving com values (but not always false - may want both)
+			IDX_alwaysSaveImgs = 12;
 
-		static const int numFlags = 12;
+		static const int numFlags = 13;
 	};
 
 }//namespace gestureIKApp 

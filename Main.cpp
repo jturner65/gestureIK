@@ -66,31 +66,31 @@ int main(int argc, char* argv[]) {
 	window.setWorld(myWorld);
 
 	std::cout << "\nKey Commands:"<< std::endl;
-	std::cout << "\t` : reset camera loc" << std::endl;
-	std::cout << "\tc : screen capture 1 entire cycle of trajectory" << std::endl;
-	std::cout << "\td : debug mode on/off" << std::endl;
-	std::cout << "\tv : markers on/off" << std::endl;
-	std::cout << "\ts : turn current symbol trajectory display on/off." << std::endl;
-	std::cout << "\tb : reload xml control params and load letter trajs." << std::endl;
-	std::cout << std::endl;
+	std::cout << "\t` : reset camera loc\n";
+	std::cout << "\tc : screen capture 1 entire cycle of trajectory\n";
+	std::cout << "\td : debug mode on/off\n";
+	std::cout << "\tv : markers on/off\n";
+	std::cout << "\ts : turn current symbol trajectory display on/off.\n";
+	std::cout << "\tb : reload xml control params and load letter trajs.\n";
+	std::cout << "\n";
 
-	std::cout << "Left click: rotate camera" << std::endl;
-	std::cout << "Right click: pan camera" << std::endl;
-	std::cout << "Shift + Left click: zoom camera" << std::endl;
+	std::cout << "Left click: rotate camera\n";
+	std::cout << "Right click: pan camera\n";
+	std::cout << "Shift + Left click: zoom camera\n";
 
-	std::cout << std::endl;
-	std::cout << "Letter Trajectories : " << std::endl;
-	std::cout << "\ta : capture letter symbols a-z to disk." << std::endl;
-	std::cout << "\tf : test letter symbols a-z following screen cap protocol without saving." << std::endl;
-	std::cout << "\tp : pause between rendering IK Frames for letters." << std::endl;
-	std::cout << "\tShift + <letter> : follow random human trajectory for <letter> " << std::endl;
+	std::cout << "\n";
+	std::cout << "Letter Trajectories : \n";
+	std::cout << "\ta : capture letter symbols a-z to disk.\n";
+	std::cout << "\tf : test letter symbols a-z following screen cap protocol without saving.\n";
+	std::cout << "\tp : pause between rendering IK Frames for letters.\n";
+	std::cout << "\tShift + <letter> : follow random human trajectory for <letter> \n";
 
-	std::cout << std::endl;
-	std::cout << "Sample Trajectories : " << std::endl;			//(debug mechanism) 
-	std::cout << "\t1,2,3,4 : follow trajectory for sample objects : circle, triangle, square, star." << std::endl;
-	std::cout << "\tr : restart current sample object with randomization." << std::endl;
-	std::cout << "\tw : capture sample symbols Triangle/Square/Star to disk." << std::endl;
-	std::cout << "\ty : reset sample object endpoints to non-random locations." << std::endl;
+	std::cout << "\n";
+	std::cout << "Sample Trajectories : \n";			//(debug mechanism) 
+	std::cout << "\t1,2,3,4 : follow trajectory for sample objects : circle, triangle, square, star.\n";
+	std::cout << "\tr : restart current sample object with randomization.\n";
+	std::cout << "\tw : capture sample symbols Triangle/Square/Star to disk.\n";
+	std::cout << "\ty : reset sample object endpoints to non-random locations.\n";
 
 	window.initCustWindow("Gesture IK");
 	glutMainLoop();
