@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<letterData>
+   <letter>g</letter>
+   <symbolExampleCounts>6</symbolExampleCounts>
+   <symbolType>1</symbolType>
+   <symbols>
+      <symbol>
+         <trajCounts>1</trajCounts>
+         <trajectory>D:/dart5-1_cs4496/dart/apps/gestureIK/jtVideoLetters/ltr_g/ltr_g_cpy_0_trj_0.csv</trajectory>
+      </symbol>
+      <symbol>
+         <trajCounts>1</trajCounts>
+         <trajectory>D:/dart5-1_cs4496/dart/apps/gestureIK/jtVideoLetters/ltr_g/ltr_g_cpy_1_trj_0.csv</trajectory>
+      </symbol>
+      <symbol>
+         <trajCounts>1</trajCounts>
+         <trajectory>D:/dart5-1_cs4496/dart/apps/gestureIK/jtVideoLetters/ltr_g/ltr_g_cpy_2_trj_0.csv</trajectory>
+      </symbol>
+      <symbol>
+         <trajCounts>1</trajCounts>
+         <trajectory>D:/dart5-1_cs4496/dart/apps/gestureIK/jtVideoLetters/ltr_g/ltr_g_cpy_3_trj_0.csv</trajectory>
+      </symbol>
+      <symbol>
+         <trajCounts>1</trajCounts>
+         <trajectory>D:/dart5-1_cs4496/dart/apps/gestureIK/jtVideoLetters/ltr_g/ltr_g_cpy_4_trj_0.csv</trajectory>
+      </symbol>
+      <symbol>
+         <trajCounts>1</trajCounts>
+         <trajectory>D:/dart5-1_cs4496/dart/apps/gestureIK/jtVideoLetters/ltr_g/ltr_g_cpy_5_trj_0.csv</trajectory>
+      </symbol>
+   </symbols>
+</letterData>
