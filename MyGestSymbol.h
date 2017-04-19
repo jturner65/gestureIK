@@ -116,6 +116,8 @@ namespace gestureIKApp {
 		bool buildRandomSymbol(std::shared_ptr<MyGestSymbol> _base, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast);
 		//load this symbol's raw trajectories and build MyGestTrajs for each trajectory - build at symbol level, not trajectory level
 		void buildTrajsFromFile(std::vector<std::string>& trajFileNames, std::shared_ptr<MyGestSymbol> _this);
+		//load this symbol's raw trajectories using x,y,velx,vely based xml files and build MyGestTrajs for each trajectory - build at symbol level, not trajectory level
+		void buildVelTrajsFromFile(std::vector< std::string >& trajFileNames, std::shared_ptr<MyGestSymbol> _thisSP);
 		//set the per-frame trajectory change list
 		void buildTrajFrameIncrs();
 		//find average x-y location of trajectory points in component trajectories of this symbol, and closest and furthest points from average. - these will be used to map to "drawing plane" in ik sim world frame 

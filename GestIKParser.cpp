@@ -85,27 +85,32 @@ namespace gestureIKApp {
 
 		tinyxml2::XMLElement* numSymbolElem = NULL;
 		numSymbolElem = configElement->FirstChildElement("symbolExampleCounts");
-		if (numSymbolElem == NULL) {						std::cout << "<symbolExampleCounts> missing in file " << _ltr->fileName << "."<< std::endl; return; }
+		if (numSymbolElem == NULL) { std::cout << "<symbolExampleCounts> missing in file " << _ltr->fileName << "." << std::endl; return; }
 		_ltr->numFileSymbols = getValueInt(configElement, "symbolExampleCounts");
+
+		tinyxml2::XMLElement* symbolType = NULL;
+		symbolType = configElement->FirstChildElement("symbolType");
 
 		tinyxml2::XMLElement* symbolsElem = NULL;
 		symbolsElem = configElement->FirstChildElement("symbols");
-		if (symbolsElem == NULL) {						std::cout << "<symbols> Element missing in file " << _ltr->fileName << "."<< std::endl; return; }
-
+		if (symbolsElem == NULL) { std::cout << "<symbols> Element missing in file " << _ltr->fileName << "." << std::endl; return; }
 		tinyxml2::XMLElement* firstSymbolElem = NULL;
+
 		firstSymbolElem = symbolsElem->FirstChildElement("symbol");
-		if (firstSymbolElem == NULL) { std::cout << "<symbol> Element missing in <symbols> tag in file " << _ltr->fileName << "."<< std::endl; return; }
-		readGestSymbolsXML(_ltr, firstSymbolElem);
+		if (firstSymbolElem == NULL) { std::cout << "<symbol> Element missing in <symbols> tag in file " << _ltr->fileName << "." << std::endl; return; }
+
+		std::vector< std::vector< std::string > > trajFileNames = readGestSymbolsXML(_ltr, firstSymbolElem);
+		_ltr->buildFileSymbolTrajs(trajFileNames, symbolType != NULL);
 
 	}//readGestLetterXML
 
-	void GestIKParser::readGestSymbolsXML(std::shared_ptr<MyGestLetter> _ltr, tinyxml2::XMLElement* _xmlElement) {
+	std::vector< std::vector< std::string > > GestIKParser::readGestSymbolsXML(std::shared_ptr<MyGestLetter> _ltr, tinyxml2::XMLElement* _xmlElement) {
 		std::vector< std::vector< std::string > > trajFileNames;			//all trajectory file names for all symbols of this ltr
 		tinyxml2::XMLElement* symElem = _xmlElement;
 		for (int i = 0; i < _ltr->numFileSymbols; ++i) {
 			tinyxml2::XMLElement* numTrajsElem = NULL;
 			numTrajsElem = symElem->FirstChildElement("trajCounts");
-			if (numTrajsElem == NULL) { std::cout << "<trajCounts> missing in file " << _ltr->fileName << " symbol def # "<<i<<"."<< std::endl; return; }
+			if (numTrajsElem == NULL) { std::cout << "<trajCounts> missing in file " << _ltr->fileName << " symbol def # "<<i<<"."<< std::endl; return trajFileNames; }
 
 			int numTrajs = getValueInt(symElem, "trajCounts");
 			std::vector< std::string > tmpSymbolTrajs;
@@ -119,8 +124,12 @@ namespace gestureIKApp {
 			trajFileNames.push_back(std::move(tmpSymbolTrajs));
 			symElem = symElem->NextSiblingElement("symbol");
 		}//for each symbol
-		_ltr->buildFileSymbolTrajs(trajFileNames);
+		//_ltr->buildFileSymbolTrajs(trajFileNames, false);
+		return trajFileNames;
 	}
+
+
+
 	//read in marker locations from xml file _filename
 	void GestIKParser::readMarkerLocsXML(const std::string& _filename, std::shared_ptr<GestIKParams> params) {
 		//_filename includes path

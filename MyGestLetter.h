@@ -67,7 +67,7 @@ namespace gestureIKApp {
 	//collection of 1 or more trajectories making up a symbol
 	class MyGestLetter {
 	public:
-		MyGestLetter(const std::string& _ltrName, unsigned int _ltrNum);
+		MyGestLetter(const std::string& _ltrName, unsigned int _ltrNum, std::shared_ptr<gestureIKApp::IKSolver> _slv);
 		virtual ~MyGestLetter();
 
 		//data from matlab will be 3 cols per point : (x,y, timing data), where timing is how long between consecutive points in milliseconds.
@@ -79,7 +79,7 @@ namespace gestureIKApp {
 			uni = std::make_shared< std::uniform_int_distribution<int> >(0, (numFileSymbols - 1));
 		}
 		//build the symbols that are built from file descriptions
-		void buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames);
+		void buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames, bool useVel);
 		//generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present
 		void buildRandExSymbolTrajs(int _totNumDesSymb);
 		//build a random symbol and solve all IK trajectories
@@ -89,7 +89,7 @@ namespace gestureIKApp {
 		std::shared_ptr<gestureIKApp::MyGestSymbol> buildRandSymbol(int idx);
 
 		//set solver for this trajectory
-		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv) { IKSolve = _slv; }
+		//void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv) { IKSolve = _slv; }
 		////set symbol to draw to be random entry in symbols list
 		//void setRandSymbolIdx(int idx, bool disp);
 		//turn on/off debug

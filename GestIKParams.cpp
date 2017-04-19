@@ -44,7 +44,7 @@ namespace gestureIKApp {
 		trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1), trajRandCtrStdScale_X(1), trajRandCtrStdScale_Y(1), trajRandCtrStdScale_Z(1),
 		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), rnd_camThet(.35), rnd_camZoom(.05), rnd_camTrans(.25), rnd_headClrBnd(.2), rnd_headDimPct(.1), rnd_handClrBnd(.2),rnd_handDimPct(.1),
 		win_Width(800), win_Height(800), numTotSymPerLtr(0), fixedClipLen(16), mBlurPreFrames(2), mBlurPostFrames(2),  origZoom(.65f),	
-		dataType(MULT_8), bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""), baseOutDir(""), markerXMLFileName(""),
+		dataType(VAR_VEL), bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""), baseOutDir(""), srcLtrDir(""), markerXMLFileName(""),
 		flags(numFlags, false)
 	{
 		std::cout << "GestIK params ctor"<<std::endl;
@@ -103,6 +103,7 @@ namespace gestureIKApp {
 		if (_name.compare("origZoom") == 0) { origZoom = stof(s);			return; }
 		//strings
 		if (_name.compare("baseOutDir") == 0) { baseOutDir = std::string(s);	return; }
+		if (_name.compare("srcLtrDir") == 0) { srcLtrDir = std::string(s);	return; }
 		if (_name.compare("markerXMLFileName") == 0) { markerXMLFileName = std::string(s);	return; }
 		//boolean
 		//std::string sDest(s);
@@ -189,14 +190,16 @@ namespace gestureIKApp {
 
 		origZoom = .65f;
 		
-		dataType = MULT_8;
+		dataType = VAR_VEL;
 
 		bkgR = 1.0;
 		bkgG = 1.0;
 		bkgB = 1.0;
 		bkgA = 1.0;
-
-		baseOutDir = "";
+		//default output directory 
+		baseOutDir = DART_ROOT_PATH"apps/gestureIK/frames/";
+		//default is base directory - ALWAYS APPENDS DART ROOT PATH when consumed so directory does not need to be specified within xml file
+		srcLtrDir = "apps/gestureIK/sourceLetters/";
 		markerXMLFileName = "";
 		
 		for (int i = 0; i < numFlags; ++i) { flags[i] = false; }
@@ -331,6 +334,7 @@ namespace gestureIKApp {
 		out << "\t| bkg clr(rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")\n";
 		out << "Motion Blur : " << (p.flags[p.IDX_useMotionBlur] ? "True" : "False");
 		if (p.flags[p.IDX_useMotionBlur]) { 	out << " : Preframes used to build blur : " << (p.mBlurPreFrames) << " : Postframes used to build blur : " << (p.mBlurPostFrames) << "\n";	}
+		out << "\tUse custom directory for source trajectories : " << (p.flags[p.IDX_useCustSrcLtrs] ? "True : Dir Specified : " : "False") << (p.flags[p.IDX_useCustSrcLtrs] ? p.getSrcLtrsPath() : "") << "\n";
 		out << "\tUse XML-Specified Output Dir : " << (p.flags[p.IDX_useOutputDir] ? "True : Dir Specified : " : "False") << (p.flags[p.IDX_useOutputDir] ? p.baseOutDir : "") << "\n";
 		out << "\tFile to use for marker locations specification : " << p.markerXMLFileName << "\n\n";
 		out << "Always Save Screenshots : " << (p.flags[p.IDX_alwaysSaveImgs] ? "True" : "False") << "\n\n";

@@ -113,12 +113,22 @@ namespace gestureIKApp {
 		inline bool limitTo16Frames() { return (dataType == FIXED_16); }
 		//whether or not to use fixed global velocity for all trajectories
 		inline bool useFixedGlblVel() { return (dataType == CONST_VEL); }
+		//whether or not to use variable velocity information from xml for all trajectories
+		inline bool useVarVelocity() { return (dataType == VAR_VEL); }
+
+		//!!always relative to DART_ROOT_PATH
+		inline std::string getSrcLtrsPath(){ 
+			std::stringstream ss;
+			ss << DART_ROOT_PATH << (flags[IDX_useCustSrcLtrs] ? srcLtrDir : "apps/gestureIK/sourceLetters/");
+			return ss.str();
+		}
+
 		void resetValues();
 		//set current date as date-based file name offset
 		void setDateFNameOffset();
 
-		//returns base output directory, if used, otherwise default relative path set in GestGlbls - must have '/' as final char
-		inline std::string getOutputBaseDir() { 	return (flags[IDX_useOutputDir] ? baseOutDir : framesFilePath);	}
+		//returns base output directory, if used, otherwise default relative path set in GestGlbls - must have '/' as final char - does not assume 
+		inline std::string getOutputBaseDir() { 	return (flags[IDX_useOutputDir] ? baseOutDir : DART_ROOT_PATH"apps/gestureIK/frames/");	}
 		//returns directory letters are stored in
 		std::string getDataOutputDir(bool isCSV);
 
@@ -213,6 +223,8 @@ namespace gestureIKApp {
 	private :
 		//base output directory to write results in, if not default
 		std::string baseOutDir;
+		//directory where source trajectory csvs are located
+		std::string srcLtrDir;
 
 		std::vector<bool> flags;									//various boolean flags used to drive GestIK
 		static const int
@@ -242,9 +254,11 @@ namespace gestureIKApp {
 			//whether or not to save COM-related values (hand COM, COM vel, elbow COM, COM vel) in screen coords
 			IDX_saveHandCOMVals = 11,
 			//whether or not to always save screen shots - should only be false if saving com values (but not always false - may want both)
-			IDX_alwaysSaveImgs = 12;
+			IDX_alwaysSaveImgs = 12,
+			//whether or not to use custom location for source csv files describing seed trajectories
+			IDX_useCustSrcLtrs = 13;
 
-		static const int numFlags = 13;
+		static const int numFlags = 14;
 	};
 
 }//namespace gestureIKApp 

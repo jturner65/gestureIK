@@ -65,8 +65,11 @@ namespace gestureIKApp {
 		MyGestTraj(const std::string& _fname,std::shared_ptr<gestureIKApp::MyGestSymbol> _p, int _num);
 		virtual ~MyGestTraj();
 
-		//load this trajectory's csv trajectory file
+		//load this trajectory's csv trajectory file - expected to be x,y,millis
 		void readTrajFile();
+		//load this trajectory's csv trajectory file - expected to be x,y,velX,velY
+		void readTrajVelFile();
+
 		//set tracked marker trajectory points used by solver
 		bool setTrkMrkrAndSolve(double lenFromStTraj);
 		//build IK trajectory from matalb data
@@ -136,6 +139,7 @@ namespace gestureIKApp {
 		eignVecVecTyp trajTargets;			//vector(all frames) of vector per target point of trajectory values - each value is a Eigen::Vector3d 
 
 		eignVecTyp srcTrajData,					//source trajectory points in matlab frame - need to be transformed
+			srcTrajVelData,						//source trajectory velocity in matlab image frame - only used if present
 			srcTrajDispVecs,				//source trajectory displacement vectors from avg loc - scale by scale amt and add to IKSolver->drawCrclCtr to find new points
 			convTrajPts,				//converted trajectory points
 			debugTrajPts;				//for debugging only

@@ -46,7 +46,7 @@
 namespace gestureIKApp {
 	MyGestTraj::MyGestTraj(const std::string& _fname, std::shared_ptr<gestureIKApp::MyGestSymbol> _p, int _num):
 		IKSolve(nullptr), parentSymbol(_p), avgLoc(0,0,0), trajLen(0), lenMaxSrcDisp(0), ctrPoint(0,0,0),
-		filename(_fname), name("tmp"),trajTargets(), srcTrajData(), srcTrajDispVecs(), convTrajPts(), debugTrajPts(), srtTrajTiming(), trajPtDistFromSt(),
+		filename(_fname), name("tmp"),trajTargets(), srcTrajData(), srcTrajVelData(), srcTrajDispVecs(), convTrajPts(), debugTrajPts(), srtTrajTiming(), trajPtDistFromSt(),
 		flags(numFlags, false) 
 	{
 		std::stringstream ss;
@@ -481,6 +481,51 @@ namespace gestureIKApp {
 		//cout << "Finished Reading :" << filename << " trajectory file.   srcTrajData holds : "<< srcTrajData.size()<<" points."<< std::endl;
 		//cout << "\n";
 	}//readTrajFile
+
+	 //trajectory file expected to have 1 column for every tracked marker, 1 row for every sample.  needs to be resampled for frames/playback speed (?)
+	 //srcTrajData holds x,y,velX,velY data mapped to z,y and separate velocity vector array.
+	void MyGestTraj::readTrajVelFile() {//read trajectory data from filename for this trajectory
+		std::cout << "Now Reading :" << filename << " trajectory file \n";
+		srcTrajData.clear();
+		srcTrajVelData.clear();
+		std::ifstream  trajData(filename);
+		std::string line, cell;
+		Eigen::Vector3d dat(0, 0, 0), velDat(0,0,0), tmpDat(0, 0, 0), tmpVelDat(0,0,0), lastDat(0, 0, 0);
+		int i = 0;
+		//int lastTime = 0;
+		std::vector<double> tmpData;
+		while (std::getline(trajData, line)) {
+			int idx = 0;
+			tmpData.clear();
+
+			//Eigen::Vector3d dat(0, 0, 0), tmpDat(0,0,0), lastDat(0,0,0);
+			std::stringstream  ss(line);
+			while (std::getline(ss, cell, ',')) {
+				tmpData.push_back(stod(cell));
+			}
+			dat << 0, tmpData[1], tmpData[0];
+			velDat << 0, tmpData[3], tmpData[2];
+			//NOTE Trajectory timing info from matlab includes time span between ending and beginning trajectories.  might need to normalize for this
+			srcTrajData.push_back(std::move(dat));
+			srcTrajVelData.push_back(std::move(velDat));
+			//debug output below : 
+			if (flags[debugIDX]) {
+				tmpDat << 0, dat(1), dat(2);
+				tmpVelDat << 0, velDat(1), velDat(2);
+				std::cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastDat).norm());
+				std::cout << "\tvelocity:" << buildStrFrmEigV3d(tmpVelDat) << " speed : "<< tmpVelDat.norm()<< "\n";
+				lastDat << tmpDat;
+			}
+		}
+
+
+
+		flags[loadedIDX] = true;
+		//cout << "Finished Reading :" << filename << " trajectory file.   srcTrajData holds : "<< srcTrajData.size()<<" points.";
+		//cout << "\n";
+	}//readTrajFile
+	
+
 
 	std::ostream& operator<<(std::ostream& out, MyGestTraj& traj) {
 		out << "Traj name " << traj.name << "\t# src traj points : " << traj.srcTrajData.size() << "\n";

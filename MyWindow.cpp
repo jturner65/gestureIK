@@ -328,8 +328,8 @@ void MyWindow::buildLetterList() {
 	//TODO use xml-specified list of letters instead of sequence, to enable specific letters to be generated (?)
 	for (unsigned int i = 0; i < 26; ++i) {
 		std::string c(1, i + 97);
-		letters.push_back(std::make_shared<MyGestLetter>(c, i));
-		letters[i]->setSolver(IKSolve);
+		letters.push_back(std::make_shared<MyGestLetter>(c, i, IKSolve));
+		//letters[i]->setSolver(IKSolve);
 		GestIKParser::readGestLetterXML(letters[i]);
 		std::cout << "Made letter : " << (*letters[i]) << "\n";
 	}

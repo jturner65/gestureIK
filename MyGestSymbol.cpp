@@ -136,6 +136,24 @@ namespace gestureIKApp {
 		buildTrajComponents();
 	}//readSymbolFile
 
+	 //list of trajectory file names composing this symbol
+	void MyGestSymbol::buildVelTrajsFromFile(std::vector< std::string >& trajFileNames, std::shared_ptr<MyGestSymbol> _thisSP) {
+		_self = _thisSP;
+		trajectories.clear();
+		for (int i = 0; i < trajFileNames.size(); ++i) {
+			trajectories.push_back(std::make_shared<MyGestTraj>(trajFileNames[i], _thisSP, i));
+			trajectories[i]->setSolver(IKSolve);
+			trajectories[i]->readTrajVelFile();
+			//NOTE Trajectory timing info from matlab includes time span between ending and beginning trajectories.  might need to normalize for this
+		}
+		//all trajectories read by here, and each traj's srcTrajData is set
+		//find average, min and max values in matab space for all and set all trajs with info - need this to project symbol in front of char for IK
+		calcTransformPts();
+		//build trajectories and linking trajectories
+		buildTrajComponents();
+	}//readSymbolFile
+
+
 	//build all trajectory components for this symbol
 	void MyGestSymbol::buildTrajComponents() {
 		//now remap all trajectories to be proscribed within a circle of specified radius from certain point around specified normal from center point to shoulder
@@ -242,22 +260,27 @@ namespace gestureIKApp {
 		if (IKSolve->params->useFixedGlblVel()) {//make all trajectories fixed per-frame speed
 			trajIncrAmt = IKSolve->params->trajDesiredVel;
 			numTrajFrames = (int)(ceil(allTrajsLen / trajIncrAmt))+1;
+
 		}
 		else if (IKSolve->params->limitTo16Frames()){
-				numTrajFrames = 16;
-				trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
+			numTrajFrames = 16;
+			trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
 		}
-		else {//calc variable length multiple of 8, greater than 16 frame clips
-				double trajAvgMult = (flags[isFastDrawnIDX] ? IKSolve->params->IK_fastTrajMult : 1.0);		//alternate between slow and fast trajs
-				trajIncrAmt = (trajAvgMult * IKSolve->params->trajDesiredVel);
-				numTrajFrames = (int)(allTrajsLen / trajIncrAmt);
-				if (numTrajFrames < 16) {
-					numTrajFrames = 16;
-				}
-				//clip to nearest mult of IKSolve->params->fixedClipLen
-				int numSegMult = (int)((numTrajFrames + (IKSolve->params->fixedClipLen - 1)) / IKSolve->params->fixedClipLen);
-				numTrajFrames = numSegMult * IKSolve->params->fixedClipLen;
-				trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
+		else if (IKSolve->params->useVarVelocity()) {
+			//use delta arclength specified within xml letter trajectory description - different displacement for every sample.  randomization should scale time for total letter drawing (so all del arclength values should be scaled equally)
+
+		}
+		else {//calc variable length multiple of 8, greater than 16 frame clips DEPRECATED
+			double trajAvgMult = (flags[isFastDrawnIDX] ? IKSolve->params->IK_fastTrajMult : 1.0);		//alternate between slow and fast trajs
+			trajIncrAmt = (trajAvgMult * IKSolve->params->trajDesiredVel);
+			numTrajFrames = (int)(allTrajsLen / trajIncrAmt);
+			if (numTrajFrames < 16) {
+				numTrajFrames = 16;
+			}
+			//clip to nearest mult of IKSolve->params->fixedClipLen
+			int numSegMult = (int)((numTrajFrames + (IKSolve->params->fixedClipLen - 1)) / IKSolve->params->fixedClipLen);
+			numTrajFrames = numSegMult * IKSolve->params->fixedClipLen;
+			trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
 		}
 		//TODO build avg increments based on desired trajectory velocity profile
 		//scale amount by curavature? (slower at angles, faster at straights) scale by gravity? (faster going down, slower going up)

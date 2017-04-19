@@ -1,5 +1,11 @@
 <?xml version="1.0" ?>
 <GestIKParams version="1.0">
+<!-- src letters location, relative to DART_ROOT - needs trailing '/'-->
+<!-- defaults to apps/gestureIK/sourceLetters/ - only used if IDX_useCustSrcLtrs == true -->
+	<parameter>
+		<name>srcLtrDir</name>
+		<val>apps/gestureIK/jtVideoLetters/</val>   
+	</parameter>
 <!--ik solver params -->
 	<parameter>
 		<name>IK_alpha</name>
@@ -142,7 +148,7 @@
 		<val>0.4</val>
 	</parameter>
 <!--END random camera and skeleton values -->
-<!--Set dataType 0 == const vel for all ltrs, 1 == fixed 16, 2 == mult8 train/test -->
+<!--Set dataType 0 == const vel for all ltrs, 1 == fixed 16, 2 == src file velocity train/test -->
 	<parameter>
 		<name>dataType</name>
 		<val>0</val> 
@@ -177,6 +183,12 @@
 		<name>fixedClipLen</name>
 		<val>16</val>
 	</parameter>
+<!-- whether or not to use custom location for csv files describing configuration of source letters -->
+	<parameter>
+		<name>IDX_useCustSrcLtrs</name>
+		<val>FALSE</val> 
+	</parameter>
+<!-- TODO -->
 	<parameter>
 		<name>IDX_useLeftHand</name>
 		<val>FALSE</val> 

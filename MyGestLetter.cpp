@@ -45,13 +45,15 @@
 #include "apps/gestureIK/IKSolver.h"
 
 namespace gestureIKApp {
-
-	MyGestLetter::MyGestLetter(const std::string& _ltrName, unsigned int _ltrNum):IKSolve(nullptr), 
+	//_ltrName is character of letter, _ltrNum is 0-25
+	MyGestLetter::MyGestLetter(const std::string& _ltrName, unsigned int _ltrNum, std::shared_ptr<gestureIKApp::IKSolver> _slv):IKSolve(_slv),
 		curIDX(_ltrNum), numFileSymbols(0), numTotSymbols(0), srcSymbols(0), exampleSymbols(0),
 		curSymbol(nullptr), ltrName(_ltrName), fileName(""), uni(nullptr), flags(numFlags)
 	{
+		std::cout << "Src Ltrs path : " << IKSolve->params->getSrcLtrsPath() << "\n";
 		std::stringstream ss;
-		ss << lettersPath << "ltr_" << ltrName << "/ltr_" << ltrName << ".xml";
+		//ss << lettersPath << "ltr_" << ltrName << "/ltr_" << ltrName << ".xml";
+		ss << IKSolve->params->getSrcLtrsPath() << "ltr_" << ltrName << "/ltr_" << ltrName << ".xml";
 		//name of xml file holding instances of this letter
 		fileName = ss.str();
 	}
@@ -71,7 +73,7 @@ namespace gestureIKApp {
 	}// buildSymbolName
 	//symbol file describing the trajectories that make up this symbol - called from xml parser
 	//per symbol list of trajectory file names
-	void MyGestLetter::buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames) {
+	void MyGestLetter::buildFileSymbolTrajs(std::vector< std::vector< std::string > >& trajFileNames, bool useVel) {
 		exampleSymbols.clear();
 		srcSymbols.clear();
 		//std::stringstream ss;
@@ -83,7 +85,8 @@ namespace gestureIKApp {
 			exampleSymbols.push_back(std::allocate_shared<MyGestSymbol>(Eigen::aligned_allocator <MyGestSymbol>(), IKSolve, name, i));
 			//set shared ptr ref to self
 			exampleSymbols[i]->setSolver(IKSolve);
-			exampleSymbols[i]->buildTrajsFromFile(trajFileNames[i], exampleSymbols[i]);
+			if (useVel) {				exampleSymbols[i]->buildVelTrajsFromFile(trajFileNames[i], exampleSymbols[i]);			}
+			else {						exampleSymbols[i]->buildTrajsFromFile(trajFileNames[i], exampleSymbols[i]);			}
 			//srcSymbols are only source trajectory symbols
 			srcSymbols.push_back(exampleSymbols[i]);
 		}
@@ -91,6 +94,8 @@ namespace gestureIKApp {
 		//build distribution of potential symbols to draw from to find random symbol idx to ik to 
 		buildUniDist();
 	}//readLetterFile
+
+
 
 	//generate random symbols from the file-based symbols already read in so that there are _totNumDesSymb present - note this is total desired, so # to add is _totNumDesSymb - numFileSymbols
 	//TODO use this to only hold debug/example symbols intended to illustrate distributions - all actual symbols are generated on the fly

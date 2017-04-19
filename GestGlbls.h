@@ -74,10 +74,10 @@ namespace gestureIKApp {
 	//const_vel uses the same per-frame displacement for all trajectories of all letters - duration can be any value
 	//FIXED_16 uses training data that is restricted to 16 frames, and multiple of 8 (but no less than 16) frame testing data
 	//mult_8 uses multiple of 8 (but no less than 16) frame training and testing data
-	enum DataType { CONST_VEL, FIXED_16, MULT_8};
-	static const char* DataType2str[] = { "Constant Velocity", "16-frame", "Mult-8 Train, Mult-8 Test" };
-	//static const char* DataType2strAbbrev[] = { "CONST_VEL", "FIXED_16", "MULT_8" };
-	static const char* DataType2strAbbrev[] = { "CVEL", "F16", "ML8" };
+	enum DataType { CONST_VEL, FIXED_16, VAR_VEL};
+	static const char* DataType2str[] = { "Constant Velocity", "16-frame", "Velocity from XML" };
+	//static const char* DataType2strAbbrev[] = { "CONST_VEL", "FIXED_16", "VAR_VEL" };
+	static const char* DataType2strAbbrev[] = { "CVEL", "F16", "VARVEL" };
 
 	//////////////////////////
 	//for randomization stuff
@@ -108,9 +108,9 @@ namespace gestureIKApp {
 	//location of generated(temporary) csv files
 	static std::string const csvFilePath = DART_ROOT_PATH"apps/gestureIK/csvs/";
 	//location of frame captures
-	static std::string const framesFilePath = DART_ROOT_PATH"apps/gestureIK/frames/";
+	//static std::string const framesFilePath = DART_ROOT_PATH"apps/gestureIK/frames/";
 	//location of BPL letters
-	static std::string const lettersPath = DART_ROOT_PATH"apps/gestureIK/sourceLetters/";
+	//static std::string const lettersPath = DART_ROOT_PATH"apps/gestureIK/sourceLetters/";
 
 	//names of generated trajectories - TODO replace with reading in from XML file
 	static std::array<std::string, 4> const trajNames{ "circle", "triangle" , "square", "star" };
