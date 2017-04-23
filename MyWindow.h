@@ -130,6 +130,9 @@ public:
 	//open index file for current data collection, either training or testing idx
 	void openIndexFile(std::ofstream& strm, bool isCSV, bool append);
 
+	//begin capturing all examples of alphabet
+	bool startCapture();
+
 	virtual void keyboard(unsigned char _key, int _x, int _y);
 	//regenerate sample object trajectories with or without randomization
 	void regenerateSampleData(bool rand);
@@ -150,7 +153,7 @@ public:
 		mBackground[3] = IKSolve->params->bkgA;
 		//set initial camera values
 		setCameraVals(origTrackBallQ, IKSolve->params->origZoom, origMTrans);
-		//set values used to map out trajectories to draw - needs to be owned by each symbol
+		//set values used to map out trajectories to draw - needs to be owned by each symbol - uses default center
 		IKSolve->setSampleCenters();
 		std::cout << "Per Frame ptr distance travelled calculated : " << IKSolve->params->trajDesiredVel << "\n";
 	}

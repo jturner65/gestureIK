@@ -45,7 +45,7 @@
 
 namespace gestureIKApp {
 	MyGestTraj::MyGestTraj(const std::string& _fname, std::shared_ptr<gestureIKApp::MyGestSymbol> _p, int _num):
-		IKSolve(nullptr), parentSymbol(_p), avgLoc(0,0,0), trajLen(0), lenMaxSrcDisp(0), ctrPoint(0,0,0),
+		IKSolve(_p->IKSolve), parentSymbol(_p), avgLoc(0,0,0), trajLen(0), lenMaxSrcDisp(0), ctrPoint(0,0,0),
 		filename(_fname), name("tmp"),trajTargets(), srcTrajData(), srcTrajVelData(), srcTrajDispVecs(), convTrajPts(), debugTrajPts(), srtTrajTiming(), trajPtDistFromSt(),
 		flags(numFlags, false) 
 	{
@@ -122,13 +122,16 @@ namespace gestureIKApp {
 		return finCurTraj;
 	}//setTrkMrkrAndSolve
 
+	//find displacement vectors for points in image/matlab space from _avgLoc - used to rebuild trajectories
+	//results still in image/matlab space
 	void MyGestTraj::calcSrcTrajDispVecs(const Eigen::Ref<const Eigen::Vector3d>& _avgLoc) {
 		avgLoc << _avgLoc;
+		//vector displacements of all points from avg location
 		srcTrajDispVecs.clear();
 		double maxSqDisp = -99999;
 		Eigen::Vector3d tmp(0, 0, 0);
 		for (int j = 0; j < srcTrajData.size(); ++j) {
-			tmp << 0, (srcTrajData[j](1) - avgLoc(1)), (srcTrajData[j](2) - avgLoc(2));			//only z-y coords since this is the format from the matlab data
+			tmp << 0, (srcTrajData[j](1) - avgLoc(1)), (srcTrajData[j](2) - avgLoc(2));			//only z-y coords since this is the format from the image/matlab data and we are using the zy plane to draw in
 			double sqLen = tmp.squaredNorm();
 			if (sqLen > maxSqDisp) {	maxSqDisp = sqLen;	}
 			srcTrajDispVecs.push_back(std::move(tmp));
@@ -136,12 +139,12 @@ namespace gestureIKApp {
 		lenMaxSrcDisp = sqrt(maxSqDisp);
 	}//calcSrcTrajDispVecs
 
-	//return vector of points from srcTrajData transformed from matlab space to IK pointer space
-	eignVecTyp MyGestTraj::convSrcTrajToGestTraj() {
+	//return vector of points from srcTrajData transformed from matlab space to IK pointer space (in z-y plane) - take all displacement vectors and multiply by sclAmt
+	eignVecTyp MyGestTraj::convSrcTrajToGestTraj(double sclAmt) {
 		eignVecTyp res(0);
 		for (int i = 0; i < srcTrajData.size(); ++i) {//1 frame of trajtarget for every src traj value
 			Eigen::Vector3d tmp(ctrPoint);
-			tmp += (parentSymbol->sclAmt * srcTrajDispVecs[i]);
+			tmp += (sclAmt * srcTrajDispVecs[i]);
 			res.push_back(std::move(tmp));
 		}
 		return res;
@@ -151,8 +154,8 @@ namespace gestureIKApp {
 	void MyGestTraj::buildTrajFromData(bool fileInit, eignVecTyp& _Initpts) {
 		ctrPoint << parentSymbol->ptrCtrPt;
 		if (fileInit) {//if file init then ignore _initpts and instead transform points read in from file to be bounded by a circle at a given point with a specific radius on a plane with a particular normal
-			//scales around center point and using max dist point inscribed on a circle
-			convTrajPts = convSrcTrajToGestTraj();
+			//scales around center point and using max dist point inscribed on a circle - projects on plane parallel to z-y plane
+			convTrajPts = convSrcTrajToGestTraj(parentSymbol->sclAmt);
 			trajLen = calcTrajLength(convTrajPts);
 			trajPtDistFromSt.clear();
 			trajPtDistFromSt = calcDistsFromStart(convTrajPts);
@@ -267,7 +270,7 @@ namespace gestureIKApp {
 		perPtSpace = trajLen / convTrajPts.size();
 	}//setPts	
 
-	 //subdivide, tuck, respace, resample, etc. pts of this curve
+	 //subdivide, tuck, respace, resample, etc. pts of this curve - smooth, equal spaced points
 	void MyGestTraj::processPts(int numPts) {
 		for (int i = 0; i < IKSolve->params->trajNumReps; ++i) {
 			debugTrajPts = procPts(_tuck, debugTrajPts, .5f, flags[closeTrajIDX]);
@@ -283,7 +286,7 @@ namespace gestureIKApp {
 		ptsDistFromSt = calcDistsFromStart(debugTrajPts);
 		debugTrajPts = resample(debugTrajPts, debugLen, ptsDistFromSt, numPts, flags[closeTrajIDX]);
 
-	}
+	}//processPts
 
 	eignVecTyp MyGestTraj::procPts(int _typ, eignVecTyp& _pts, double val, bool wrap) {
 		eignVecTyp tmp(0); // temporary array
@@ -296,6 +299,7 @@ namespace gestureIKApp {
 			tmp.push_back(_pts[_pts.size() - 1]);
 			return tmp; }
 		case _tuck: {
+			//tuck args : midpoint A, prev endpoint B, post endpoint C, tuck amt
 			if (wrap) {				
 				tmp.push_back(std::move(tuck(_pts[0],_pts[(_pts.size() - 1)], _pts[1], val)));
 				for (int i = 1; i < _pts.size() - 1; ++i) {	tmp.push_back(std::move(tuck(_pts[i], _pts[(i - 1)], _pts[(i + 1)], val)));	}
@@ -312,19 +316,23 @@ namespace gestureIKApp {
 		return tmp;
 	}
 
-	//uses length of trajectory of _pts to respace points
+	//TODO replace array of dists from start to each point with map where key is arclength to point and value is point
+	//uses length of trajectory of _pts to respace points to be equi-distant from one another - will return 1 more point than sent
 	eignVecTyp MyGestTraj::equiDist(eignVecTyp& _pts, double _len, std::vector<double>& _ptsDistFromSt) {
 		eignVecTyp tmp(0);
-		double ratio = _len / (1.0f * _pts.size()), curDist = 0;					 //new distance between each vertex, iterative dist travelled so far			 
+		//ratio is new distance between each point, curDist is iterative dist travelled so far		
+		double ratio = _len / (1.0f * _pts.size()), curDist = 0;					 	 
 		for (int i = 0; i<_pts.size(); ++i) {
 			tmp.push_back(at(curDist / _len, _len, _pts, _ptsDistFromSt));
 			curDist += ratio;
 		}
+		//preserve endpoint - will always add 1 point to total
 		tmp.push_back(_pts[_pts.size() - 1]);
+	
 		return tmp;
 	}//equiDist
 
-	 //uses length of trajectory of _pts to resample points based on location along length - assumes equidistant
+	 //uses length of trajectory of _pts to resample points based on location along arc length - assumes equidistant
 	eignVecTyp MyGestTraj::resample(eignVecTyp& _pts, double _len, std::vector<double>& _ptsDistFromSt, int numPts, bool wrap) {
 		eignVecTyp tmp(0);
 		//if wrap then end at first point after wrap, otherwise end at last point
@@ -341,7 +349,7 @@ namespace gestureIKApp {
 			newIdx++;
 		}
 		if (wrap) {
-			if ((tmp[newIdx - 1] - tmp[0]).norm() > ratio) {			//want to only add another point if last 2 points are further than ratio apart otherwise NOP - initial point is last point
+			if ((tmp[newIdx - 1] - tmp[0]).norm() > ratio) {			//want to only add another point if last point is further than ratio from first point otherwise NOP - initial point is last point
 				f = (tmp[newIdx - 1] - tmp[0]).norm() - ratio;
 				tmp.push_back(std::move(interpVec(tmp[newIdx - 1], tmp[0], f)));
 			} else { }
@@ -350,31 +358,6 @@ namespace gestureIKApp {
 
 		return tmp;
 	}//equiDist
-
-	 //copy the source info from passed trajectory - should make this trajectory ready for buildTrajFromData call, except for setting center and radius of circle and plane of inscribed circle, all from symbol
-	void MyGestTraj::copySrcInfo(std::shared_ptr<gestureIKApp::MyGestTraj> _src) {
-		avgLoc << _src->avgLoc;				//in matlab space so will not change 
-		ctrPoint << parentSymbol->ptrCtrPt;
-		double newScaleAmt = parentSymbol->sclAmt / _src->parentSymbol->sclAmt;
-		for (int i = 0; i < numFlags; ++i) {		flags[i] = _src->flags[i];	}
-		//copy convTrajPts into this traj's convTrajPts
-		eignVecTyp tmpCtrToPtVecs(0);
-		for (int i = 0; i < _src->convTrajPts.size(); ++i) {
-			tmpCtrToPtVecs.push_back(_src->convTrajPts[i] - _src->ctrPoint);//vector of displacement in _src traj
-			tmpCtrToPtVecs[i] *= newScaleAmt;
-		}
-		//rotate vectors to lie on plane normal to parentSymbol->ptrPlaneNorm and displace from ctrPoint by tmpCtrToPtVecs 
-		eignVecTyp tmpPts(0);
-		for (int i = 0; i < tmpCtrToPtVecs.size(); ++i) {
-			Eigen::Vector3d tmp = tmpCtrToPtVecs[i],
-				yVec(0, -1, 0), R = parentSymbol->ptrPlaneNorm.cross(yVec).normalized(), S = parentSymbol->ptrPlaneNorm.cross(R).normalized();
-			tmpPts.push_back(ctrPoint + (tmp(2) * R) + (tmp(1) * S));
-
-		}
-		setPts(tmpPts);
-		//build actual tracking data trajectory - before this is called, _myParent's ctrPoint, elbowPt, and normal vex need to be calced
-		buildFullTraj();
-	}//copySrcInfo
 
 	/**
 	* using arc length parameterisation this will return a point along the curve at a
@@ -387,14 +370,46 @@ namespace gestureIKApp {
 		else if (t>1) { std::cout << "In at : t=" << t << " needs to be [0,1]"<< std::endl; return (flags[closeTrajIDX] ? _pts[0] : _pts[_pts.size() - 1]); }//last point on closed trajectory is first point
 		double dist = t * _ttllen, s;		
 		for (int i = 0; i < _distAtEachPt.size() - 1; ++i) {										//built off d_pts so that it will get wrap for closed curve
+			//TODO replace with map of dist so far as key, point as value - removes need for loop
 			if (_distAtEachPt[i + 1] >= dist) {													//if current distance along arclength > dist we want for point
-				s = ((dist - _distAtEachPt[i]) / (_distAtEachPt[i + 1] - _distAtEachPt[i]));					//needs to stay between 0 and 1 (since interpolation functions between pts will be 0-1 based), so normalize by distance d_pts[i]
-				
+				s = ((dist - _distAtEachPt[i]) / (_distAtEachPt[i + 1] - _distAtEachPt[i]));					//needs to stay between 0 and 1 (since interpolation functions between pts will be 0-1 based), so normalize by distance d_pts[i]				
 				return interpVec(_pts[i], _pts[((i + 1) % _pts.size())], s);
 			}
 		}
 		return _pts[0];
 	}//at	
+
+
+	 //copy the source info from passed trajectory - should make this trajectory ready for buildTrajFromData call, except for setting center and radius of circle and plane of inscribed circle, all from symbol
+	void MyGestTraj::copySrcInfo(std::shared_ptr<gestureIKApp::MyGestTraj> _src, double newSclAmtZ, double newSclAmtY) {
+		avgLoc << _src->avgLoc;				//in matlab space so will not change 
+		ctrPoint << parentSymbol->ptrCtrPt;
+		//new scale amount takes new owning symbol's scale and divides it by source symbol's scale amount to modify source symbol's data to be scaled for new symbol's data
+		//scale amount calculates distance scaling of displacement vector for each point from ctr point
+		//double newScaleAmt = parentSymbol->sclAmt / _src->parentSymbol->sclAmt;
+
+		for (int i = 0; i < numFlags; ++i) { flags[i] = _src->flags[i]; }
+		//copy convTrajPts into this traj's convTrajPts
+		eignVecTyp tmpCtrToPtVecs(0);
+		for (int i = 0; i < _src->convTrajPts.size(); ++i) {
+			tmpCtrToPtVecs.push_back(_src->convTrajPts[i] - _src->ctrPoint);//vector of displacement in _src traj
+			//tmpCtrToPtVecs[i] *= newScaleAmt;
+			tmpCtrToPtVecs[i](1) *= newSclAmtY;
+			tmpCtrToPtVecs[i](2) *= newSclAmtZ;
+		}
+		//rotate vectors to lie on plane normal to parentSymbol->ptrPlaneNorm and displace from ctrPoint by tmpCtrToPtVecs 
+		eignVecTyp tmpPts(0);
+		for (int i = 0; i < tmpCtrToPtVecs.size(); ++i) {
+			Eigen::Vector3d tmp = tmpCtrToPtVecs[i], yVec(0, -1, 0),
+				R = parentSymbol->ptrPlaneNorm.cross(yVec).normalized(),
+				S = parentSymbol->ptrPlaneNorm.cross(R).normalized();
+			tmpPts.push_back(ctrPoint + (tmp(2) * R) + (tmp(1) * S));
+
+		}
+		setPts(tmpPts);
+		//build actual tracking data trajectory - before this is called, _myParent's ctrPoint, elbowPt, and normal vex need to be calced
+		buildFullTraj();
+	}//copySrcInfo
 
 
 	void MyGestTraj::drawDebugTraj(dart::renderer::RenderInterface* mRI, const Eigen::Ref<const Eigen::Vector3d>& clr) {
@@ -448,84 +463,49 @@ namespace gestureIKApp {
 
 	 //trajectory file expected to have 1 column for every tracked marker, 1 row for every sample.  needs to be resampled for frames/playback speed (?)
 	 //srcTrajData holds x,y,timing data mapped to z,y and separate timing ara.
-	void MyGestTraj::readTrajFile() {//read trajectory data from filename for this trajectory
+	void MyGestTraj::readTrajFile(bool useVel) {//read trajectory data from filename for this trajectory
 									 //cout << "Now Reading :" << filename << " trajectory file "<< std::endl;
 		srcTrajData.clear();
 		srtTrajTiming.clear();
 		std::ifstream  trajData(filename);
 		std::string line, cell;
-		Eigen::Vector3d dat(0, 0, 0), tmpDat(0, 0, 0), lastDat(0, 0, 0);
-		double lastTime = 0;
+		Eigen::Vector3d dat(0, 0, 0), tmpDat(0, 0, 0), lastDat(0,0,0), lastTmpDat(0, 0, 0);
+		double lastTmpTime = 0, datTime = 0;
 		int i = 0;
 		//int lastTime = 0;
+		std::vector<double> vals(0);
 		while (std::getline(trajData, line)) {
-			int idx = 2;
-			//Eigen::Vector3d dat(0, 0, 0), tmpDat(0,0,0), lastDat(0,0,0);
+			//int idx = 2;
+			vals.clear();
 			std::stringstream  ss(line);
 			while (std::getline(ss, cell, ',')) {
-				//put first and 2nd in idx 2 and 1 of dat, respectively, and put 3rd col in sep construct
-				if (idx != 0) { dat(idx--) = stod(cell); }
-				else { dat(0) = 0;		srtTrajTiming.push_back(stod(cell)); }
+				vals.push_back(stod(cell));
 			}
+			//z-y order
+			dat << 0, vals[1], vals[0];
+			if (useVel) { //use norm of velocity 
+				Eigen::Vector3d tmpV(0, vals[3], vals[2]);
+				datTime = tmpV.norm();
+			} else { datTime = vals[2]; }//use timing value
 			//NOTE Trajectory timing info from matlab includes time span between ending and beginning trajectories.  might need to normalize for this
-			srcTrajData.push_back(std::move(dat));
+			//only save point if different than last point
+			if ((dat-lastDat).squaredNorm() > .0000001) {
+				srcTrajData.push_back(std::move(dat));
+				srtTrajTiming.push_back(datTime);
+			}
+			lastDat << dat;
 			//debug output below : 
 			if (flags[debugIDX]) {
 				tmpDat << 0, dat(1), dat(2);
-				std::cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastDat).norm()) << "\ttiming:" << srtTrajTiming.back() << " timing diff " << (srtTrajTiming.back() - lastTime) << "\n";
-				lastTime = srtTrajTiming.back();
-				lastDat << tmpDat;
+				std::cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastTmpDat).norm()) << "\ttiming:" << srtTrajTiming.back() << " timing diff " << (srtTrajTiming.back() - lastTmpTime) << "\n";
+				lastTmpTime = srtTrajTiming.back();
+				lastTmpDat << tmpDat;
 			}
 		}
 		flags[loadedIDX] = true;
 		//cout << "Finished Reading :" << filename << " trajectory file.   srcTrajData holds : "<< srcTrajData.size()<<" points."<< std::endl;
 		//cout << "\n";
 	}//readTrajFile
-
-	 //trajectory file expected to have 1 column for every tracked marker, 1 row for every sample.  needs to be resampled for frames/playback speed (?)
-	 //srcTrajData holds x,y,velX,velY data mapped to z,y and separate velocity vector array.
-	void MyGestTraj::readTrajVelFile() {//read trajectory data from filename for this trajectory
-		std::cout << "Now Reading :" << filename << " trajectory file \n";
-		srcTrajData.clear();
-		srcTrajVelData.clear();
-		std::ifstream  trajData(filename);
-		std::string line, cell;
-		Eigen::Vector3d dat(0, 0, 0), velDat(0,0,0), tmpDat(0, 0, 0), tmpVelDat(0,0,0), lastDat(0, 0, 0);
-		int i = 0;
-		//int lastTime = 0;
-		std::vector<double> tmpData;
-		while (std::getline(trajData, line)) {
-			int idx = 0;
-			tmpData.clear();
-
-			//Eigen::Vector3d dat(0, 0, 0), tmpDat(0,0,0), lastDat(0,0,0);
-			std::stringstream  ss(line);
-			while (std::getline(ss, cell, ',')) {
-				tmpData.push_back(stod(cell));
-			}
-			dat << 0, tmpData[1], tmpData[0];
-			velDat << 0, tmpData[3], tmpData[2];
-			//NOTE Trajectory timing info from matlab includes time span between ending and beginning trajectories.  might need to normalize for this
-			srcTrajData.push_back(std::move(dat));
-			srcTrajVelData.push_back(std::move(velDat));
-			//debug output below : 
-			if (flags[debugIDX]) {
-				tmpDat << 0, dat(1), dat(2);
-				tmpVelDat << 0, velDat(1), velDat(2);
-				std::cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastDat).norm());
-				std::cout << "\tvelocity:" << buildStrFrmEigV3d(tmpVelDat) << " speed : "<< tmpVelDat.norm()<< "\n";
-				lastDat << tmpDat;
-			}
-		}
-
-
-
-		flags[loadedIDX] = true;
-		//cout << "Finished Reading :" << filename << " trajectory file.   srcTrajData holds : "<< srcTrajData.size()<<" points.";
-		//cout << "\n";
-	}//readTrajFile
-	
-
 
 	std::ostream& operator<<(std::ostream& out, MyGestTraj& traj) {
 		out << "Traj name " << traj.name << "\t# src traj points : " << traj.srcTrajData.size() << "\n";

@@ -32,7 +32,7 @@
 *   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *   POSSIBILITY OF SUCH DAMAGE.
-*/
+*/ 
 
 #ifndef APPS_GESTURE_MYGESTSYMBOL_H_
 #define APPS_GESTURE_MYGESTSYMBOL_H_
@@ -52,8 +52,8 @@ namespace dart {
 } 
 
 namespace gestureIKApp {
-	class MyGestTraj;
 	class IKSolver;
+	class MyGestTraj;
 
 	class SymbolRandVals {
 	public :
@@ -106,18 +106,14 @@ namespace gestureIKApp {
 
 		//set flags of all subordinate symbols
 		void setFlags(int idx, bool val);
-		//set solver for this trajectory
-		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv);
 
 		//set flags to show all letter trajectories
 		inline void setShowAllTrajs(bool val) { setFlags(showAllTrajsIDX, val); }
 
 		//buld a randomized version of the passed symbol
-		bool buildRandomSymbol(std::shared_ptr<MyGestSymbol> _base, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast);
-		//load this symbol's raw trajectories and build MyGestTrajs for each trajectory - build at symbol level, not trajectory level
-		void buildTrajsFromFile(std::vector<std::string>& trajFileNames, std::shared_ptr<MyGestSymbol> _this);
-		//load this symbol's raw trajectories using x,y,velx,vely based xml files and build MyGestTrajs for each trajectory - build at symbol level, not trajectory level
-		void buildVelTrajsFromFile(std::vector< std::string >& trajFileNames, std::shared_ptr<MyGestSymbol> _thisSP);
+		bool buildRandomSymbol(std::shared_ptr<MyGestSymbol> _base, std::shared_ptr<MyGestSymbol> _thisSP, bool showCtr, bool isFast);
+		//load this symbol's raw trajectories and build MyGestTrajs for each trajectory - build at symbol level, not trajectory level - whether or not velocity info is included in traj csv (as x,y,velx,vely or x,y,timing)
+		void buildTrajsFromFile(std::vector<std::string>& trajFileNames, std::shared_ptr<MyGestSymbol> _this, bool useVel);
 		//set the per-frame trajectory change list
 		void buildTrajFrameIncrs();
 		//find average x-y location of trajectory points in component trajectories of this symbol, and closest and furthest points from average. - these will be used to map to "drawing plane" in ik sim world frame 
@@ -171,7 +167,7 @@ namespace gestureIKApp {
 
 		static const unsigned int numFlags = 7;
 
-		Eigen::Vector3d avgLoc;													//average location of symbol data in matlab space
+		Eigen::Vector3d avgImgSpcLoc;											//average location of symbol data in image/matlab space
 
 		Eigen::Vector3d	ptrCtrPt,												//center point of circle the transformed version of this symbol is inscribed within 
 			elbowCtrPt,															//center point of circle the transformed elbow traj of this symbol is incribed within
@@ -183,5 +179,6 @@ namespace gestureIKApp {
 		unsigned int curTraj;													//idx of current trajectory being processed
 
 	};
-} // namespace gestureIKApp
+}// namespace gestureIKApp
+
 #endif // #ifndef APPS_GESTURE_MYGESTSYMBOL_H_

@@ -226,7 +226,7 @@ void MyWindow::trainLtrDatManageCol() {
 	//for next iteration
 	//TODO get rid of curSymIDX - let each letter maintain count of how many symbols have been drawn
 	++curSymIDX;
-	bool doneWithLetter = (curSymIDX >= IKSolve->params->numTotSymPerLtr);// (curSymIDX >= curLetter->getNumSymbols());
+	bool doneWithLetter = (curSymIDX >= IKSolve->params->numTotSymPerLtr);
 	//finished all symbols of this letter
 	if (doneWithLetter) {
 		++curLtrIDX;
@@ -325,13 +325,12 @@ void MyWindow::trainDatWriteIndexFile(std::ofstream& outFile, const std::string&
 //build map of all available symbols, idxed by name
 void MyWindow::buildLetterList() {
 	letters.clear();
-	//TODO use xml-specified list of letters instead of sequence, to enable specific letters to be generated (?)
 	for (unsigned int i = 0; i < 26; ++i) {
 		std::string c(1, i + 97);
+		//only place prototype letters are loaded from file 
 		letters.push_back(std::make_shared<MyGestLetter>(c, i, IKSolve));
-		//letters[i]->setSolver(IKSolve);
 		GestIKParser::readGestLetterXML(letters[i]);
-		std::cout << "Made letter : " << (*letters[i]) << "\n";
+		std::cout << "Made letter : " << (*letters[i]) << " from file description.\n";
 	}
 }
 void MyWindow::buildRandDbugLetterList() {
@@ -595,6 +594,36 @@ std::string MyWindow::getCurrLocAndQuat() {
 	return ss.str();
 }
 
+bool MyWindow::startCapture() {
+	if (letters.size() == 0) {
+		std::cout << "No letters loaded, so aborting screen capture save\n";
+		return false;
+	}
+	flags[initTrnDatCapIDX] = true;
+	flags[useLtrTrajIDX] = true;
+	std::stringstream ss;
+	if (IKSolve->params->saveHandCOMVals()) {//save com/com vel csvs - make base directory for csvs
+		ss << getFullBasePath(true);
+		const std::string tmp1 = ss.str();
+		bool made = makeDirectory(tmp1);
+		if (!made) { std::cout << "Failed to make base COM CSV directory : " << tmp1 << "\n";	return false; }
+		else { std::cout << "Made base COM CSV directory : " << tmp1 << "\n"; }
+		ss.str("");
+	}
+	if (IKSolve->params->saveScreenShots()) {//save screen shots if not saving hand com vals or if saving screenshots always is enabled
+		ss << getFullBasePath(false);
+		const std::string tmp = ss.str();
+		bool made = makeDirectory(tmp);
+		if (!made) { std::cout << "Failed to make base letter directory : " << tmp << "\n";	return false; }
+		else { std::cout << "Made base letter directory : " << tmp << "\n"; }
+	}
+	//turn off any tests that may have been initiated
+	flags[testLtrQualIDX] = false;
+	for (int i = 0; i < letters.size(); ++i) { letters[i]->setTestLtrQual(flags[testLtrQualIDX]); }
+	std::cout << "Capture all letters with data type : " << DataType2str[IKSolve->params->dataType] << "\n";
+	return true;
+}//startCapture
+
 void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 	unsigned int keyVal = _key;
 	if ((keyVal >= 65) && (keyVal <= 90)) {		//draw letter trajectories if any capital letter is selected
@@ -624,56 +653,62 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		resetSkelVals();
 		break; }
 	case 'a': {  // screen capture all letters (train and test)
-		if (letters.size() == 0) {
-			std::cout << "No letters loaded, so aborting screen capture save\n";
-			return;
-		}
-		flags[initTrnDatCapIDX] = true;
-		flags[useLtrTrajIDX] = true;
-		std::stringstream ss;
-		if (IKSolve->params->saveHandCOMVals()) {//save com/com vel csvs - make base directory for csvs
-			ss << getFullBasePath(true);
-			const std::string tmp1 = ss.str();
-			bool made = makeDirectory(tmp1);
-			if (!made) { std::cout << "Failed to make base COM CSV directory : " << tmp1 << "\n";	return; }
-			else { std::cout << "Made base COM CSV directory : " << tmp1 << "\n"; }
-			ss.str("");
-		}
-		if (IKSolve->params->saveScreenShots()) {//save screen shots if not saving hand com vals or if saving screenshots always is enabled
-			ss << getFullBasePath(false);
-			const std::string tmp = ss.str();
-			bool made = makeDirectory(tmp);
-			if (!made) { std::cout << "Failed to make base letter directory : " << tmp << "\n";	return; }
-			else { std::cout << "Made base letter directory : " << tmp << "\n"; }
-		}
-		//turn off any tests that may have been initiated
-		flags[testLtrQualIDX] = false;
-		for (int i = 0; i < letters.size(); ++i) { letters[i]->setTestLtrQual(flags[testLtrQualIDX]); }
-		std::cout << "Capture all letters with data type : "<< DataType2str[IKSolve->params->dataType] << "\n";
+		if (!startCapture()) { std::cout << std::endl; return; }
+		std::cout << std::endl;//to flush
+
+		//if (letters.size() == 0) {
+		//	std::cout << "No letters loaded, so aborting screen capture save\n";
+		//	return;
+		//}
+		//flags[initTrnDatCapIDX] = true;
+		//flags[useLtrTrajIDX] = true;
+		//std::stringstream ss;
+		//if (IKSolve->params->saveHandCOMVals()) {//save com/com vel csvs - make base directory for csvs
+		//	ss << getFullBasePath(true);
+		//	const std::string tmp1 = ss.str();
+		//	bool made = makeDirectory(tmp1);
+		//	if (!made) { std::cout << "Failed to make base COM CSV directory : " << tmp1 << "\n";	return; }
+		//	else { std::cout << "Made base COM CSV directory : " << tmp1 << "\n"; }
+		//	ss.str("");
+		//}
+		//if (IKSolve->params->saveScreenShots()) {//save screen shots if not saving hand com vals or if saving screenshots always is enabled
+		//	ss << getFullBasePath(false);
+		//	const std::string tmp = ss.str();
+		//	bool made = makeDirectory(tmp);
+		//	if (!made) { std::cout << "Failed to make base letter directory : " << tmp << "\n";	return; }
+		//	else { std::cout << "Made base letter directory : " << tmp << "\n"; }
+		//}
+		////turn off any tests that may have been initiated
+		//flags[testLtrQualIDX] = false;
+		//for (int i = 0; i < letters.size(); ++i) { letters[i]->setTestLtrQual(flags[testLtrQualIDX]); }
+		//std::cout << "Capture all letters with data type : "<< DataType2str[IKSolve->params->dataType] << "\n";
 		break; }
 	case 'b': { // reload xml and build lists of letters and random letters
 		//reload params from xml 
 		reloadXml();
 		//read all letter files and build trajectories
 		buildLetterList();
+		std::cout << std::endl;//to flush
 		break; }
 	case 'c': {  // screen capture
 		flags[stCaptAtZeroIDX] = true;				//start capturing when trajectory gets to 0
-		std::cout << "start capturing when trajectory gets to t == 0\n.";
+		std::cout << "start capturing when trajectory gets to t == 0"<< std::endl;
 		break; }
 	case 'd': { // debug mode
 		flags[debugIDX] = !flags[debugIDX];
 		if (flags[debugIDX] && !flags[debugLtrsBuiltIDX]) {
 			flags[debugLtrsBuiltIDX] = true;
-			buildRandDbugLetterList();
+			//buildRandDbugLetterList();
 		}
 		std::cout << "Debug Mode : " << (flags[debugIDX] ? "True\n" : "False\n") ;
 		for (int i = 0; i < letters.size(); ++i) { letters[i]->setDebug( flags[debugIDX]); }	//debugIDX is 0 in every class
+		std::cout << std::endl;
 		break; }
 	case 'e': { // show all letter trajectories
 		flags[showAllTrajsIDX] = !flags[showAllTrajsIDX];
 		std::cout << "Show all letter trajectories : " << (flags[showAllTrajsIDX] ? "True\n" : "False\n") ;
 		for (int i = 0; i < letters.size(); ++i) { letters[i]->setShowAllTrajs( flags[showAllTrajsIDX]); }	//debugIDX is 0 in every class
+		std::cout << std::endl;
 		break; }
 	case 'f': { //test all letters - same as screen cap except no IK and no file save
 		if (letters.size() == 0) {
@@ -687,10 +722,21 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 			flags[useLtrTrajIDX] = true;
 		}
 		for (int i = 0; i < letters.size(); ++i) { letters[i]->setTestLtrQual(flags[testLtrQualIDX]); }
+		std::cout << std::endl;
 		break;}
+	case 'g' : {//build debug letter lists for visualizing 
+		if (letters.size() == 0) {
+			std::cout << "No letters loaded, so can't build randomized versions.\n";
+			return;
+		}
+		std::cout << "Building example randomized versions of letters \n";
+		buildRandDbugLetterList();
+		std::cout << std::endl;
+		break; }
 	case 'p' : {  // pause between IK frames for debugging
 		flags[pauseIKLtrIDX] = !flags[pauseIKLtrIDX];
 		std::cout << "Pause between IK frames : " << (flags[pauseIKLtrIDX] ? "True\n" : "False\n") ;
+		std::cout << std::endl;
 		break; }
 	case 'r': {//randomize symbols
 		regenerateSampleData(true);
@@ -714,7 +760,6 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 
     default:{    Win3D::keyboard(_key, _x, _y);}
 	}
-	std::cout << std::endl;//to flush
 	glutPostRedisplay();
 }
 

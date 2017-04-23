@@ -123,6 +123,9 @@ namespace gestureIKApp {
 			return ss.str();
 		}
 
+		//get standard dev vector for random ctr location
+		inline Eigen::Vector3d getCtrStdVec(){ 	return Eigen::Vector3d(trajRandCtrStdScale_X*trajRandCtrStd, trajRandCtrStdScale_Y*trajRandCtrStd, trajRandCtrStdScale_Z*trajRandCtrStd);	}
+
 		void resetValues();
 		//set current date as date-based file name offset
 		void setDateFNameOffset();
@@ -132,6 +135,12 @@ namespace gestureIKApp {
 		//returns directory letters are stored in
 		std::string getDataOutputDir(bool isCSV);
 
+		//TODO change to read in left hand ptr names from XML
+		const std::string getIKPtrFingerName() { return(flags[IDX_useLeftHand] ? "ptrFinger_l" : "ptrFinger_r"); }
+		const std::string getIKPtrWristName() { return (flags[IDX_useLeftHand] ? "ptrWrist_l" : "ptrWrist_r");	}
+		const std::string getIKPtrElbowName() { return (flags[IDX_useLeftHand] ? "ptrElbow_l" : "ptrElbow_r");	}
+		const std::string getIKPtrShldrName() { return (flags[IDX_useLeftHand] ? "left_scapula" : "right_scapula");}
+
 		friend std::ostream& operator<<(std::ostream& out, GestIKParams& GestIK);
 
 	public:	//variables
@@ -140,7 +149,7 @@ namespace gestureIKApp {
 		std::vector<markerXMLData> markerLocs;
 		//marker location xml file name
 		std::string markerXMLFileName;
-		
+
 		//IK solver and skel configuration parameters
 		//% of full reach to set up imaginary writing plane
 		double IK_reachPct;
@@ -200,6 +209,8 @@ namespace gestureIKApp {
 		int mBlurPreFrames;
 		//# of motion blur frames after current frame to use 
 		int mBlurPostFrames;
+		//type of debug traj drawing : 0:draw no debug trajs, 1:draw file-derived trajs, 2:draw rand trajs, 3:draw all trajs
+		int dbgTrajDrawn;
 
 		//int width/height of windows
 		int win_Width, win_Height;

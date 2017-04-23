@@ -101,6 +101,11 @@
 		<name>ltrIdxStSave</name>
 		<val>0</val> 
 	</parameter>
+<!-- type of debug traj drawing : 0:draw no debug trajs, 1:draw file-derived trajs, 2:draw rand trajs, 3:draw all trajs -->
+	<parameter>
+		<name>dbgTrajDrawn</name>
+		<val>2</val> 
+	</parameter>
 <!-- # of frames before and after current frame to use for motion blur -->
 <!-- both positive, >0 pre, 0 post would give trails, 0 pre, >0 post would blur into motion -->
 	<parameter>
@@ -148,7 +153,7 @@
 		<val>0.4</val>
 	</parameter>
 <!--END random camera and skeleton values -->
-<!--Set dataType 0 == const vel for all ltrs, 1 == fixed 16, 2 == src file velocity train/test -->
+<!--Set dataType 0 == const vel for all ltrs, 1 == fixed 16, 2 == src file velocity train/test (no longer using mult8) -->
 	<parameter>
 		<name>dataType</name>
 		<val>0</val> 

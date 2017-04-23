@@ -43,9 +43,8 @@ namespace gestureIKApp {
 		IK_reachPct(.75), IK_drawRad(.2), IK_solveIters(100), IK_alpha(0.01), IK_maxSqError(0.0001), IK_elbowScale(0.36), IK_fastTrajMult(1.5), IK_ctrYOffset(0),
 		trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1), trajRandCtrStdScale_X(1), trajRandCtrStdScale_Y(1), trajRandCtrStdScale_Z(1),
 		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), rnd_camThet(.35), rnd_camZoom(.05), rnd_camTrans(.25), rnd_headClrBnd(.2), rnd_headDimPct(.1), rnd_handClrBnd(.2),rnd_handDimPct(.1),
-		win_Width(800), win_Height(800), numTotSymPerLtr(0), fixedClipLen(16), mBlurPreFrames(2), mBlurPostFrames(2),  origZoom(.65f),	
-		dataType(VAR_VEL), bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""), baseOutDir(""), srcLtrDir(""), markerXMLFileName(""),
-		flags(numFlags, false)
+		win_Width(800), win_Height(800), numTotSymPerLtr(0), fixedClipLen(16), mBlurPreFrames(2), mBlurPostFrames(2), dbgTrajDrawn(3),  origZoom(.65f),
+		dataType(VAR_VEL), bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""), baseOutDir(""), srcLtrDir(""), markerXMLFileName(""), flags(numFlags, false)
 	{
 		std::cout << "GestIK params ctor"<<std::endl;
 		setDefaultVals();																//set defaults from hardcoded values - overridden by xml data if necessary
@@ -97,6 +96,8 @@ namespace gestureIKApp {
 		if (_name.compare("fixedClipLen") == 0) { fixedClipLen = stoi(s);			return; }
 		if (_name.compare("mBlurPreFrames") == 0) { mBlurPreFrames = stoi(s);			return; }
 		if (_name.compare("mBlurPostFrames") == 0) { mBlurPostFrames = stoi(s);			return; }
+		if (_name.compare("dbgTrajDrawn") == 0) { dbgTrajDrawn = stoi(s);			return; }
+		
 		//enum
 		if (_name.compare("dataType") == 0) {	dataType = static_cast<DataType>(stoi(s)); return;	}
 		//floats 
@@ -121,6 +122,7 @@ namespace gestureIKApp {
 		if (_name.compare("IDX_useOutputDir") == 0) { flags[IDX_useOutputDir] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_saveHandCOMVals") == 0) { flags[IDX_saveHandCOMVals] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_alwaysSaveImgs") == 0) { flags[IDX_alwaysSaveImgs] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_useCustSrcLtrs") == 0) { flags[IDX_useCustSrcLtrs] = (s.compare("TRUE") == 0 ? true : false);        return; }
 
 	}	//setParamValFromXMLStr
 	//construct and return name of directory holding letter sequences or csv's of com locations in screen space
@@ -187,6 +189,7 @@ namespace gestureIKApp {
 		fixedClipLen = 16;
 		mBlurPreFrames = 2;
 		mBlurPostFrames = 2;
+		dbgTrajDrawn = 3;
 
 		origZoom = .65f;
 		
@@ -201,7 +204,7 @@ namespace gestureIKApp {
 		//default is base directory - ALWAYS APPENDS DART ROOT PATH when consumed so directory does not need to be specified within xml file
 		srcLtrDir = "apps/gestureIK/sourceLetters/";
 		markerXMLFileName = "";
-		
+	
 		for (int i = 0; i < numFlags; ++i) { flags[i] = false; }
 		flags[IDX_alwaysSaveImgs] = true;//default this to true
 
@@ -252,6 +255,7 @@ namespace gestureIKApp {
 		res.push_back(fixedClipLen);
 		res.push_back(mBlurPreFrames);
 		res.push_back(mBlurPostFrames);
+		res.push_back(dbgTrajDrawn);
 
 		res.push_back(origZoom);
 		res.push_back(dataType);
@@ -306,6 +310,7 @@ namespace gestureIKApp {
 		fixedClipLen = (int)floor(vals[idx++] + .5);
 		mBlurPreFrames = (int)floor(vals[idx++] + .5);
 		mBlurPostFrames = (int)floor(vals[idx++] + .5);
+		dbgTrajDrawn = (int)floor(vals[idx++] + .5);		
 
 		origZoom = vals[idx++];
 		dataType = static_cast<DataType>(((int)floor(vals[idx++] + .5) % 3));

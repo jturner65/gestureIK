@@ -102,18 +102,23 @@ namespace gestureIKApp {
 		//load/reload all xml-based sim parameters
 		void loadIKParams();
 		//load/reload xml-based marker locations - in case marker locs change or using different skeleton
-		void loadMarkerLocs();
+		//void loadMarkerLocs();
 		
 		//set tracked marker positions - call this or something like it before solve
 		void setTrkMrkrs(eignVecTyp& _tarPos);
 
+		//pass guesses for elbow position, solve IK to get actual position, set glbl values 
+		void slvForElbowPos(const Eigen::Ref<const Eigen::Vector3d>& ctr, const Eigen::Ref<const Eigen::Vector3d>& lbw);
+		
 		void solve(eignVecTyp& _tarPos);
 
 		void solve();
 		//get error in current pose between markers and targets
 		double getPoseError();
+
 		//set sample trajectory pointer and elbow centers and normal vectors of planes drawn on (also used for defaults)
-		void setSampleCenters();
+		void setSampleCenters(); 
+		void setSampleCenters(const Eigen::Ref<const Eigen::Vector3d>& ctr);
 
 		//get gauss random double with mean mu and std = std - put here so that accessible in all classes
 		inline double getRandDbl(double mu, double std = 1.0) {
@@ -147,7 +152,6 @@ namespace gestureIKApp {
 			return Eigen::Vector3d(getUniRandDbl(min(0), max(0)), getUniRandDbl(min(1), max(1)), getUniRandDbl(min(2), max(2)));
 		}
 
-
 		void drawTrkMrkrs(dart::renderer::RenderInterface* mRI, bool onlyTraj);
 
 		inline dart::dynamics::SkeletonPtr getSkel() const { return skelPtr; }
@@ -163,17 +167,20 @@ namespace gestureIKApp {
 
 		std::shared_ptr<trkMrkMap> trkMarkers;										//all tracked markers in this skeleton
 
-		double reach,		//approx distance skel can reach without changing posture too much(i.e. twisting at waist); (rest dist from scap to ptrFinger_r)
-			bicepLen,	//length from writing shoulder mrkr to writing elbow marker
-			frArmLen,	//length from elbow marker to wrist marker
-			handLen;	//length from wrist marker to ptrFinger_r marker
+		double reach;		//approx distance skel can reach without changing posture too much(i.e. twisting at waist); (rest dist from scap to ptrFinger_r)
+			//bicepLen,	//length from writing shoulder mrkr to writing elbow marker
+			//frArmLen,	//length from elbow marker to wrist marker
+			//handLen;	//length from wrist marker to ptrFinger_r marker
 		
 		//center of drawn circle (some distance forward from drawing arm's shoulder); center of circle of drawing elbow; 
 
 		Eigen::Vector3d drawCrclCtr, drawElbowCtr, tstRShldrSt, elbowShldrNormal;
 
 		std::shared_ptr<gestureIKApp::GestIKParams> params;
+		//name of marker for drawing arm's shoulder
+		std::string drawShldrMrkrName, drawElbowMrkrName;
 	protected:
+		void setAllArmMrkrDims();
 		void createMarkersXML();
 
 		Eigen::VectorXd calcGradient();
@@ -193,4 +200,5 @@ namespace gestureIKApp {
 	};
 
 }//namespace gestureIKApp 
+
 #endif  // APPS_GESTURE_CONTROLLER_H_

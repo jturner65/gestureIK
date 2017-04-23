@@ -105,13 +105,14 @@ namespace gestureIKApp {
 		//cameraRot(0.5*sqrt(2), 0, -0.5*sqrt(2), 0),
 		curFrame(0), numTrajFrames(0), srcSymbolIDX(_srcIDX), allTrajsLen(0), //trajVel(.03), 
 		sclAmt(1.0), curTrajDist(0), trajectories(0), trajLens(0), trajFrameIncrs(0), name(_name), flags(numFlags,false),
-		avgLoc(0,0,0), ptrCtrPt(0,0,0), elbowCtrPt(0,0,0), ptrPlaneNorm(-1,0,0), elbowPlaneNorm(0,0,0), circleRad(0), curTraj(0)
+		avgImgSpcLoc(0,0,0), ptrCtrPt(0,0,0), elbowCtrPt(0,0,0), ptrPlaneNorm(-1,0,0), elbowPlaneNorm(0,0,0), circleRad(0), curTraj(0)
 
 	{
 		//show connecting trajectories in debug output
 		flags[drawConnTrajIDX] = true;
 		circleRad = IKSolve->params->IK_drawRad;
 		ptrCtrPt << IKSolve->drawCrclCtr;
+		//vector from drawing center to drawing shoulder marker
 		ptrPlaneNorm << (IKSolve->tstRShldrSt - ptrCtrPt).normalized();
 		elbowCtrPt << IKSolve->drawElbowCtr;
 		elbowPlaneNorm << IKSolve->elbowShldrNormal;
@@ -120,39 +121,21 @@ namespace gestureIKApp {
 	MyGestSymbol::~MyGestSymbol() {}//dtor
 	
 	//list of trajectory file names composing this symbol
-	void MyGestSymbol::buildTrajsFromFile(std::vector< std::string >& trajFileNames, std::shared_ptr<MyGestSymbol> _thisSP){
+	void MyGestSymbol::buildTrajsFromFile(std::vector< std::string >& trajFileNames, std::shared_ptr<MyGestSymbol> _thisSP, bool useVel){
 		_self = _thisSP;
 		trajectories.clear();
 		for (int i = 0; i < trajFileNames.size(); ++i) {
 			trajectories.push_back(std::make_shared<MyGestTraj>(trajFileNames[i], _thisSP, i));
-			trajectories[i]->setSolver(IKSolve);
-			trajectories[i]->readTrajFile();
+			//trajectories[i]->setSolver(IKSolve);
+			trajectories[i]->readTrajFile(useVel);	
 			//NOTE Trajectory timing info from matlab includes time span between ending and beginning trajectories.  might need to normalize for this
 		}
 		//all trajectories read by here, and each traj's srcTrajData is set
 		//find average, min and max values in matab space for all and set all trajs with info - need this to project symbol in front of char for IK
 		calcTransformPts();
-		//build trajectories and linking trajectories
+		//build trajectories and linking trajectories for basic letters in IK space
 		buildTrajComponents();
 	}//readSymbolFile
-
-	 //list of trajectory file names composing this symbol
-	void MyGestSymbol::buildVelTrajsFromFile(std::vector< std::string >& trajFileNames, std::shared_ptr<MyGestSymbol> _thisSP) {
-		_self = _thisSP;
-		trajectories.clear();
-		for (int i = 0; i < trajFileNames.size(); ++i) {
-			trajectories.push_back(std::make_shared<MyGestTraj>(trajFileNames[i], _thisSP, i));
-			trajectories[i]->setSolver(IKSolve);
-			trajectories[i]->readTrajVelFile();
-			//NOTE Trajectory timing info from matlab includes time span between ending and beginning trajectories.  might need to normalize for this
-		}
-		//all trajectories read by here, and each traj's srcTrajData is set
-		//find average, min and max values in matab space for all and set all trajs with info - need this to project symbol in front of char for IK
-		calcTransformPts();
-		//build trajectories and linking trajectories
-		buildTrajComponents();
-	}//readSymbolFile
-
 
 	//build all trajectory components for this symbol
 	void MyGestSymbol::buildTrajComponents() {
@@ -241,11 +224,11 @@ namespace gestureIKApp {
 					allTrajsLen += d;
 				}
 			}
+			if (std::isnan(allTrajsLen)) {
+				std::cout << "NAN traj length for " << name << " iter : " << i << " so setting to 0." << std::endl;
+				allTrajsLen = 0;
+			}
 			trajLens.push_back(allTrajsLen);
-		}
-		if (std::isnan(allTrajsLen)) {
-			std::cout << "NAN traj length for " << name << " so setting to 0."<< std::endl;
-			allTrajsLen = 0;
 		}
 		//else { std::cout << "Total Traj len for : " << name << " : " << allTrajsLen << " from " << trajectories.size() << " trajectories."<< std::endl; }
 		buildTrajFrameIncrs();
@@ -312,7 +295,7 @@ namespace gestureIKApp {
 
 	 //returns true if finished with trajectories
 	bool MyGestSymbol::solve() {
-		if (allTrajsLen == 0) { std::cout << "Error : trying to IK to length 0 trajectory.\n"; return true; }
+		if (allTrajsLen == 0) { std::cout << "Error : trying to IK to length 0 trajectory for symbol : " << name << ".\n"; return true; }
 		if (flags[isDoneDrawingIDX]) {//perform here so that we cover final point and don't change curFrame until after image is rendered
 			initSymbolIK();
 		}
@@ -377,35 +360,45 @@ namespace gestureIKApp {
 	}//setIKSkelPose
 
 	//make this symbol a randomized version of the passed symbol - 
-	bool MyGestSymbol::buildRandomSymbol(std::shared_ptr<MyGestSymbol> _src, std::shared_ptr<MyGestSymbol> _thisSP, bool isFast) {
+	bool MyGestSymbol::buildRandomSymbol(std::shared_ptr<MyGestSymbol> _src, std::shared_ptr<MyGestSymbol> _thisSP, bool showCtr, bool isFast) {
 		_self = _thisSP;
-		avgLoc << _src->avgLoc;		//avg location in matlab space
-		//use this for random :  double getRandDbl(double mu, double std = 1.0)  
+		avgImgSpcLoc << _src->avgImgSpcLoc;		//avg location in matlab space
+		//use this for random :  double getRandDbl(double mu, double std = 1.0) 
+		//get gaussian random value for scl using base symbol scale amt as mean and std described in XML
+		double scaleZ, scaleY;
+		//do {
+		//	sclAmt = IKSolve->getRandDbl(_src->sclAmt, IKSolve->params->trajRandSclStd);
+		//} while (sclAmt <= 0);
+		//this scales the y and z coords of the displacement vectors of the trajectories
 		do {
-			sclAmt = IKSolve->getRandDbl(_src->sclAmt, IKSolve->params->trajRandSclStd);
-		} while (sclAmt <= 0);
-		//trajVel = IKSolve->params->trajDesiredVel;
+			scaleZ = IKSolve->getRandDbl(_src->sclAmt, IKSolve->params->trajRandSclStd);
+			scaleY = IKSolve->getRandDbl(_src->sclAmt, IKSolve->params->trajRandSclStd);
+		} while ((scaleZ <= 0) || (scaleY <= 0));//repeat until both scale values are legal
+		sclAmt = .5*(scaleZ + scaleY);
+		//fast drawn trajectory wags arm/elbow - elbow IK trajectory flipped on elbow-normal plane
 		flags[isFastDrawnIDX] = isFast;
-
-		Eigen::Vector3d stdVec(IKSolve->params->trajRandCtrStdScale_X*IKSolve->params->trajRandCtrStd, IKSolve->params->trajRandCtrStdScale_Y*IKSolve->params->trajRandCtrStd, IKSolve->params->trajRandCtrStdScale_Z*IKSolve->params->trajRandCtrStd);
+		//std dev vector for random ctr point derivation
+		//Eigen::Vector3d stdVec(IKSolve->params->trajRandCtrStdScale_X*IKSolve->params->trajRandCtrStd, IKSolve->params->trajRandCtrStdScale_Y*IKSolve->params->trajRandCtrStd, IKSolve->params->trajRandCtrStdScale_Z*IKSolve->params->trajRandCtrStd);
+		Eigen::Vector3d stdVec = IKSolve->params->getCtrStdVec();
 		ptrCtrPt << IKSolve->getRandVec(_src->ptrCtrPt, stdVec);				//
+		if (showCtr) { std::cout << "MyGestSymbol::buildRandomSymbol : ptrCtrPt = " << buildStrFrmEigV3d(ptrCtrPt) << " |\t src ctrPt : " << buildStrFrmEigV3d(_src->ptrCtrPt) << "|\tstd vec : " << buildStrFrmEigV3d(stdVec) << "\n"; }
 		setSymbolCenters(ptrCtrPt);				//need to set this before interacting with trajectories
 		trajectories.clear();
 		if(_src->trajectories.size() > 6){std::cout<<"Too many trajectories in symbol ("<< _src->trajectories.size()<<") so not using to generate random traj."<< std::endl; return false; }
 		for (int i = 0; i < _src->trajectories.size(); ++i) {
 			if (!_src->trajectories[i]->useTraj()) { std::cout << "Unused traj in trajectories for ltr : " << _src->name << " : symbol idx " << i << " so not using this symbol."<< std::endl; return false; }
 			trajectories.push_back(std::make_shared<MyGestTraj>("not_from_file", _self, i));
-			trajectories[i]->setSolver(IKSolve);
-			trajectories[i]->copySrcInfo(_src->trajectories[i]);
+			trajectories[i]->copySrcInfo(_src->trajectories[i], scaleZ / _src->sclAmt, scaleY / _src->sclAmt);
 		}
 		calcAllTrajsLen();
 		return true;
 	}//buildRandomSymbol
 
-	//find average x-y location of matlab-space trajectory points in component trajectories of this symbol, and closest and furthest points from average.
+	//NOTE IK is done in z-y plane (camera along x axis)
+	//find average z-y location of matlab-space trajectory points in component trajectories of this symbol, and closest and furthest points from average.
 	//these will be used to map to "drawing plane" in ik sim world frame - all trajs will be treated the same, so avg/min/maxs apply to all
 	void MyGestSymbol::calcTransformPts() {
-		avgLoc.setZero();
+		avgImgSpcLoc.setZero();
 		int totPts = 0;
 		eignVecTyp allTrajPts(0);
 		//find average location
@@ -414,21 +407,20 @@ namespace gestureIKApp {
 			std::shared_ptr<MyGestTraj> traj = trajectories[i];
 			for (int j = 0; j < traj->srcTrajData.size(); ++j) {
 				allTrajPts.push_back(traj->srcTrajData[j]);
-				allTrajPts[destIdx++](0) = 0;		//x is timing info, not to be used for location
+				//allTrajPts[destIdx++](0) = 0;		//x is timing info, not to be used for location
 			}
 			totPts += traj->srcTrajData.size();
 		}
 		if (totPts == 0) {	std::cout << "Error : no points found for symbol " << name << " to calculate average from."<< std::endl;	return;	}
-		//find avg of all pts
-		for (int i = 0; i < allTrajPts.size(); ++i) {		avgLoc += allTrajPts[i];		}
-		avgLoc /= totPts;
+		//find avg of all pts - ignore x coord, which holds timing/arclength info
+		for (int i = 0; i < allTrajPts.size(); ++i) { avgImgSpcLoc += allTrajPts[i];		}
+		avgImgSpcLoc(0) = 0;
+		avgImgSpcLoc /= totPts;
 		//std::cout << "Avg Loc for symbol : " << (this->name) << " with # of trajs : " << trajectories.size() << " and total # of pts : " << totPts << " : (" << buildStrFrmEigV3d(avgLoc) << ")"<< std::endl;
-		//set for all trajs - avgLoc,  maxLoc,  maxDist(0),
-		//maxLoc.setZero();
 		double maxDist = -99999999;
 		//set avg loc and build disp std::vectors from avg location to each src point
 		for (int i = 0; i < trajectories.size(); ++i) {
-			trajectories[i]->calcSrcTrajDispVecs(avgLoc);
+			trajectories[i]->calcSrcTrajDispVecs(avgImgSpcLoc);
 		}
 		//for all trajs for all points - find min/max based on avg loc - need to be done here
 		for (int i = 0; i < trajectories.size(); ++i) {		
@@ -436,7 +428,7 @@ namespace gestureIKApp {
 		}
 
 		//std::cout << "Max Loc for symbol : " << (this->name) << " with # of trajs : " << trajectories.size() << " and total # of pts : " << totPts << " : (" << buildStrFrmEigV3d(maxLoc) << ") and Min Dist : " << maxDist << "\n";
-		//find scale amount by using params->IK_drawRad and maxDist - scales all std::vectors by this amount to fit within proscribed circle
+		//find scale amount by using params->IK_drawRad and maxDist - scales all std::vectors by this amount to fit within proscribing circle
 		sclAmt = circleRad / maxDist;
 	}//calcTransformPts
 
@@ -455,23 +447,10 @@ namespace gestureIKApp {
 		mRI->popMatrix();
 	}//drawTrajs
 
-	 //set reference to IK solver - set in all trajectories
-	void MyGestSymbol::setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv) {
-		//IKSolve = _slv;
-
-		//circleRad = IKSolve->params->IK_drawRad;
-		//ptrCtrPt << IKSolve->drawCrclCtr;
-		//ptrPlaneNorm << (IKSolve->tstRShldrSt - ptrCtrPt).normalized();
-		//elbowCtrPt << IKSolve->drawElbowCtr;
-		//elbowPlaneNorm << IKSolve->elbowShldrNormal;
-	//	trajVel = IKSolve->params->trajDesiredVel;
-
-		for (int i = 0; i<trajectories.size(); ++i) { trajectories[i]->setSolver(IKSolve); }
-	}
-
 	//passes center point to use, build all other relevant vals off this value (for random centers).  
 	void MyGestSymbol::setSymbolCenters(const Eigen::Ref<const Eigen::Vector3d>& ctPt) {
 		ptrCtrPt << ctPt;
+
 		ptrPlaneNorm << (IKSolve->tstRShldrSt - ptrCtrPt).normalized();
 		//instead of winging it for elbow, IK to draw center and update elbow location - use this estimate as start loc
 		elbowCtrPt = .5 * (IKSolve->tstRShldrSt + ptrCtrPt);
@@ -489,7 +468,8 @@ namespace gestureIKApp {
 		if (flags[debugIDX]) {	
 			std::cout << "Sample Elbow Location being updated after IKing to Ctr point in IKSolver"<< std::endl;
 		}
-		elbowCtrPt = IKSolve->getSkel()->getMarker("ptrElbow_r")->getWorldPosition();
+		//IKSolve->drawElbowMrkrName set when IKSolve->params loaded
+		elbowCtrPt = IKSolve->getSkel()->getMarker(IKSolve->drawElbowMrkrName)->getWorldPosition();
 		//normal point from elbow to shoulder as arm is extended to ~average position
 		elbowPlaneNorm = (IKSolve->tstRShldrSt - elbowCtrPt).normalized();
 	}//setSymbolCenters
@@ -516,7 +496,7 @@ namespace gestureIKApp {
 	//generate a linking trajectory from the end of 1 trajectory to the beginning of another using 4 pt neville between end points 
 	std::shared_ptr<MyGestTraj> MyGestSymbol::genConnectTraj(const Eigen::Ref<const Eigen::Vector3d>& ctPt, const Eigen::Ref<const Eigen::Vector3d>& traj1End, const Eigen::Ref<const Eigen::Vector3d>& traj2St) {
 		std::shared_ptr<MyGestTraj> res = std::make_shared<MyGestTraj>("", _self, -1);
-		res->setSolver(IKSolve);
+		//res->setSolver(IKSolve);
 		res->flags[res->connTrajIDX] = true;
 		//gen 4 pt neville in plane of motion
 		Eigen::Vector3d stPtVec = (traj1End - ctPt), endPtVec(traj1End - traj2St);
@@ -550,7 +530,7 @@ namespace gestureIKApp {
 	}
 	
 	std::ostream& operator<<(std::ostream& out, MyGestSymbol& sym) {
-		out << "Symbol : " << sym.name << "\tavg loc : ("<< buildStrFrmEigV3d(sym.avgLoc)<<")"<< std::endl;
+		out << "Symbol : " << sym.name << "\tavg loc : ("<< buildStrFrmEigV3d(sym.avgImgSpcLoc)<<")"<< std::endl;
 		return out;
 	}
 

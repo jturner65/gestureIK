@@ -75,6 +75,7 @@ namespace gestureIKApp {
 		//average location needs to be managed at symbol level.
 
 		//build a uniform distribution engine to be able to select randomly from all the symbols that represent this letter (read from file and desired from random generation)
+		//randomization of letters picks random base letter to start from and then randomizes components of that base letter trajectory
 		void buildUniDist() {
 			uni = std::make_shared< std::uniform_int_distribution<int> >(0, (numFileSymbols - 1));
 		}
@@ -86,7 +87,7 @@ namespace gestureIKApp {
 		void buildSymbolAndSolveIK(int symIdx, bool solveIK, bool disp);
 
 		//build a single random symbol for this letter
-		std::shared_ptr<gestureIKApp::MyGestSymbol> buildRandSymbol(int idx);
+		std::shared_ptr<gestureIKApp::MyGestSymbol> buildRandSymbol(int idx, bool useIDX);
 
 		//set solver for this trajectory
 		//void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv) { IKSolve = _slv; }

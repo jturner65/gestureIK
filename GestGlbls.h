@@ -98,11 +98,8 @@ namespace gestureIKApp {
 	static std::array<double, 4> const sqCrnrConsts{ .25*DART_PI,.75*DART_PI, 1.25*DART_PI,1.75*DART_PI };
 	static std::array<double, 5> const strCrnrConsts{ DART_PI_HALF, DART_PI_HALF + (2.0 * 1.256637061435917), DART_PI_HALF + (4.0 * 1.256637061435917), DART_PI_HALF + (1.256637061435917), DART_PI_HALF + (3.0 * 1.256637061435917) };
 
-	////base value of # of trajectories to capture for training and testing data
-	//static const int dataCap = 100;
-	////threshold between testing and training data
-	//static const double testTrainThresh = .5;
-
+	//file name of parameters used to generate data
+	static std::string const baseXMLFileName = "dflt_gestik_params.xml";
 	//location of generated(temporary) csv files
 	static std::string const appFilePath = DART_ROOT_PATH"apps/gestureIK/";
 	//location of generated(temporary) csv files
@@ -118,9 +115,9 @@ namespace gestureIKApp {
 	//precalced sqrt 2
 	static const double sqrt2 = sqrt(2);
 
-	//names of markers that we are actually solving for in IK
+	//names of markers that we are actually solving for in IK - TODO change to be loaded via XML so will support left hand or right hand
 	static std::array<std::string, 7> const trkedMrkrNames{ "ptrFinger_r", "ptrElbow_r" , "right_scapula", "left_scapula" , "head_right","head_left", "abdomen" };
-	//names of markers we are holding fixed (solving for original positions only)
+	//names of markers we are holding fixed (solving for original positions only) 
 	static std::array<std::string, 5> const fixedMrkrNames{ "right_scapula", "left_scapula" , "head_right", "head_left", "abdomen" };
 
 	//colors to use for trajectory rendering
@@ -184,7 +181,7 @@ namespace gestureIKApp {
 	//interpolation routines
 	//static inline Eigen::Vector3d interpVec(const Eigen::Ref<const Eigen::Vector3d>& A, const Eigen::Ref<const Eigen::Vector3d>& B, double t) { return ((1 - t) * A) + (t * B); }
 	static inline Eigen::Vector3d interpVec(const Eigen::Ref<const Eigen::Vector3d>& A, const Eigen::Ref<const Eigen::Vector3d>& B, double t) { return (A + (t * (B - A))); }
-	//tuck/untuck based on sign of t
+	//tuck/untuck based on sign of t - A:midpoint, B,C : endpoints, t : tuck amt
 	static inline Eigen::Vector3d tuck(const Eigen::Ref<const Eigen::Vector3d>& A, const Eigen::Ref<const Eigen::Vector3d>& B, const Eigen::Ref<const Eigen::Vector3d>& C, double t) {return interpVec(A, interpVec(B, C, .5), t);}
 
 	static Eigen::Vector3d GenQInterp(const Eigen::Ref<const Eigen::Vector3d>& A, double a, const Eigen::Ref<const Eigen::Vector3d>& B, double b,

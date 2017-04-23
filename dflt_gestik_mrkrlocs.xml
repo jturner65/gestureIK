@@ -60,7 +60,6 @@
 		<bnode>h_bicep_right</bnode>
 		<name>right_bicep</name>
 	</marker>
-<!--TODO : add capability to customize to use left hand instead of right -->
 	<marker>
 		<offset>0.0 -0.28 0</offset>
 		<bnode>h_bicep_right</bnode>
@@ -70,6 +69,11 @@
 		<offset>0.0 -0.2 -0.05</offset>
 		<bnode>h_bicep_left</bnode>
 		<name>left_bicep</name>
+	</marker>
+	<marker>
+		<offset>0.0 -0.28 0</offset>
+		<bnode>h_bicep_left</bnode>
+		<name>ptrElbow_l</name>
 	</marker>
 	<marker>
 		<offset>0.0 0.0 0.025</offset>
@@ -97,8 +101,18 @@
 		<name>left_wrist</name>
 	</marker>
 	<marker>
+		<offset>0.0 0.0 0.0</offset>
+		<bnode>h_hand_left</bnode>
+		<name>ptrWrist_l</name>
+	</marker>
+	<marker>
 		<offset>0.0 -0.1 -0.025</offset>
 		<bnode>h_hand_left</bnode>
 		<name>left_hand</name>
 	</marker>	
+	<marker>
+		<offset>0.0 -0.14 0.0</offset>
+		<bnode>h_hand_left</bnode>
+		<name>ptrFinger_l</name>
+	</marker>
 </GestIKSkelMrkrLocs>

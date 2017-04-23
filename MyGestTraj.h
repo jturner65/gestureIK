@@ -48,40 +48,34 @@
 namespace dart {
 	namespace renderer {
 		class RenderInterface;
-	}  // namespace renderer
-} // namespace dart
+	}  
+} 
 
-/*
-	this class will build and manage a vector of per-frame vectors of per-constraint target positions
-	for tracked markers on skeleton
-	a trajectory consists of a single "stroke" without interruption.
-*/
 namespace gestureIKApp {
 	class IKSolver;
 	class MyGestSymbol;
 
 	class MyGestTraj { 
 	public:
+
 		MyGestTraj(const std::string& _fname,std::shared_ptr<gestureIKApp::MyGestSymbol> _p, int _num);
 		virtual ~MyGestTraj();
 
-		//load this trajectory's csv trajectory file - expected to be x,y,millis
-		void readTrajFile();
-		//load this trajectory's csv trajectory file - expected to be x,y,velX,velY
-		void readTrajVelFile();
+		//load this trajectory's csv trajectory file - expected to be x,y,millis or x,y,vx,vy if useVel
+		void readTrajFile(bool useVel);
 
 		//set tracked marker trajectory points used by solver
 		bool setTrkMrkrAndSolve(double lenFromStTraj);
 		//build IK trajectory from matalb data
 		void buildTrajFromData(bool init, eignVecTyp& _Initpts);
 
-		//convert matlab source trajectory for pointer to properly scaled traj for IK
-		eignVecTyp convSrcTrajToGestTraj();
+		//convert image-space source trajectory for pointer to properly scaled traj for IK
+		eignVecTyp convSrcTrajToGestTraj(double sclAmt);
 
 		//convert pointer location to elbow space location
 		Eigen::Vector3d convPtrToElbow(const Eigen::Ref<const Eigen::Vector3d>& _pt);
 		//copy the source info from passed trajectory
-		void copySrcInfo(std::shared_ptr<gestureIKApp::MyGestTraj> _src);
+		void copySrcInfo(std::shared_ptr<gestureIKApp::MyGestTraj> _src, double newSclAmtZ, double newSclAmtY);
 
 		inline eignVecTyp getTrajFrame(int idx) {	return trajTargets[idx];		}
 
@@ -116,7 +110,7 @@ namespace gestureIKApp {
 		void drawDebugTraj(dart::renderer::RenderInterface* mRI, const Eigen::Ref<const Eigen::Vector3d>& clr);
 
 		//set solver for this trajectory
-		void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv) {		IKSolve = _slv;		} 
+		//void setSolver(std::shared_ptr<gestureIKApp::IKSolver> _slv) {		IKSolve = _slv;		} 
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestTraj& traj);
 
@@ -128,11 +122,13 @@ namespace gestureIKApp {
 		//used for mapping
 		Eigen::Vector3d avgLoc;				//average location of all trajectories in the symbol this traj belongs to	- !!in matlab space!!	
 		Eigen::Vector3d ctrPoint;				//center point of traj	- !!in IK space!!	
-
-		double //sclAmt,						//amt to scale direction vectors from center based on max dist and trajRad
-			trajLen,						//length of trajectory
-			lenMaxSrcDisp,					//longest source displacement length (to speed up scale calculation)
-			perPtSpace;						//space between points in final trajectory
+			
+			//length of trajectory
+		double trajLen,		
+			//longest source displacement length (to speed up scale calculation)
+			lenMaxSrcDisp,					
+			//space between points in final trajectory
+			perPtSpace;						
 
 		std::string filename,				//filename source for this trajectory
 					name;					//trajectory name (contains ltr name, symbol #, ltr #
@@ -160,6 +156,6 @@ namespace gestureIKApp {
 		static const unsigned int numFlags = 8;
 
 	};	
-} //namespace
-#endif // #ifndef APPS_GESTURE_MYGESTTRAJ_H_
+}
 
+#endif 
