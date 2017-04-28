@@ -70,7 +70,7 @@ namespace gestureIKApp {
 		void buildTrajFromData(bool init, eignVecTyp& _Initpts);
 
 		//convert image-space source trajectory for pointer to properly scaled traj for IK
-		eignVecTyp convSrcTrajToGestTraj(double sclAmt);
+		//eignVecTyp convSrcTrajToGestTraj(double sclAmt);
 
 		//convert pointer location to elbow space location
 		Eigen::Vector3d convPtrToElbow(const Eigen::Ref<const Eigen::Vector3d>& _pt);
@@ -96,8 +96,8 @@ namespace gestureIKApp {
 		eignVecTyp resample(eignVecTyp& _pts, double _len, std::vector<double>& _ptsDistFromSt, int numPts, bool wrap);
 		std::vector<double> calcDistsFromStart(eignVecTyp& _pts);
 		Eigen::Vector3d at(double t, double _ttllen, eignVecTyp& _pts, std::vector<double>& _distAtEachPt);
-		void processPts(int numPts);
-		void setPts(eignVecTyp& tmp);
+		void processPts(int numPts, eignVecTyp& debugTrajPts);
+		void setPts(eignVecTyp& tmp, eignVecTyp& tmpVelAra);
 		//whether or not to use this trajectory - currently only ever set false if length of traj is >0 but < some small threshold.  denotes traj noise
 		inline bool useTraj() { return flags[useTrajIDX]; }
 		//whether or not this trajectory is a connecting trajectory
@@ -114,6 +114,14 @@ namespace gestureIKApp {
 
 		friend std::ostream& operator<<(std::ostream& out, MyGestTraj& traj);
 
+		//renormalize timing vector - will have each element be del arc len of total trajectory at that point
+		void normSrcTrajDispRatio(std::vector<double>& timingVec) {
+			double nFact = 0;
+			for (int i = 0; i < timingVec.size(); ++i) {		nFact += timingVec[i];		}
+			if (nFact == 0) { return; }
+			for (int i = 0; i < timingVec.size(); ++i) { timingVec[i]/=nFact; }
+		}
+
 
 	public :	//variables
 		std::shared_ptr<gestureIKApp::IKSolver> IKSolve;			//ref to ik solver
@@ -126,7 +134,9 @@ namespace gestureIKApp {
 			//length of trajectory
 		double trajLen,		
 			//longest source displacement length (to speed up scale calculation)
-			lenMaxSrcDisp,					
+			lenMaxSrcDisp,	
+			//shortest source displacement length
+			lenMinSrcDisp,
 			//space between points in final trajectory
 			perPtSpace;						
 
@@ -137,10 +147,13 @@ namespace gestureIKApp {
 		eignVecTyp srcTrajData,					//source trajectory points in matlab frame - need to be transformed
 			srcTrajVelData,						//source trajectory velocity in matlab image frame - only used if present
 			srcTrajDispVecs,				//source trajectory displacement vectors from avg loc - scale by scale amt and add to IKSolver->drawCrclCtr to find new points
-			convTrajPts,				//converted trajectory points
-			debugTrajPts;				//for debugging only
+			convTrajPts;				//converted trajectory points
+			//debugTrajPts;				//for debugging only
 
-		std::vector<double> srtTrajTiming, trajPtDistFromSt;		//timing of source trajectory, dists to each point from start of arc
+		std::vector<double> 
+			srtTrajTiming, 
+			convTVelRats,			//converted ratios of total trajectory
+			trajPtDistFromSt;		//timing of source trajectory, dists to each point from start of arc
 
 		std::vector<bool> flags;					//state flags of trajectory
 		static const unsigned int

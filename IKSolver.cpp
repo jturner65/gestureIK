@@ -75,11 +75,11 @@ namespace gestureIKApp {
 
 	//reset reach, 
 	void IKSolver::setAllArmMrkrDims() {
-		std::string _finger(params->getIKPtrFingerName()), _wrist(params->getIKPtrWristName()), _elbow(params->getIKPtrElbowName()), _shldr(params->getIKPtrShldrName());
+		std::string _finger(params->getIKPtrFingerName()), _wrist(params->getIKPtrWristName()), _elbow(params->getIKPtrElbowName()), _shldr(params->getIKPtrShldrName()), _IKPtr(params->getIKTarget());
 		//reset skeleton to be in initial pose
 		setPoseAndCompSkelKin(initPose);
 		//approx distance skel can reach without changing posture too much (rest dist from scap to ptrFinger_r) - !!!depends on skeleton arm being straight to start!!!
-		reach = (skelPtr->getMarker(_finger)->getWorldPosition() - skelPtr->getMarker(_shldr)->getWorldPosition()).norm(); //only works because arm is straight
+		reach = (skelPtr->getMarker(_IKPtr)->getWorldPosition() - skelPtr->getMarker(_shldr)->getWorldPosition()).norm(); //only works because arm is straight
 		//double bicepLen = (skelPtr->getMarker(_elbow)->getWorldPosition() - skelPtr->getMarker(_shldr)->getWorldPosition()).norm();
 		//double frArmLen = (skelPtr->getMarker(_wrist)->getWorldPosition() - skelPtr->getMarker(_elbow)->getWorldPosition()).norm();
 		//double handLen = (skelPtr->getMarker(_finger)->getWorldPosition() - skelPtr->getMarker(_wrist)->getWorldPosition()).norm();
@@ -87,8 +87,28 @@ namespace gestureIKApp {
 		//std::cout << "bicep len : " << bicepLen << " forearm len : " << frArmLen << " hand len : " << handLen << " sum of lengths : " << streach << " reach : " << reach << "\n";
 		//start location of shoulder in world
 		tstRShldrSt = skelPtr->getMarker(_shldr)->getWorldPosition();
-		drawShldrMrkrName.assign( _shldr);
+		drawShldrMrkrName.assign(_shldr);
 		drawElbowMrkrName.assign(_elbow);
+
+		trkMarkers = std::make_shared<trkMrkMap>();
+		//set all tracked markers (these are solved for in IKSolver)
+		//set tracked values based on XML data
+		trkedMrkrNames[0].assign(_IKPtr);
+		trkedMrkrNames[1].assign(_elbow);
+
+		for (int i = 0; i < trkedMrkrNames.size(); ++i) {
+			Marker* m = skelPtr->getMarker(trkedMrkrNames[i]);
+			trkMarkers->insert(std::make_pair(trkedMrkrNames[i], std::make_shared<trackedMarker>(m)));
+			mrkrWts.insert(std::make_pair(trkedMrkrNames[i], 1.0));		//equal weights of 1
+		}
+		//ptr finger 2x as important as standard, elbow 1/2 as important
+		//mrkrWts["ptrFinger_r"] *= 2.0;
+		//mrkrWts["ptrElbow_r"] *= .1;
+		//set fixed markers to be fixed to their current position
+		for (int i = 0; i < fixedMrkrNames.size(); ++i) {
+			(*trkMarkers)[fixedMrkrNames[i]]->fixToLoc(true);
+		}
+
 	}//setAllArmMrkrDims
 
 	//load/reload all params values from xml
@@ -97,6 +117,12 @@ namespace gestureIKApp {
 		std::stringstream ss;
 		ss << appFilePath << baseXMLFileName;
 		GestIKParser::readGestIKXML(ss.str(), params);
+		if (params->loadCustXML()) {//override default params with special settings for particular configurations
+			std::cout << "\nLoading Custom params from " << params->ovrParamsXMLFilename << "\n\n";
+			ss.str("");
+			ss << appFilePath << params->ovrParamsXMLFilename;
+			GestIKParser::readGestIKXML(ss.str(), params);
+		}
 		std::cout << "Loaded params : " << *params << "\n";
 
 		//loadMarkerLocs();
@@ -111,21 +137,6 @@ namespace gestureIKApp {
 		//TODO change to use names of markers from XML file, to support drawing with left hand
 		//setAllArmMrkrDims("ptrFinger_r", "ptrWrist_r", "ptrElbow_r", "right_scapula");
 		setAllArmMrkrDims();
-		trkMarkers = std::make_shared<trkMrkMap>();
-		//set all tracked markers (these are solved for in IKSolver)
-		for (int i = 0; i < trkedMrkrNames.size(); ++i) {
-			Marker* m = skelPtr->getMarker(trkedMrkrNames[i]);
-			trkMarkers->insert(std::make_pair(trkedMrkrNames[i], std::make_shared<trackedMarker>(m)));
-			mrkrWts.insert(std::make_pair(trkedMrkrNames[i], 1.0));		//equal weights of 1
-		}
-		//ptr finger 2x as important as standard, elbow 1/2 as important
-		//mrkrWts["ptrFinger_r"] *= 2.0;
-		//mrkrWts["ptrElbow_r"] *= .1;
-		//set fixed markers to be fixed to their current position
-		for (int i = 0; i < fixedMrkrNames.size(); ++i) {
-			(*trkMarkers)[fixedMrkrNames[i]]->fixToLoc(true);
-		}
-
 	}
 	
 	//void IKSolver::loadMarkerLocs() {
@@ -166,8 +177,9 @@ namespace gestureIKApp {
 		//normal point from elbow to shoulder as arm is extended to ~average position
 		elbowShldrNormal = (tstRShldrSt - drawElbowCtr).normalized();
 		std::cout << "In IKSolve : arm reach : " << reach << " elbow scale : "<< params->IK_elbowScale<<"\tcenter " << buildStrFrmEigV3d(drawCrclCtr) << " elbow center " << buildStrFrmEigV3d(drawElbowCtr) << " and rad of test circle " << params->IK_drawRad << "\n";
-		(*trkMarkers)[trkedMrkrNames[0]]->setTarPos(drawCrclCtr);
-		(*trkMarkers)[trkedMrkrNames[1]]->setTarPos(drawElbowCtr);
+		setTargetPos(drawCrclCtr, drawElbowCtr);
+		//(*trkMarkers)[trkedMrkrNames[0]]->setTarPos(drawCrclCtr);
+		//(*trkMarkers)[trkedMrkrNames[1]]->setTarPos(drawElbowCtr);
 		//solve IK
 		solve();
 		//recalc elbow center after IKing ptr to circle center location - improves guess
@@ -191,6 +203,11 @@ namespace gestureIKApp {
 		return diffRes.squaredNorm();
 	}
 
+	//set target positions for pointer finger/hand and pointer elbow
+	void IKSolver::setTargetPos(const Eigen::Ref<const Eigen::Vector3d>& _tar1, const Eigen::Ref<const Eigen::Vector3d>& _tar2) {
+		(*trkMarkers)[trkedMrkrNames[0]]->setTarPos(_tar1);
+		(*trkMarkers)[trkedMrkrNames[1]]->setTarPos(_tar2);
+	}
 
 	void IKSolver::setTrkMrkrs(eignVecTyp& _tarPosAra) {
 		//update target positions from passed values

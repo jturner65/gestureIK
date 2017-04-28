@@ -6,7 +6,7 @@
    <symbols>
       <symbol>
          <trajCounts>1</trajCounts>
-         <trajectory>D:/dart5-1_cs4496/dart/apps/gestureIK/jtVideoLetters/ltr_r/ltr_r_cpy_0_trj_0.csv</trajectory>
+         <trajectory>D:/dart5-1_cs4496/dart/apps/gestureIK/jtVideoLetters/ltr_r/ltr_r_cpy_0_trj_0.csv</trajectory>         <!--<trajectory>D:/dart5-1_cs4496/dart/apps/gestureIK/jtVideoLetters/ltr_r/COMVals_04122124_r_00000_CVEL.csv</trajectory>-->
       </symbol>
       <symbol>
          <trajCounts>1</trajCounts>

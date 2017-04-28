@@ -4,7 +4,14 @@
 <!-- defaults to apps/gestureIK/sourceLetters/ - only used if IDX_useCustSrcLtrs == true -->
 	<parameter>
 		<name>srcLtrDir</name>
-		<val>apps/gestureIK/jtVideoLetters/</val>   
+		<val>apps/gestureIK/sourceLetters/</val>   
+	</parameter>
+<!-- override xml file name to load in after these base values have been loaded  -->
+<!-- only used if IDX_useCustParamsXML is true -->
+	<parameter>
+		<name>ovrParamsXMLFilename</name>
+		<!--<val>jtVidLtrSrc_gestik_params.xml</val> -->  
+		<val>omniLtrSrc_gestik_params.xml</val> 
 	</parameter>
 <!--ik solver params -->
 	<parameter>
@@ -44,9 +51,15 @@
 		<name>trajLenThresh</name>
 		<val>0.01</val>   
 	</parameter>
+<!--# of repetitions of (tuck/untuck cycle(s)) subdivide -->
 	<parameter>
 		<name>trajNumReps</name>
-		<val>5</val>   
+		<val>4</val>   
+	</parameter>
+<!-- # of tuck/untuck repititions -->
+	<parameter>
+		<name>trajNumTuck</name>
+		<val>10</val>   
 	</parameter>
 	<parameter>
 		<name>trajDistMult</name>
@@ -193,6 +206,11 @@
 		<name>IDX_useCustSrcLtrs</name>
 		<val>FALSE</val> 
 	</parameter>
+<!-- whether or not to use override xml file specified in ovrParamsXMLFilename -->
+	<parameter>
+		<name>IDX_useCustParamsXML</name>
+		<val>TRUE</val>
+	</parameter>
 <!-- TODO -->
 	<parameter>
 		<name>IDX_useLeftHand</name>
@@ -250,6 +268,27 @@
 	<parameter>
 		<name>IDX_rndHandClr</name>
 		<val>TRUE</val> 
+	</parameter>
+<!--source data flags -->
+<!-- Whether to use max displacement vector or avg displacement vector in source material to scale to IK space-->
+	<parameter>
+		<name>IDX_useMaxDispLen</name>
+		<val>TRUE</val> 
+	</parameter>
+<!--Whether to flip the source letter around the y axis (backwards) - omniglot data has this -->
+	<parameter>
+		<name>IDX_flipSrcYAxis</name>
+		<val>FALSE</val> 
+	</parameter>
+<!--Whether to flip the source letter around the z axis (backwards) - omniglot data has this -->
+	<parameter>
+		<name>IDX_flipSrcZAxis</name>
+		<val>FALSE</val> 
+	</parameter>
+<!-- whether to use pointing hand com or ptr finger (Default - if false) to IK to -->
+	<parameter>
+		<name>IDX_IKToHandCOM</name>
+		<val>FALSE</val> 
 	</parameter>
 </GestIKParams>
 <!-- Template to build gesture IK xml configuration file to store params -- all file names relative to dart data path -->

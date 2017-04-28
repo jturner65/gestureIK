@@ -108,6 +108,21 @@ namespace gestureIKApp {
 		inline bool saveHandCOMVals() { return flags[IDX_saveHandCOMVals]; }
 		//save screenshots - true if either not saving hand com vals or if IDX_alwaysSaveImgs is specified as true
 		inline bool saveScreenShots() { return (!flags[IDX_saveHandCOMVals] || flags[IDX_alwaysSaveImgs]); }
+		//whether to use max displacement or avg displacement (if false) for building scale amount when transforming trajs from img/matlab space to IK space
+		inline bool useMaxDispLen() { return flags[IDX_useMaxDispLen]; }
+		//whether to flip source data around y axis
+		inline bool flipSrcYAxis() {	return flags[IDX_flipSrcYAxis];	}
+		//whether to flip source data around z axis
+		inline bool flipSrcZAxis() {	return flags[IDX_flipSrcZAxis];		}
+		//whether or not to subsequently load a custom XML file after defaults
+		inline bool loadCustXML() {		return (flags[IDX_useCustParamsXML] && (ovrParamsXMLFilename != "")); }
+		//whether to IK to hand COM or to pointer finger(if false <- default)
+		inline bool IKToHandCOM() { return flags[IDX_IKToHandCOM]; }
+		//get IK target - either use pointer finger or pointer-hand wrist (?) 
+		inline std::string getIKTarget() {
+			if (flags[IDX_IKToHandCOM]) {return getIKPtrWristName();	}
+			else {						 return getIKPtrFingerName(); }
+		}
 
 		//whether or not to force training data to be 16 frames long
 		inline bool limitTo16Frames() { return (dataType == FIXED_16); }
@@ -149,7 +164,8 @@ namespace gestureIKApp {
 		std::vector<markerXMLData> markerLocs;
 		//marker location xml file name
 		std::string markerXMLFileName;
-
+		//custom xml file name - only some values are specified - this file name needs to be specified in default xml and flags[IDX_useCustParamsXML] == true for this to be used
+		std::string ovrParamsXMLFilename;
 		//IK solver and skel configuration parameters
 		//% of full reach to set up imaginary writing plane
 		double IK_reachPct;
@@ -177,8 +193,10 @@ namespace gestureIKApp {
 
 		//std of randomized trajectory center
 		double trajRandSclStd;
-		//# of iterations of tuck/untuck/subdivide for trajectory smoothing
+		//# of iterations of (tuck/untuck cycle(s))/subdivide for trajectory smoothing
 		int trajNumReps;
+		//# of repititons of tuck/untuck cycles per repitition of 
+		int trajNumTuck;
 		//multiplier of trajectory distance per frame for trajectory point gen
 		double trajDistMult;
 		//desired target velocity of motion, in units of IK space at ptr finger
@@ -267,9 +285,19 @@ namespace gestureIKApp {
 			//whether or not to always save screen shots - should only be false if saving com values (but not always false - may want both)
 			IDX_alwaysSaveImgs = 12,
 			//whether or not to use custom location for source csv files describing seed trajectories
-			IDX_useCustSrcLtrs = 13;
+			IDX_useCustSrcLtrs = 13,
+			//whether to use max displacement vector in source material, or avg displacement vector in source, to set IK scaling
+			IDX_useMaxDispLen = 14,
+			//whether to flip source data around y axis
+			IDX_flipSrcYAxis = 15,
+			//whether to flip source data around z axis
+			IDX_flipSrcZAxis = 16,
+			//whether or not to subsequently load a custom XML file after defaults
+			IDX_useCustParamsXML = 17,
+			//whether to IK to hand COM or to pointer finger(if false <- default)
+			IDX_IKToHandCOM = 18;
 
-		static const int numFlags = 14;
+		static const int numFlags = 19;
 	};
 
 }//namespace gestureIKApp 

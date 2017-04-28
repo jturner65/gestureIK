@@ -115,8 +115,6 @@ namespace gestureIKApp {
 	//precalced sqrt 2
 	static const double sqrt2 = sqrt(2);
 
-	//names of markers that we are actually solving for in IK - TODO change to be loaded via XML so will support left hand or right hand
-	static std::array<std::string, 7> const trkedMrkrNames{ "ptrFinger_r", "ptrElbow_r" , "right_scapula", "left_scapula" , "head_right","head_left", "abdomen" };
 	//names of markers we are holding fixed (solving for original positions only) 
 	static std::array<std::string, 5> const fixedMrkrNames{ "right_scapula", "left_scapula" , "head_right", "head_left", "abdomen" };
 

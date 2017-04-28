@@ -106,10 +106,9 @@ namespace gestureIKApp {
 		
 		//set tracked marker positions - call this or something like it before solve
 		void setTrkMrkrs(eignVecTyp& _tarPos);
-
-		//pass guesses for elbow position, solve IK to get actual position, set glbl values 
-		void slvForElbowPos(const Eigen::Ref<const Eigen::Vector3d>& ctr, const Eigen::Ref<const Eigen::Vector3d>& lbw);
-		
+		//set target positions for pointer finger/hand and pointer elbow
+		void setTargetPos(const Eigen::Ref<const Eigen::Vector3d>& _tar1, const Eigen::Ref<const Eigen::Vector3d>& _tar2);
+	
 		void solve(eignVecTyp& _tarPos);
 
 		void solve();
@@ -118,7 +117,6 @@ namespace gestureIKApp {
 
 		//set sample trajectory pointer and elbow centers and normal vectors of planes drawn on (also used for defaults)
 		void setSampleCenters(); 
-		void setSampleCenters(const Eigen::Ref<const Eigen::Vector3d>& ctr);
 
 		//get gauss random double with mean mu and std = std - put here so that accessible in all classes
 		inline double getRandDbl(double mu, double std = 1.0) {
@@ -179,6 +177,9 @@ namespace gestureIKApp {
 		std::shared_ptr<gestureIKApp::GestIKParams> params;
 		//name of marker for drawing arm's shoulder
 		std::string drawShldrMrkrName, drawElbowMrkrName;
+
+		//names of markers tracked by IK - first 2 are set by XML files
+		std::array<std::string, 7> trkedMrkrNames{ "SET BY PARAMS PTR FINGER", "SET BY PARAMS ELBOW" , "right_scapula", "left_scapula" , "head_right","head_left", "abdomen" };
 	protected:
 		void setAllArmMrkrDims();
 		void createMarkersXML();

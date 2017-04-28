@@ -397,6 +397,7 @@ namespace gestureIKApp {
 	//NOTE IK is done in z-y plane (camera along x axis)
 	//find average z-y location of matlab-space trajectory points in component trajectories of this symbol, and closest and furthest points from average.
 	//these will be used to map to "drawing plane" in ik sim world frame - all trajs will be treated the same, so avg/min/maxs apply to all
+	//THIS ALSO CALLS FUNCTION THAT BUILDS THE DISPLACEMENT VECTORS used to rebuild trajectory in IK space
 	void MyGestSymbol::calcTransformPts() {
 		avgImgSpcLoc.setZero();
 		int totPts = 0;
@@ -406,30 +407,33 @@ namespace gestureIKApp {
 		for (int i = 0; i < trajectories.size(); ++i) {
 			std::shared_ptr<MyGestTraj> traj = trajectories[i];
 			for (int j = 0; j < traj->srcTrajData.size(); ++j) {
-				allTrajPts.push_back(traj->srcTrajData[j]);
+				//allTrajPts.push_back(traj->srcTrajData[j]);
+				avgImgSpcLoc += traj->srcTrajData[j];
 				//allTrajPts[destIdx++](0) = 0;		//x is timing info, not to be used for location
 			}
 			totPts += traj->srcTrajData.size();
 		}
 		if (totPts == 0) {	std::cout << "Error : no points found for symbol " << name << " to calculate average from."<< std::endl;	return;	}
 		//find avg of all pts - ignore x coord, which holds timing/arclength info
-		for (int i = 0; i < allTrajPts.size(); ++i) { avgImgSpcLoc += allTrajPts[i];		}
-		avgImgSpcLoc(0) = 0;
+		//for (int i = 0; i < allTrajPts.size(); ++i) { avgImgSpcLoc += allTrajPts[i];		}
+		avgImgSpcLoc(0) = 0;//x should be 0 since img/matlab space is z-y
 		avgImgSpcLoc /= totPts;
 		//std::cout << "Avg Loc for symbol : " << (this->name) << " with # of trajs : " << trajectories.size() << " and total # of pts : " << totPts << " : (" << buildStrFrmEigV3d(avgLoc) << ")"<< std::endl;
-		double maxDist = -99999999;
+		double maxDist = -99999999, minDist = 99999999;
 		//set avg loc and build disp std::vectors from avg location to each src point
 		for (int i = 0; i < trajectories.size(); ++i) {
 			trajectories[i]->calcSrcTrajDispVecs(avgImgSpcLoc);
 		}
 		//for all trajs for all points - find min/max based on avg loc - need to be done here
-		for (int i = 0; i < trajectories.size(); ++i) {		
-			if (trajectories[i]->lenMaxSrcDisp > maxDist) { maxDist = trajectories[i]->lenMaxSrcDisp; }	
+		for (int i = 0; i < trajectories.size(); ++i) {
+			if (trajectories[i]->lenMaxSrcDisp > maxDist) { maxDist = trajectories[i]->lenMaxSrcDisp; }
+			if (trajectories[i]->lenMinSrcDisp <= minDist) { minDist = trajectories[i]->lenMinSrcDisp; }
 		}
+		if (IKSolve->params->useMaxDispLen()) {		sclAmt = circleRad / maxDist;	}
+		else {			sclAmt = circleRad / (.5*(maxDist + minDist));		}
 
 		//std::cout << "Max Loc for symbol : " << (this->name) << " with # of trajs : " << trajectories.size() << " and total # of pts : " << totPts << " : (" << buildStrFrmEigV3d(maxLoc) << ") and Min Dist : " << maxDist << "\n";
 		//find scale amount by using params->IK_drawRad and maxDist - scales all std::vectors by this amount to fit within proscribing circle
-		sclAmt = circleRad / maxDist;
 	}//calcTransformPts
 
 
@@ -461,8 +465,9 @@ namespace gestureIKApp {
 		if (flags[debugIDX]) {
 			std::cout << "In Symbol " << name << " : Right arm reach : " << IKSolve->reach << " center " << buildStrFrmEigV3d(ptrCtrPt) << " elbow center " << buildStrFrmEigV3d(elbowCtrPt) << " and rad of test circle " << IKSolve->params->IK_drawRad << "\n";
 		}
-		(*IKSolve->trkMarkers)[trkedMrkrNames[0]]->setTarPos(ptrCtrPt);
-		(*IKSolve->trkMarkers)[trkedMrkrNames[1]]->setTarPos(elbowCtrPt);
+		IKSolve->setTargetPos(ptrCtrPt, elbowCtrPt);
+		//(*IKSolve->trkMarkers)[trkedMrkrNames[0]]->setTarPos(ptrCtrPt);
+		//(*IKSolve->trkMarkers)[trkedMrkrNames[1]]->setTarPos(elbowCtrPt);
 		IKSolve->solve();
 		//recalc elbow center after IKing ptr to circle center location
 		if (flags[debugIDX]) {	
@@ -492,11 +497,9 @@ namespace gestureIKApp {
 		}
 	}//setFlags
 
-	//TODO move to MyGestLetter ?
 	//generate a linking trajectory from the end of 1 trajectory to the beginning of another using 4 pt neville between end points 
 	std::shared_ptr<MyGestTraj> MyGestSymbol::genConnectTraj(const Eigen::Ref<const Eigen::Vector3d>& ctPt, const Eigen::Ref<const Eigen::Vector3d>& traj1End, const Eigen::Ref<const Eigen::Vector3d>& traj2St) {
 		std::shared_ptr<MyGestTraj> res = std::make_shared<MyGestTraj>("", _self, -1);
-		//res->setSolver(IKSolve);
 		res->flags[res->connTrajIDX] = true;
 		//gen 4 pt neville in plane of motion
 		Eigen::Vector3d stPtVec = (traj1End - ctPt), endPtVec(traj1End - traj2St);
@@ -508,9 +511,14 @@ namespace gestureIKApp {
 		//intermediate neville points
 		Eigen::Vector3d p1 = traj1End + (stPtVec *scAmt1),	p2 = traj2St + (endPtVec *scAmt2);	
 		//neville between traj1End, p1, p2, traj2St
+		float tot = 0.0f;
+		res->srtTrajTiming.clear();
 		for (float t = 0; t <= 1.0f; t += .01f) {
 			genPoints.push_back(QInterp(traj1End, p1, p2, traj2St,t));
+			res->srtTrajTiming.push_back(.01f);
+			tot += .01f;
 		}
+		for (int i = 0; i < res->srtTrajTiming.size(); ++i) {	res->srtTrajTiming[i] /= tot;	}
 		//TODO add points to new MyGestTraj and calculate all component target trajectories
 		res->buildTrajFromData(false, genPoints);
 

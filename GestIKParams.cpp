@@ -44,7 +44,7 @@ namespace gestureIKApp {
 		trajLenThresh(0.01), trajRandCtrStd(.1), trajRandSclStd(.1), trajRandCtrStdScale_X(1), trajRandCtrStdScale_Y(1), trajRandCtrStdScale_Z(1),
 		trajNumReps(5), trajDistMult(.1), trajDesiredVel(.03), trajNev4OvPct(.2), rnd_camThet(.35), rnd_camZoom(.05), rnd_camTrans(.25), rnd_headClrBnd(.2), rnd_headDimPct(.1), rnd_handClrBnd(.2),rnd_handDimPct(.1),
 		win_Width(800), win_Height(800), numTotSymPerLtr(0), fixedClipLen(16), mBlurPreFrames(2), mBlurPostFrames(2), dbgTrajDrawn(3),  origZoom(.65f),
-		dataType(VAR_VEL), bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""), baseOutDir(""), srcLtrDir(""), markerXMLFileName(""), flags(numFlags, false)
+		dataType(VAR_VEL), bkgR(1.0), bkgG(1.0), bkgB(1.0), bkgA(1.0), dateFNameOffset(""), baseOutDir(""), srcLtrDir(""), markerXMLFileName(""), ovrParamsXMLFilename(""), flags(numFlags, false)
 	{
 		std::cout << "GestIK params ctor"<<std::endl;
 		setDefaultVals();																//set defaults from hardcoded values - overridden by xml data if necessary
@@ -90,6 +90,7 @@ namespace gestureIKApp {
 		//ints
 		if (_name.compare("IK_solveIters") == 0) { IK_solveIters = stoi(s);			return; }
 		if (_name.compare("trajNumReps") == 0) { trajNumReps = stoi(s);			return; }
+		if (_name.compare("trajNumTuck") == 0) { trajNumTuck = stoi(s);			return; }		
 		if (_name.compare("win_Width") == 0) { win_Width = stoi(s);			return; }
 		if (_name.compare("win_Height") == 0) { win_Height = stoi(s);			return; }
 		if (_name.compare("numTotSymPerLtr") == 0) { numTotSymPerLtr = stoi(s);			return; }
@@ -106,6 +107,7 @@ namespace gestureIKApp {
 		if (_name.compare("baseOutDir") == 0) { baseOutDir = std::string(s);	return; }
 		if (_name.compare("srcLtrDir") == 0) { srcLtrDir = std::string(s);	return; }
 		if (_name.compare("markerXMLFileName") == 0) { markerXMLFileName = std::string(s);	return; }
+		if (_name.compare("ovrParamsXMLFilename") == 0) { ovrParamsXMLFilename = std::string(s);	return; }
 		//boolean
 		//std::string sDest(s);
 		//std::transform(s.begin(), s.end(), sDest.begin(), toupper);
@@ -123,7 +125,12 @@ namespace gestureIKApp {
 		if (_name.compare("IDX_saveHandCOMVals") == 0) { flags[IDX_saveHandCOMVals] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_alwaysSaveImgs") == 0) { flags[IDX_alwaysSaveImgs] = (s.compare("TRUE") == 0 ? true : false);        return; }
 		if (_name.compare("IDX_useCustSrcLtrs") == 0) { flags[IDX_useCustSrcLtrs] = (s.compare("TRUE") == 0 ? true : false);        return; }
-
+		if (_name.compare("IDX_useMaxDispLen") == 0) { flags[IDX_useMaxDispLen] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_flipSrcYAxis") == 0) { flags[IDX_flipSrcYAxis] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_flipSrcZAxis") == 0) { flags[IDX_flipSrcZAxis] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_useCustParamsXML") == 0) { flags[IDX_useCustParamsXML] = (s.compare("TRUE") == 0 ? true : false);        return; }
+		if (_name.compare("IDX_IKToHandCOM") == 0) { flags[IDX_IKToHandCOM] = (s.compare("TRUE") == 0 ? true : false);        return; }
+				
 	}	//setParamValFromXMLStr
 	//construct and return name of directory holding letter sequences or csv's of com locations in screen space
 	std::string GestIKParams::getDataOutputDir(bool isCSV) {
@@ -173,6 +180,7 @@ namespace gestureIKApp {
 
 		trajDistMult = 0.1;
 		trajNumReps = 5;
+		trajNumTuck = 2;
 		trajDesiredVel = .03;
 		trajNev4OvPct = .2;
 		rnd_camThet = .35;
@@ -204,9 +212,11 @@ namespace gestureIKApp {
 		//default is base directory - ALWAYS APPENDS DART ROOT PATH when consumed so directory does not need to be specified within xml file
 		srcLtrDir = "apps/gestureIK/sourceLetters/";
 		markerXMLFileName = "";
+		ovrParamsXMLFilename = "";
 	
 		for (int i = 0; i < numFlags; ++i) { flags[i] = false; }
 		flags[IDX_alwaysSaveImgs] = true;//default this to true
+		flags[IDX_useMaxDispLen] = true;//default to using max displacement vector length for scaling in transformation from img space to IK space
 
 		defaultVals = accumulateVals();			//set default values as current param vals
 	}//setDefaultVals
@@ -239,6 +249,7 @@ namespace gestureIKApp {
 
 		res.push_back(trajDistMult);
 		res.push_back(trajNumReps);
+		res.push_back(trajNumTuck);
 		res.push_back(trajDesiredVel);
 		res.push_back(trajNev4OvPct);
 		res.push_back(rnd_camThet);
@@ -294,6 +305,7 @@ namespace gestureIKApp {
 		
 		trajDistMult = vals[idx++];
 		trajNumReps = (int)floor(vals[idx++] + .5);
+		trajNumTuck = (int)floor(vals[idx++] + .5);
 		trajDesiredVel = vals[idx++];
 		trajNev4OvPct = vals[idx++];
 		rnd_camThet = vals[idx++];
@@ -328,20 +340,27 @@ namespace gestureIKApp {
 
 	std::ostream& operator<<(std::ostream& out, GestIKParams& p) {//for dbug output 
 		out << "GestIK Params values : "<<"\tdateFNameOffset : "<< p.dateFNameOffset<< std::endl;
-		out << "Letter data type : " << DataType2str[p.dataType] << "\t# total Symbols per letter : " << p.numTotSymPerLtr << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << "\n";
+		out << "Letter data type : " << DataType2str[p.dataType] << "\t# total Symbols per letter : " << p.numTotSymPerLtr << "\t| IK_reachPct : " << p.IK_reachPct << "\t| IK_solveIters : " << p.IK_solveIters << "\n";		
+		out << "\nUsing Custom XML File : " << (p.flags[p.IDX_useCustParamsXML] ? "True" : "False") << " ";
+		if (p.flags[p.IDX_useCustParamsXML]) { out << "File Name : " << p.ovrParamsXMLFilename; }
+		out << "\n\n";
 		out << "Random Env/Skel vals : rnd_camThet : " << p.rnd_camThet << "\t rnd_camZoom : " << p.rnd_camZoom << "\t rnd_camTrans : " << p.rnd_camTrans << "\n";
 		out << "\t rnd_headClrBnd : " << p.rnd_headClrBnd << "\t rnd_headDimPct : " << p.rnd_headDimPct << "\t rnd_handClrBnd : " << p.rnd_handClrBnd << "\t rnd_handDimPct : " << p.rnd_handDimPct << "\n";
+		out << "\nIK to " << (p.flags[p.IDX_IKToHandCOM] ? "Hand COM" : "Pointer Finger") << "\n";
 		out << "IK_alpha  : " << p.IK_alpha << "\t| IK_drawRad  : " << p.IK_drawRad << "\t| IK_maxSqError  : " << p.IK_maxSqError << "\t| IK_elbowScale  : " << p.IK_elbowScale << "\t| IK_fastTrajMult  : ";
-		out << p.IK_fastTrajMult << "\t| IK_ctrYOffset  : " << p.IK_ctrYOffset << "\n";
-		out << "trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult << "\ttrajNumReps : " << p.trajNumReps << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct;
+		out << p.IK_fastTrajMult << "\t| IK_ctrYOffset  : " << p.IK_ctrYOffset << "\n"; 
+		out << "trajLenThresh : " << p.trajLenThresh << "\t| trajDistMult : " << p.trajDistMult << "\t| trajNumReps : " << p.trajNumReps << "\ttrajNumTuck : " << p.trajNumTuck << "\t| trajDesiredVel : " << p.trajDesiredVel << "\t| trajNev4OvPct : " << p.trajNev4OvPct << "\n";
 		out << "\t| win_Width : " << p.win_Width << "\t| win_Height : " << p.win_Height << "\t| orig zoom : " << p.origZoom << "\n";
-		out << "\t| traj rand scale x,y,z (" << p.trajRandCtrStdScale_X << ", " << p.trajRandCtrStdScale_Y << ", " << p.trajRandCtrStdScale_Z << ")";
-		out << "\t| bkg clr(rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")\n";
+		out << "\t| traj rand scale x,y,z (" << p.trajRandCtrStdScale_X << ", " << p.trajRandCtrStdScale_Y << ", " << p.trajRandCtrStdScale_Z << ")" << "\t| bkg clr(rgba) : (" << p.bkgR << ", " << p.bkgG << ", " << p.bkgB << ", " << p.bkgA << ")\n";
 		out << "Motion Blur : " << (p.flags[p.IDX_useMotionBlur] ? "True" : "False");
-		if (p.flags[p.IDX_useMotionBlur]) { 	out << " : Preframes used to build blur : " << (p.mBlurPreFrames) << " : Postframes used to build blur : " << (p.mBlurPostFrames) << "\n";	}
+		if (p.flags[p.IDX_useMotionBlur]) { 	out << " : Preframes used to build blur : " << (p.mBlurPreFrames) << " : Postframes used to build blur : " << (p.mBlurPostFrames);	}
+		out << "\n\n";
 		out << "\tUse custom directory for source trajectories : " << (p.flags[p.IDX_useCustSrcLtrs] ? "True : Dir Specified : " : "False") << (p.flags[p.IDX_useCustSrcLtrs] ? p.getSrcLtrsPath() : "") << "\n";
 		out << "\tUse XML-Specified Output Dir : " << (p.flags[p.IDX_useOutputDir] ? "True : Dir Specified : " : "False") << (p.flags[p.IDX_useOutputDir] ? p.baseOutDir : "") << "\n";
 		out << "\tFile to use for marker locations specification : " << p.markerXMLFileName << "\n\n";
+		out << "Using " << (p.flags[p.IDX_useMaxDispLen] ? "MAX " : "AVG" ) << " displacement vector length in source data for scale amount to transform from img/matlab space to IK space.\n";
+		out << "\tFlip Orientation of Source data around Y axis (backwards) : " << (p.flags[p.IDX_flipSrcYAxis] ? "True\n" : "False\n");
+		out << "\tFlip Orientation of Source data around Z axis (upside-down) : " << (p.flags[p.IDX_flipSrcZAxis] ? "True\n" : "False\n\n");
 		out << "Always Save Screenshots : " << (p.flags[p.IDX_alwaysSaveImgs] ? "True" : "False") << "\n\n";
 		out << "Generate data focused on left hand (TODO) : " << (p.flags[p.IDX_useLeftHand] ? "True" : "False") << "\tDisplay trajs with different colors : " << (p.flags[p.IDX_chgTrajDbgClrs] ? "True\n" : "False\n") ;
 		out << "Save COM-related values of hand and elbow : " << (p.flags[p.IDX_saveHandCOMVals] ? "True\n" : "False\n") ;
@@ -350,6 +369,8 @@ namespace gestureIKApp {
 		out << "\tHead Dimensions: " << (p.flags[p.IDX_rndHeadDims] ? "True" : "False") << "\t  Head Color: " << (p.flags[p.IDX_rndHeadClr] ? "True\n" : "False\n") ;
 		out << "\tHand Shape : " << (p.flags[p.IDX_rndHandShape] ? "True" : "False") << "\t  Hand Dimensions : " << (p.flags[p.IDX_rndHandDims] ? "True" : "False");
 		out << "\tHand Color : " << (p.flags[p.IDX_rndHandClr] ? "True\n" : "False\n") ;
+		out << "\nIK Targets : \n";
+		out <<"\tIK Tar : " << p.getIKTarget()<<"\tIK Side : "<<(p.flags[p.IDX_useLeftHand] ? "LEFT\n" : "RIGHT\n");
 		return out;
 	}
 

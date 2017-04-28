@@ -1079,10 +1079,10 @@ void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajA
 	std::array<std::string, 3> const dims{ " X"," Y"," Z" };
 
 	//column names
-	ss << trkedMrkrNames[0] << dims[0];
-	for (int i = 1; i < 3; ++i) { ss << "," << trkedMrkrNames[0] << dims[i]; }//first set without leading comma
+	ss << IKSolve->trkedMrkrNames[0] << dims[0];
+	for (int i = 1; i < 3; ++i) { ss << "," << IKSolve->trkedMrkrNames[0] << dims[i]; }//first set without leading comma
 	for (int col = 1; col < numCols; ++col) {
-		for (int i = 0; i < 3; ++i) { ss << "," << trkedMrkrNames[col] << dims[i]; }
+		for (int i = 0; i < 3; ++i) { ss << "," << IKSolve->trkedMrkrNames[col] << dims[i]; }
 	}
 	ss << "\n";
 	if (flags[debugIDX]) { std::cout << ss.str(); }	//debug
@@ -1090,10 +1090,10 @@ void MyWindow::writeTrajCSVFile(const std::string& _fname, eignVecVecTyp& _trajA
 
 	ss.str("");
 	//fixed or not
-	std::string isFixed = ((*IKSolve->trkMarkers)[trkedMrkrNames[0]]->IsFixed() ? "true" : "false");
+	std::string isFixed = ((*IKSolve->trkMarkers)[IKSolve->trkedMrkrNames[0]]->IsFixed() ? "true" : "false");
 	ss << isFixed << "," << isFixed << "," << isFixed;
 	for (int col = 1; col < numCols; ++col) {
-		isFixed = ((*IKSolve->trkMarkers)[trkedMrkrNames[col]]->IsFixed() ? "true" : "false");
+		isFixed = ((*IKSolve->trkMarkers)[IKSolve->trkedMrkrNames[col]]->IsFixed() ? "true" : "false");
 		ss << "," << isFixed << "," << isFixed << "," << isFixed;
 	}
 	ss << "\n";

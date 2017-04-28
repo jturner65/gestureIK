@@ -96,6 +96,11 @@
 		<name>ptrFinger_r</name>
 	</marker>
 	<marker>
+		<offset>0.0 -0.07 0.0</offset>
+		<bnode>h_hand_right</bnode>
+		<name>ptrHand_r</name>
+	</marker>
+	<marker>
 		<offset>0.0 0.0 -0.025</offset>
 		<bnode>h_hand_left</bnode>
 		<name>left_wrist</name>
@@ -109,7 +114,12 @@
 		<offset>0.0 -0.1 -0.025</offset>
 		<bnode>h_hand_left</bnode>
 		<name>left_hand</name>
-	</marker>	
+	</marker>
+	<marker>
+		<offset>0.0 -0.07 0.0</offset>
+		<bnode>h_hand_left</bnode>
+		<name>ptrHand_l</name>
+	</marker>
 	<marker>
 		<offset>0.0 -0.14 0.0</offset>
 		<bnode>h_hand_left</bnode>
