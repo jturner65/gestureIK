@@ -151,7 +151,7 @@ namespace gestureIKApp {
 			//debugTrajPts;				//for debugging only
 
 		std::vector<double> 
-			srtTrajTiming, 
+			srcTrajTmngRat,			//ratio of total trajectory length for each delta arclen
 			convTVelRats,			//converted ratios of total trajectory
 			trajPtDistFromSt;		//timing of source trajectory, dists to each point from start of arc
 

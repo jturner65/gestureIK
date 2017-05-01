@@ -152,6 +152,7 @@ namespace gestureIKApp {
 
 		std::vector<std::shared_ptr<gestureIKApp::MyGestTraj> > trajectories;	//component trajectories making up this symbol
 		std::vector<double>trajLens;											//array of total length of trajectory at a location, including piece at IDX
+		std::vector<double>trajVelMult;											//multiple of avg displacement at all component trajectories' points
 		std::vector<double>trajFrameIncrs;										//amount to move each frame - TODO make this variable to add velocity variance in motion
 		std::string name;														//symbol name - letter + # of symbol
 

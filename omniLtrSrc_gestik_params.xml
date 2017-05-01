@@ -1,0 +1,166 @@
+<!-- overrides to default params for omniglot letters-->
+<?xml version="1.0" ?>
+<GestIKParams version="1.0">
+<!--trajectory gen params -->
+	<parameter>
+		<name>trajRandCtrStd</name>
+		<val>.0157</val>   
+	</parameter>
+	<parameter>
+		<name>trajRandCtrStdScale_X</name>
+		<val>.1</val>   
+	</parameter>
+	<parameter>
+		<name>trajRandCtrStdScale_Y</name>
+		<val>1.0</val>   
+	</parameter>
+	<parameter>
+		<name>trajRandCtrStdScale_Z</name>
+		<val>1.5</val>   
+	</parameter>
+	<parameter>
+		<name>trajRandSclStd</name>
+		<val>.0001</val>   
+	</parameter>
+	<parameter>
+		<name>trajNev4OvPct</name>
+		<val>.2</val>   
+	</parameter>
+<!--window, cam and env params -->
+<!--	<parameter>
+		<name>win_Width</name>
+		<val>200</val>   
+	</parameter>
+	<parameter>
+		<name>win_Height</name>
+		<val>200</val>   
+	</parameter>
+	<parameter>
+		<name>origZoom</name>
+		<val>0.80</val> 
+	</parameter>-->
+	<parameter>
+		<name>numTotSymPerLtr</name>
+		<val>1000</val> 
+	</parameter>
+<!-- type of debug traj drawing : 0:draw no debug trajs, 1:draw file-derived trajs, 2:draw rand trajs, 3:draw all trajs -->
+	<parameter>
+		<name>dbgTrajDrawn</name>
+		<val>2</val> 
+	</parameter>
+<!-- # of frames before and after current frame to use for motion blur -->
+<!-- both positive, >0 pre, 0 post would give trails, 0 pre, >0 post would blur into motion -->
+	<parameter>
+		<name>mBlurPreFrames</name>
+		<val>2</val>
+	</parameter>
+	<parameter>
+		<name>mBlurPostFrames</name>
+		<val>2</val>
+	</parameter>
+<!--random camera and skeleton values -->
+<!--+/- camera orientation uniform range in radians-->
+	<parameter>
+		<name>rnd_camThet</name>
+		<val>.15</val>
+	</parameter>
+<!-- +/- camera zoom uniform range -->
+	<parameter>
+		<name>rnd_camZoom</name>
+		<val>0.01</val>
+	</parameter>
+<!-- camera uniform pct of translation dim - should be around 50-100 -->
+	<parameter>
+		<name>rnd_camTrans</name>
+		<val>50</val>
+	</parameter>
+<!-- head color bound - grayscale : avoid rand colors of bkgrnd clr +/- this amt (.05-.25)-->
+	<parameter>
+		<name>rnd_headClrBnd</name>
+		<val>.2</val>
+	</parameter>
+	<!-- +/- head dim mod pct -->
+	<parameter>
+		<name>rnd_headDimPct</name>
+		<val>0.3</val>
+	</parameter>
+<!-- hand color bound - grayscale : avoid rand colors of bkgrnd clr +/- this amt (.05-.25)-->
+	<parameter>
+		<name>rnd_handClrBnd</name>
+		<val>.2</val>
+	</parameter>
+<!-- +/- hand dim mod pct -->
+	<parameter>
+		<name>rnd_handDimPct</name>
+		<val>0.4</val>
+	</parameter>
+<!--END random camera and skeleton values -->
+<!--Set dataType 0 == const vel for all ltrs, 1 == fixed 16, 2 == src file velocity train/test (no longer using mult8) -->
+	<parameter>
+		<name>dataType</name>
+		<val>2</val> 
+	</parameter>
+<!-- output directory to write results to - defaults to dart\apps\gestureIK\frames if unspecified - needs trailing '/' -->
+	<parameter>
+		<name>baseOutDir</name>
+		<val>E:/Dropbox/Public/GestureIK/frames/</val>
+	</parameter>
+<!-- TODO -->
+	<parameter>
+		<name>IDX_useLeftHand</name>
+		<val>FALSE</val> 
+	</parameter>
+<!-- whether or not to use xml-specified output directory -->
+	<parameter>
+		<name>IDX_useOutputDir</name>
+		<val>TRUE</val> 
+	</parameter>
+<!-- enable/disable motion blur -->
+	<parameter>
+		<name>IDX_useMotionBlur</name>
+		<val>FALSE</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_chgTrajDbgClrs</name>
+		<val>FALSE</val> 
+	</parameter>
+<!-- whether or not to save the COM and COM Vel of the hand in screen space coords - IGNORED IF MOTION BLUR ON -->
+	<parameter>
+		<name>IDX_saveHandCOMVals</name>
+		<val>TRUE</val> 
+	</parameter>
+<!-- whether or not to save screenshots -->
+	<parameter>
+		<name>IDX_alwaysSaveImgs</name>
+		<val>FALSE</val> 
+	</parameter>
+<!-- randomization flags - which aspects of skeleton and environment to randomize -->
+	<parameter>
+		<name>IDX_rndCamOrient</name>
+		<val>TRUE</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_rndCamLoc</name>
+		<val>TRUE</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_rndHeadDims</name>
+		<val>TRUE</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_rndHeadClr</name>
+		<val>TRUE</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_rndHandShape</name>
+		<val>TRUE</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_rndHandDims</name>
+		<val>TRUE</val> 
+	</parameter>
+	<parameter>
+		<name>IDX_rndHandClr</name>
+		<val>TRUE</val> 
+	</parameter>
+</GestIKParams>

@@ -46,7 +46,7 @@
 namespace gestureIKApp {
 	MyGestTraj::MyGestTraj(const std::string& _fname, std::shared_ptr<gestureIKApp::MyGestSymbol> _p, int _num):
 		IKSolve(_p->IKSolve), parentSymbol(_p), avgLoc(0,0,0), trajLen(0), lenMaxSrcDisp(0), ctrPoint(0,0,0),
-		filename(_fname), name("tmp"),trajTargets(), srcTrajData(), srcTrajVelData(), srcTrajDispVecs(), convTrajPts(), srtTrajTiming(), trajPtDistFromSt(),
+		filename(_fname), name("tmp"),trajTargets(), srcTrajData(), srcTrajVelData(), srcTrajDispVecs(), convTrajPts(), srcTrajTmngRat(), trajPtDistFromSt(),
 		flags(numFlags, false) 
 	{
 		std::stringstream ss;
@@ -156,35 +156,40 @@ namespace gestureIKApp {
 	void MyGestTraj::buildTrajFromData(bool fileInit, eignVecTyp& _Initpts) {
 		eignVecTyp debugTrajPts(0), debugTmngPts(0);
 		ctrPoint << parentSymbol->ptrCtrPt;
+		convTrajPts.clear();
 		if (fileInit) {//if file init then ignore _initpts and instead transform points read in from file to be bounded by a circle at a given point with a specific radius on a plane with a particular normal
 			//scales around center point and using max dist point inscribed on a circle - projects on plane parallel to z-y plane
-			convTrajPts.clear();
 			for (int i = 0; i < srcTrajData.size(); ++i) {//1 frame of trajtarget for every src traj value
 				Eigen::Vector3d tmp(ctrPoint);
 				tmp += (parentSymbol->sclAmt * srcTrajDispVecs[i]);
 				convTrajPts.push_back(std::move(tmp));
 			}
 			//convTrajPts = convSrcTrajToGestTraj(parentSymbol->sclAmt);
-			trajLen = calcTrajLength(convTrajPts);
-			trajPtDistFromSt = calcDistsFromStart(convTrajPts);
+			//trajLen = calcTrajLength(convTrajPts);
+			//trajPtDistFromSt = calcDistsFromStart(convTrajPts);
 		}
 		else {//this is a generated trajectory		
-			for (int i = 0; i < convTrajPts.size(); ++i) {
-				debugTmngPts.push_back(Eigen::Vector3d(srtTrajTiming[i], 0, 0));		//timing points in vector to use existing function for point processing
+			for (int i = 0; i < _Initpts.size(); ++i) {//1 frame of trajtarget for every src traj value
+				convTrajPts.push_back(_Initpts[i]);
 			}
-			setPts(_Initpts, debugTmngPts);
+			//setPts(_Initpts, debugTmngPts);
 		}
+		trajLen = calcTrajLength(convTrajPts);
+		trajPtDistFromSt = calcDistsFromStart(convTrajPts);
+
 		trajTargets.clear();
 		flags[useTrajIDX] = true;
 
-		//TODO (maybe?) use matlab timings stored in srtTrajTiming to get drawing speed
+		//TODO (maybe?) use matlab timings stored in srcTrajTmngRat to get drawing speed
 		//using average desired speed from xml IK_desiredVel to decide how many points to find.
 		//we will end up picking points by moving some percentage along trajectory and interpolating locations between end-points of that trajectory component
+		//perPtSpace is average
+		//srcTrajTmngRat is ratio of total traj length this component traj has
 		perPtSpace = IKSolve->params->trajDistMult * IKSolve->params->trajDesiredVel;
 		int numObjs = (int)(trajLen / perPtSpace);
 		for (int i = 0; i < convTrajPts.size(); ++i) {
 			debugTrajPts.push_back(convTrajPts[i]);
-			debugTmngPts.push_back(Eigen::Vector3d(srtTrajTiming[i], 0, 0));		//timing points in vector to use existing function for point processing
+			debugTmngPts.push_back(Eigen::Vector3d(srcTrajTmngRat[i], 0, 0));		//timing points in vector to use existing function for point processing
 		}
 		if(convTrajPts.size() > 1){
 			if ((trajLen > 0) && (trajLen < IKSolve->params->trajLenThresh)) {
@@ -200,7 +205,7 @@ namespace gestureIKApp {
 				}
 				//cout << "\n";
 				processPts(numObjs, debugTrajPts);
-				//handle timing/velocity points
+				//handle per-step ratio of total traj 
 				processPts(numObjs, debugTmngPts);
 				//set actual conv traj points
 				setPts(debugTrajPts, debugTmngPts);
@@ -211,6 +216,7 @@ namespace gestureIKApp {
 		//build actual tracking data trajectory
 		buildFullTraj();
 	}//buildTrajFromData
+
 
 	//convert passed point in IK pointer space to elbow space, using appropriate transformations - project on plane ortho to elbow-shoulder vector with scaled size .25 * the distance in pointer space for symbol center (avgLoc)
 	//and theta == angle of point
@@ -275,8 +281,10 @@ namespace gestureIKApp {
 	//and move interpolated traj vel/timing data back into vector of doubles
 	void MyGestTraj::setPts(eignVecTyp& tmpAra, eignVecTyp& tmpVelAra) {
 		convTrajPts.clear();
+		convTVelRats.clear();
 		for (int i = 0; i < tmpAra.size(); ++i) {//1 frame of trajtarget for every src traj value
 			convTrajPts.push_back(tmpAra[i]);
+			convTVelRats.push_back(tmpVelAra[i](0));		//sets proportion of avg traj displacement at this point - 1 means velocity yields avg displacement, .5 is 1/2 displacement, 2 is 2x displacement - this is only for this trajectory
 		}
 		trajLen = calcTrajLength(convTrajPts);
 		trajPtDistFromSt = calcDistsFromStart(convTrajPts);
@@ -482,16 +490,14 @@ namespace gestureIKApp {
 	void MyGestTraj::readTrajFile(bool useVel) {//read trajectory data from filename for this trajectory
 									 //cout << "Now Reading :" << filename << " trajectory file "<< std::endl;
 		srcTrajData.clear();
-		srtTrajTiming.clear();
+		srcTrajTmngRat.clear();
 		std::ifstream  trajData(filename);
 		std::string line, cell;
 		Eigen::Vector3d dat(0, 0, 0), tmpDat(0, 0, 0), lastDat(0,0,0), lastTmpDat(0, 0, 0);
-		double lastTmpTime = 0, datTime = 0, totTime = 0;
+		double lastTmpTime = -1, lastDbgTmpTime=0,  datTime = 0, totTime = 0;
 		int i = 0;
-		//int lastTime = 0;
 		std::vector<double> vals(0);
 		while (std::getline(trajData, line)) {
-			//int idx = 2;
 			vals.clear();
 			std::stringstream  ss(line);
 			while (std::getline(ss, cell, ',')) {		vals.push_back(stod(cell));		} //build an array of vals from csv
@@ -500,28 +506,57 @@ namespace gestureIKApp {
 			if ((useVel) && (vals.size() > 3)) {					//use norm of velocity - only if at least 4 elements in array 
 				Eigen::Vector3d tmpV(0, vals[3], vals[2]);
 				datTime = tmpV.norm();
-			} else { datTime = vals[2]; }							//use timing value
-			//NOTE Trajectory timing info from matlab includes time span between ending and beginning trajectories. 
+			} else { 
+				//set initial value for 3-value timing info - will only be -1 on first entry
+				if (lastTmpTime == -1) { 
+					datTime = 0;
+					lastTmpTime = vals[2]; 
+				}
+				else {
+					if (vals[2] - lastTmpTime == 0){
+						datTime = 0;
+					}
+					else {
+						datTime = 1.0 / (vals[2] - lastTmpTime);	//get per frame difference
+					}
+					lastTmpTime = vals[2];
+				}
+			}							//use timing value
+			//NOTE Trajectory timing info from matlab omniglot data includes time span between ending and beginning trajectories. 
+
 			//only save point if different than last point
 			if ((dat-lastDat).squaredNorm() > .0000001) {
 				srcTrajData.push_back(std::move(dat));
-				srtTrajTiming.push_back(datTime);
-				totTime += datTime;
+				if (datTime != 0) {
+					srcTrajTmngRat.push_back(datTime);
+					totTime += srcTrajTmngRat.back();
+				}		//set next step's displacement as current displacement, set final displacement as 0
 			}
 			lastDat << dat;
 			//debug output below : 
 			if (flags[debugIDX]) {
 				tmpDat << 0, dat(1), dat(2);
-				std::cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastTmpDat).norm()) << "\ttiming:" << srtTrajTiming.back() << " timing diff " << (srtTrajTiming.back() - lastTmpTime) << "\n";
-				lastTmpTime = srtTrajTiming.back();
+				std::cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastTmpDat).norm()) << "\ttiming:" << srcTrajTmngRat.back() << " timing diff " << (srcTrajTmngRat.back() - lastDbgTmpTime) << "\n";
+				lastDbgTmpTime = srcTrajTmngRat.back();
 				lastTmpDat << tmpDat;
 			}
 		}
-		//build ratio of each incremental travel based on total time
+		//set last displacement to be equal to 2nd-to-last displacement and 1st to be equal to 2nd
+		if (srcTrajTmngRat.size() > 1) {
+			totTime -= srcTrajTmngRat[0];
+			srcTrajTmngRat[0] = srcTrajTmngRat[1];
+			totTime += srcTrajTmngRat[0];
+		}
+		double lval = (srcTrajTmngRat.size() > 0) ? srcTrajTmngRat.back() : 0;
+		srcTrajTmngRat.push_back(lval);
+		totTime += srcTrajTmngRat.back();
+		//build ratio of each incremental avg travel based on total time/length
 		if (totTime == 0) {//no total time calculated so just set at equal timing
-			for (int i = 0; i < srtTrajTiming.size(); ++i) {srtTrajTiming[i] = 1.0/ srtTrajTiming.size();}
+			for (int i = 0; i < srcTrajTmngRat.size(); ++i) {srcTrajTmngRat[i] = 1.0;}
 		} else {
-			for (int i = 0; i < srtTrajTiming.size(); ++i) {	srtTrajTiming[i] /= totTime;}
+			//save ratio of avg per-pt travel to recorded per-point travel - allows for interpolation
+			double avg = totTime/ srcTrajTmngRat.size();
+			for (int i = 0; i < srcTrajTmngRat.size(); ++i) { srcTrajTmngRat[i] /= avg; }
 		}
 		flags[loadedIDX] = true;
 		//cout << "Finished Reading :" << filename << " trajectory file.   srcTrajData holds : "<< srcTrajData.size()<<" points."<< std::endl;

@@ -104,7 +104,7 @@ namespace gestureIKApp {
 		rndVals(std::allocate_shared<SymbolRandVals>(Eigen::aligned_allocator <SymbolRandVals>(), IKSolve)), IKPoses(0),
 		//cameraRot(0.5*sqrt(2), 0, -0.5*sqrt(2), 0),
 		curFrame(0), numTrajFrames(0), srcSymbolIDX(_srcIDX), allTrajsLen(0), //trajVel(.03), 
-		sclAmt(1.0), curTrajDist(0), trajectories(0), trajLens(0), trajFrameIncrs(0), name(_name), flags(numFlags,false),
+		sclAmt(1.0), curTrajDist(0), trajectories(0), trajLens(0), trajVelMult(0), trajFrameIncrs(0), name(_name), flags(numFlags,false),
 		avgImgSpcLoc(0,0,0), ptrCtrPt(0,0,0), elbowCtrPt(0,0,0), ptrPlaneNorm(-1,0,0), elbowPlaneNorm(0,0,0), circleRad(0), curTraj(0)
 
 	{
@@ -207,10 +207,14 @@ namespace gestureIKApp {
 	//calculate total length of trajectories, component lengths of each trajectory, and 
 	void MyGestSymbol::calcAllTrajsLen() {
 		allTrajsLen = 0;
+		double tmpTrajMult = 1;
 		eignVecTyp stFrame, endFrame;
 		for (int i = 0; i < trajectories.size(); ++i) {
 			if (trajectories[i]->useTraj()) {
 				allTrajsLen += trajectories[i]->trajLen;
+				for (int j = 0; j < trajectories[i]->convTVelRats.size(); ++j) {
+					trajVelMult.push_back(trajectories[i]->convTVelRats[j]);
+				}
 			}
 			else {
 				std::cout<<"Nonused trajectory  for " << name << " idx : "<<i <<" of len "<< trajectories[i]->trajLen << "\n";
@@ -222,13 +226,17 @@ namespace gestureIKApp {
 				if (d > DART_EPSILON) {
 					//std::cout<<"Non-zero inter-traj dist for " << name << " trajectories : "<<i<<" and "<<(i+1)<<" = "<<d<< std::endl;
 					allTrajsLen += d;
+					tmpTrajMult = .5*(trajectories[i]->convTVelRats.back() + trajectories[i + 1]->convTVelRats.front());
 				}
 			}
 			if (std::isnan(allTrajsLen)) {
 				std::cout << "NAN traj length for " << name << " iter : " << i << " so setting to 0." << std::endl;
+				//don't set to 0, just don't increment ? TODO investigate
 				allTrajsLen = 0;
+				tmpTrajMult = 1;
 			}
 			trajLens.push_back(allTrajsLen);
+			trajVelMult.push_back(tmpTrajMult);
 		}
 		//else { std::cout << "Total Traj len for : " << name << " : " << allTrajsLen << " from " << trajectories.size() << " trajectories."<< std::endl; }
 		buildTrajFrameIncrs();
@@ -239,37 +247,65 @@ namespace gestureIKApp {
 		trajFrameIncrs.clear();
 		numTrajFrames = 0 ;
 		double trajIncrAmt = IKSolve->params->trajDesiredVel;
+		if (!IKSolve->params->useVarVelocity()) {
+			if (IKSolve->params->useFixedGlblVel()) {//make all trajectories fixed per-frame speed
+				trajIncrAmt = IKSolve->params->trajDesiredVel;
+				numTrajFrames = (int)(ceil(allTrajsLen / trajIncrAmt)) + 1;
 
-		if (IKSolve->params->useFixedGlblVel()) {//make all trajectories fixed per-frame speed
-			trajIncrAmt = IKSolve->params->trajDesiredVel;
-			numTrajFrames = (int)(ceil(allTrajsLen / trajIncrAmt))+1;
-
-		}
-		else if (IKSolve->params->limitTo16Frames()){
-			numTrajFrames = 16;
-			trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
-		}
-		else if (IKSolve->params->useVarVelocity()) {
-			//use delta arclength specified within xml letter trajectory description - different displacement for every sample.  randomization should scale time for total letter drawing (so all del arclength values should be scaled equally)
-
-		}
-		else {//calc variable length multiple of 8, greater than 16 frame clips DEPRECATED
-			double trajAvgMult = (flags[isFastDrawnIDX] ? IKSolve->params->IK_fastTrajMult : 1.0);		//alternate between slow and fast trajs
-			trajIncrAmt = (trajAvgMult * IKSolve->params->trajDesiredVel);
-			numTrajFrames = (int)(allTrajsLen / trajIncrAmt);
-			if (numTrajFrames < 16) {
-				numTrajFrames = 16;
 			}
-			//clip to nearest mult of IKSolve->params->fixedClipLen
-			int numSegMult = (int)((numTrajFrames + (IKSolve->params->fixedClipLen - 1)) / IKSolve->params->fixedClipLen);
-			numTrajFrames = numSegMult * IKSolve->params->fixedClipLen;
-			trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
-		}
-		//TODO build avg increments based on desired trajectory velocity profile
-		//scale amount by curavature? (slower at angles, faster at straights) scale by gravity? (faster going down, slower going up)
-		//add one to have extra element in array for edge cases
-		for (int i = 0; i < numTrajFrames + 1; ++i) {
-			trajFrameIncrs.push_back(trajIncrAmt);
+			else if (IKSolve->params->limitTo16Frames()) {
+				numTrajFrames = 16;
+				trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
+			}
+			else {//calc variable length multiple of 8, greater than 16 frame clips DEPRECATED
+				double trajAvgMult = (flags[isFastDrawnIDX] ? IKSolve->params->IK_fastTrajMult : 1.0);		//alternate between slow and fast trajs
+				trajIncrAmt = (trajAvgMult * IKSolve->params->trajDesiredVel);
+				numTrajFrames = (int)(allTrajsLen / trajIncrAmt);
+				if (numTrajFrames < 16) {
+					numTrajFrames = 16;
+				}
+				//clip to nearest mult of IKSolve->params->fixedClipLen
+				int numSegMult = (int)((numTrajFrames + (IKSolve->params->fixedClipLen - 1)) / IKSolve->params->fixedClipLen);
+				numTrajFrames = numSegMult * IKSolve->params->fixedClipLen;
+				trajIncrAmt = allTrajsLen / (numTrajFrames - 1);
+			}
+			//TODO build avg increments based on desired trajectory velocity profile
+			//scale amount by curavature? (slower at angles, faster at straights) scale by gravity? (faster going down, slower going up)
+			//add one to have extra element in array for edge cases
+			for (int i = 0; i < numTrajFrames + 1; ++i) {
+				trajFrameIncrs.push_back(trajIncrAmt);
+			}
+		} else {
+			//use delta arclength specified within xml letter trajectory description - different displacement for every sample.  randomization should scale time for total letter drawing (so all del arclength values should be scaled equally)
+			trajIncrAmt = IKSolve->params->trajDesiredVel;
+			numTrajFrames = (int)(ceil(allTrajsLen / trajIncrAmt)) + 1;
+			//if (IKSolve->params->useVarVelocity())  then need to multiple frame incrs by traj vel @ frame
+			double tIncr = trajVelMult.size() / (numTrajFrames + 1), sum=0;
+			int idx = 0;
+			std::vector<double> tmpMult(0);
+			//if (tIncr < 1.0) {//if want more than we have then we need to interpolate 
+			double t=0, interpVal;
+			for (int i = 0; i < numTrajFrames + 1; ++i) {
+				interpVal = trajVelMult[idx] + (t*(trajVelMult[(idx+1)% trajVelMult.size()] - trajVelMult[idx]));
+				tmpMult.push_back(interpVal);
+				sum += interpVal;
+				t += tIncr;
+				if (t > 1) {
+					int modVal = (int)t;
+					idx += modVal;
+					t -= modVal;
+				}
+			}
+			//} else {
+			//	for (int i = 0; i < numTrajFrames + 1; ++i) {
+			//		tmpMult.push_back( trajVelMult[idx]);
+			//		idx += idxIncr;
+			//	}
+			//}
+			double div = (sum==0? 1.0 : tmpMult.size() / sum);
+			for (int i = 0; i < numTrajFrames + 1; ++i) {
+				trajFrameIncrs.push_back(trajIncrAmt * tmpMult[i] * div);
+			}
 		}
 		//if (flags[isFastDrawnIDX]) {
 		//double trajLen = 0;
@@ -302,6 +338,7 @@ namespace gestureIKApp {
 		double trajStartLoc = (curTraj > 0) ? trajLens[curTraj - 1] : 0;
 		//std::cout << "Cur Traj Dist for " << name << " in solve : " << curTrajDist << " and start length : " << trajStartLoc << " and end length of this traj : " << trajLens[curTraj] << "\n";
 		//below calls IKSolver->solve(), solves IK
+		double trajDisp = 0;
 		bool finishedCurTraj = trajectories[curTraj]->setTrkMrkrAndSolve(curTrajDist - trajStartLoc);
 		//save solved newPos from IKSolver
 		IKPoses.push_back(IKSolve->getNewPose());
@@ -511,14 +548,13 @@ namespace gestureIKApp {
 		//intermediate neville points
 		Eigen::Vector3d p1 = traj1End + (stPtVec *scAmt1),	p2 = traj2St + (endPtVec *scAmt2);	
 		//neville between traj1End, p1, p2, traj2St
-		float tot = 0.0f;
-		res->srtTrajTiming.clear();
+		res->srcTrajTmngRat.clear();
 		for (float t = 0; t <= 1.0f; t += .01f) {
 			genPoints.push_back(QInterp(traj1End, p1, p2, traj2St,t));
-			res->srtTrajTiming.push_back(.01f);
-			tot += .01f;
+			res->srcTrajTmngRat.push_back(1.0);
+		//	tot += .01f;
 		}
-		for (int i = 0; i < res->srtTrajTiming.size(); ++i) {	res->srtTrajTiming[i] /= tot;	}
+		//for (int i = 0; i < res->srcTrajTmngRat.size(); ++i) {	res->srcTrajTmngRat[i] /= tot;	}
 		//TODO add points to new MyGestTraj and calculate all component target trajectories
 		res->buildTrajFromData(false, genPoints);
 
