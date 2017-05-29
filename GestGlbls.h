@@ -73,7 +73,7 @@ namespace gestureIKApp {
 	//data being generated - variation to explore the LSTM's capabilities and quirks - the LSTM's window is 16 frames long
 	//const_vel uses the same per-frame displacement for all trajectories of all letters - duration can be any value
 	//FIXED_16 uses training data that is restricted to 16 frames, and multiple of 8 (but no less than 16) frame testing data
-	//mult_8 uses multiple of 8 (but no less than 16) frame training and testing data
+	//VAR_VEL uses values derived from data in xml (i.e. timing data in omniglot dataset, or displacement in hand-isolation data from videos
 	enum DataType { CONST_VEL, FIXED_16, VAR_VEL};
 	static const char* DataType2str[] = { "Constant Velocity", "16-frame", "Velocity from XML" };
 	//static const char* DataType2strAbbrev[] = { "CONST_VEL", "FIXED_16", "VAR_VEL" };

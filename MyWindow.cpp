@@ -634,6 +634,7 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 		}
 		//repeatedly pressing the same letter will cycle through all available symbols of that letter
 		//TODO have this work only using To be coded debug array of example random trajs
+		std::cout << "MyWindow::keyboard request draw letter : "<< static_cast<char>(keyVal) <<"\tsymbol " << curSymIDX << std::endl;
 		setDrawLtrOrSmpl(true, idx, curSymIDX);
 		curSymIDX = (curSymIDX + 1) % curLetter->getNumSymbols();
 		return;

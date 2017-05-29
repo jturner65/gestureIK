@@ -89,6 +89,7 @@ namespace gestureIKApp {
 		_ltr->numFileSymbols = getValueInt(configElement, "symbolExampleCounts");
 
 		tinyxml2::XMLElement* symbolType = NULL;
+		//symbolType == NULL in original omniglot data, but != null in hand motion data from JT videos 
 		symbolType = configElement->FirstChildElement("symbolType");
 
 		tinyxml2::XMLElement* symbolsElem = NULL;
@@ -127,8 +128,6 @@ namespace gestureIKApp {
 		//_ltr->buildFileSymbolTrajs(trajFileNames, false);
 		return trajFileNames;
 	}
-
-
 
 	//read in marker locations from xml file _filename
 	void GestIKParser::readMarkerLocsXML(const std::string& _filename, std::shared_ptr<GestIKParams> params) {

@@ -2,6 +2,7 @@
 <?xml version="1.0" ?>
 <GestIKParams version="1.0">
 <!-- src letters location, relative to DART_ROOT - needs trailing '/'-->
+<!-- defaults to apps/gestureIK/sourceLetters/ - srcLtrDir only used if IDX_useCustSrcLtrs == true -->
 	<parameter>
 		<name>srcLtrDir</name>
 		<val>apps/gestureIK/jtVideoLetters/</val>   

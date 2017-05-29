@@ -122,6 +122,7 @@ namespace gestureIKApp {
 			if (!useIDX) {			srcSymbolIDX = (*uni)(mtrn_gen);		}					//random idx of source symbol			
 			const std::string name = buildSymbolName(idx);
 			tmpPtr = std::allocate_shared<MyGestSymbol>(Eigen::aligned_allocator <MyGestSymbol>(), IKSolve, name, srcSymbolIDX);
+			std::cout << "MyGestLetter::buildRandSymbol : Attempt to build symbol " << name << " sourced from symbol idx : " << srcSymbolIDX << std::endl;
 			//isDone returns false if there are issues with the random symbol build - i.e. if the source symbol has too many trajectories or other problems
 			isDone = tmpPtr->buildRandomSymbol(srcSymbols[srcSymbolIDX], tmpPtr, !useIDX, isFast);
 			//uncomment to equally represent each source symbol 
@@ -133,7 +134,7 @@ namespace gestureIKApp {
 	//sets specific index in symbol list for letter to draw - used to let myWindow control which symbols to draw (for train and test data)
 	void MyGestLetter::buildSymbolAndSolveIK(int symIdx, bool solveIK, bool disp) {
 		//generating random symbol here - symIdx is only specified to determine if all symbols of this letter have been drawn - need to maintain a count instead
-		curSymbol = buildRandSymbol(symIdx, false);
+		curSymbol = buildRandSymbol(symIdx, true);
 		curSymbol->initSymbolIK();
 		//if solveIK solve all IK frames here, initially, if we wish to enable motion blur, and save skel states in vector, so we can display buffer accumulated results 
 		if (solveIK) {//only solve for all frames if using motion blur
@@ -143,7 +144,7 @@ namespace gestureIKApp {
 			}
 			curSymbol->curFrame = 0;		//reset to 0 so can be used again for setIKSkelPose
 		}
-		if (disp) { std::cout << "MyGestLetter::buildSymbolAndSolveIK : Specified " << symIdx << "th symbol to use for ltr idx : " << curIDX << " : " << ltrName << " with : "<< curSymbol->numTrajFrames <<" frames "<< std::endl; }
+		if (disp) { std::cout << "MyGestLetter::buildSymbolAndSolveIK : Specified " << symIdx << "th symbol to use for ltr idx : " << curIDX << " : " << ltrName << " with : " << curSymbol->numTrajFrames << " frames\tsourced from symbol idx : " << curSymbol->srcSymbolIDX << std::endl; }
 	}//buildSymbolAndSolveIK
 
 	//draw all trajectory components of all symbols of current letter being used for IK

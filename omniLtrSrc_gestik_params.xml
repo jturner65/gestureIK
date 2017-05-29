@@ -1,7 +1,13 @@
 <!-- overrides to default params for omniglot letters-->
 <?xml version="1.0" ?>
 <GestIKParams version="1.0">
+<!-- src letters location, relative to DART_ROOT - needs trailing '/'-->
+<!-- defaults to apps/gestureIK/sourceLetters/ - srcLtrDir only used if IDX_useCustSrcLtrs == true -->
 <!--trajectory gen params -->
+	<parameter>
+		<name>srcLtrDir</name>
+		<val>apps/gestureIK/sourceLetters/</val>   
+	</parameter>
 	<parameter>
 		<name>trajRandCtrStd</name>
 		<val>.0157</val>   
@@ -105,12 +111,12 @@
 		<name>baseOutDir</name>
 		<val>E:/Dropbox/Public/GestureIK/frames/</val>
 	</parameter>
-<!-- TODO -->
+<!-- TODO use left hand not completely implemented -->
 	<parameter>
 		<name>IDX_useLeftHand</name>
 		<val>FALSE</val> 
 	</parameter>
-<!-- whether or not to use xml-specified output directory -->
+<!-- whether or not to use output directory specified by baseOutDir in xml -->
 	<parameter>
 		<name>IDX_useOutputDir</name>
 		<val>TRUE</val> 

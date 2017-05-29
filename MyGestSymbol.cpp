@@ -120,7 +120,9 @@ namespace gestureIKApp {
 	
 	MyGestSymbol::~MyGestSymbol() {}//dtor
 	
-	//list of trajectory file names composing this symbol
+	//trajFileNames : list of 1 or more trajectory file names composing this symbol
+	//_thisSP is ref to this symbol's shared ptr
+	//useVel : true if data is from videos, false if data is from omniglot
 	void MyGestSymbol::buildTrajsFromFile(std::vector< std::string >& trajFileNames, std::shared_ptr<MyGestSymbol> _thisSP, bool useVel){
 		_self = _thisSP;
 		trajectories.clear();
@@ -166,7 +168,7 @@ namespace gestureIKApp {
 					//std::cout << "Keeping 1-point traj :" << trajectories[i]->name << " since not redundant\n";
 				}
 				else {
-					std::cout << "Tossing traj :" << trajectories[i]->name << " due to having only 1 redundant point\n";
+					std::cout << "MyGestSymbol::buildTrajComponents : Tossing traj :" << trajectories[i]->name << " due to having only 1 redundant point\n";
 				}
 			}
 		}

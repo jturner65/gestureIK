@@ -50,6 +50,30 @@
 
 namespace gestureIKApp {
 	//any necessary hyperparams needed to be loaded from XML file
+	/**
+	Letter source trajectory files have specific, nested format. 
+
+	main file : ltr_<char>.xml 
+	
+	this file holds <char>'s letter name, # of examples, and other optional config data, 
+	as well as the counts and filenames (with absolute path embedded, unfortunately) of each example's 
+	component trajectory files.
+
+	trajectory file : ltr_<char>_cpy_<exNum>_trj_<trjNum>.csv
+	
+	holds a trajectory of an example of a letter. 
+	<trjNum> is the trajectory in the sequence of trajectories comprising this example
+	<exNum> is a particular example of the letter; <char> is the letter.
+
+	ex : 
+	ltr_a.xml
+	ltr_a_cpy_0_trj_0.csv
+	ltr_a_cpy_0_trj_1.csv
+	ltr_a_cpy_1_trj_0.csv
+	...
+
+	means : a's main descriptor xml, a's example #0 component traj's 0 and 1, and a's example #1 component traj 1
+	*/
 
 	class GestIKParser {
 	public:

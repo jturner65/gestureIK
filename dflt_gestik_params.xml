@@ -1,17 +1,17 @@
 <?xml version="1.0" ?>
 <GestIKParams version="1.0">
-<!-- src letters location, relative to DART_ROOT - needs trailing '/'-->
-<!-- defaults to apps/gestureIK/sourceLetters/ - only used if IDX_useCustSrcLtrs == true -->
-	<parameter>
-		<name>srcLtrDir</name>
-		<val>apps/gestureIK/sourceLetters/</val>   
-	</parameter>
 <!-- override xml file name to load in after these base values have been loaded  -->
 <!-- only used if IDX_useCustParamsXML is true -->
 	<parameter>
 		<name>ovrParamsXMLFilename</name>
 		<!--<val>jtVidLtrSrc_gestik_params.xml</val> -->  
 		<val>omniLtrSrc_gestik_params.xml</val> 
+	</parameter>
+<!-- src letters location, relative to DART_ROOT - needs trailing '/'-->
+<!-- defaults to apps/gestureIK/sourceLetters/ - only used if IDX_useCustSrcLtrs == true -->
+	<parameter>
+		<name>srcLtrDir</name>
+		<val>apps/gestureIK/sourceLetters/</val>   
 	</parameter>
 <!--ik solver params -->
 	<parameter>
@@ -108,11 +108,7 @@
 	</parameter>
 	<parameter>
 		<name>numTotSymPerLtr</name>
-		<val>1000</val> 
-	</parameter>
-	<parameter>
-		<name>ltrIdxStSave</name>
-		<val>0</val> 
+		<val>10</val> 
 	</parameter>
 <!-- type of debug traj drawing : 0:draw no debug trajs, 1:draw file-derived trajs, 2:draw rand trajs, 3:draw all trajs -->
 	<parameter>
@@ -209,14 +205,14 @@
 <!-- whether or not to use override xml file specified in ovrParamsXMLFilename -->
 	<parameter>
 		<name>IDX_useCustParamsXML</name>
-		<val>TRUE</val>
+		<val>FALSE</val>
 	</parameter>
-<!-- TODO -->
+<!-- TODO use left hand not completely implemented -->
 	<parameter>
 		<name>IDX_useLeftHand</name>
 		<val>FALSE</val> 
 	</parameter>
-<!-- whether or not to use xml-specified output directory -->
+<!-- whether or not to use output directory specified by baseOutDir in xml -->
 	<parameter>
 		<name>IDX_useOutputDir</name>
 		<val>TRUE</val> 
@@ -235,10 +231,10 @@
 		<name>IDX_saveHandCOMVals</name>
 		<val>TRUE</val> 
 	</parameter>
-<!-- whether or not to save screenshots -->
+<!-- whether or not to save screenshots while saving COM vals -->
 	<parameter>
 		<name>IDX_alwaysSaveImgs</name>
-		<val>FALSE</val> 
+		<val>TRUE</val> 
 	</parameter>
 <!-- randomization flags - which aspects of skeleton and environment to randomize -->
 	<parameter>
@@ -275,17 +271,17 @@
 		<name>IDX_useMaxDispLen</name>
 		<val>TRUE</val> 
 	</parameter>
-<!--Whether to flip the source letter around the y axis (backwards) - omniglot data has this -->
+<!--Whether to flip the source letter around the y axis (backwards) - address source trajectory mapping -->
 	<parameter>
 		<name>IDX_flipSrcYAxis</name>
 		<val>FALSE</val> 
 	</parameter>
-<!--Whether to flip the source letter around the z axis (backwards) - omniglot data has this -->
+<!--Whether to flip the source letter around the z axis (backwards) - address source trajectory mapping -->
 	<parameter>
 		<name>IDX_flipSrcZAxis</name>
 		<val>FALSE</val> 
 	</parameter>
-<!-- whether to use pointing hand com or ptr finger (Default - if false) to IK to -->
+<!-- whether to IK to pointing hand COM or finger tip(default) -->
 	<parameter>
 		<name>IDX_IKToHandCOM</name>
 		<val>FALSE</val> 

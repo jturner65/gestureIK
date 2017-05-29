@@ -46,7 +46,8 @@
 namespace gestureIKApp {
 	MyGestTraj::MyGestTraj(const std::string& _fname, std::shared_ptr<gestureIKApp::MyGestSymbol> _p, int _num):
 		IKSolve(_p->IKSolve), parentSymbol(_p), avgLoc(0,0,0), trajLen(0), lenMaxSrcDisp(0), ctrPoint(0,0,0),
-		filename(_fname), name("tmp"),trajTargets(), srcTrajData(), srcTrajVelData(), srcTrajDispVecs(), convTrajPts(), srcTrajTmngRat(), trajPtDistFromSt(),
+		filename(_fname), name("tmp"),trajTargets(), srcTrajData(), //srcTrajVelData(), 
+		srcTrajDispVecs(), convTrajPts(), srcTrajTmngRat(), trajPtDistFromSt(),
 		flags(numFlags, false) 
 	{
 		std::stringstream ss;
@@ -157,6 +158,7 @@ namespace gestureIKApp {
 		eignVecTyp debugTrajPts(0), debugTmngPts(0);
 		ctrPoint << parentSymbol->ptrCtrPt;
 		convTrajPts.clear();
+		convTVelRats.clear();
 		if (fileInit) {//if file init then ignore _initpts and instead transform points read in from file to be bounded by a circle at a given point with a specific radius on a plane with a particular normal
 			//scales around center point and using max dist point inscribed on a circle - projects on plane parallel to z-y plane
 			for (int i = 0; i < srcTrajData.size(); ++i) {//1 frame of trajtarget for every src traj value
@@ -186,12 +188,12 @@ namespace gestureIKApp {
 		//perPtSpace is average
 		//srcTrajTmngRat is ratio of total traj length this component traj has
 		perPtSpace = IKSolve->params->trajDistMult * IKSolve->params->trajDesiredVel;
-		int numObjs = (int)(trajLen / perPtSpace);
-		for (int i = 0; i < convTrajPts.size(); ++i) {
-			debugTrajPts.push_back(convTrajPts[i]);
-			debugTmngPts.push_back(Eigen::Vector3d(srcTrajTmngRat[i], 0, 0));		//timing points in vector to use existing function for point processing
-		}
 		if(convTrajPts.size() > 1){
+			int numObjs = (int)(trajLen / perPtSpace);
+			for (int i = 0; i < convTrajPts.size(); ++i) {
+				debugTrajPts.push_back(convTrajPts[i]);
+				debugTmngPts.push_back(Eigen::Vector3d(srcTrajTmngRat[i], 0, 0));		//timing points in vector to use existing function for point processing
+			}
 			if ((trajLen > 0) && (trajLen < IKSolve->params->trajLenThresh)) {
 				//cout << "Traj len for traj : " << name << " smaller than threshold so traj will be ignored. |\t# conv pts : " << convTrajPts.size() << "|\t traj len : " << trajLen << "\n";
 				flags[useTrajIDX] = false;
@@ -204,13 +206,16 @@ namespace gestureIKApp {
 				//	cout << "\tDesired Size is small - setting to 2 : traj Len : "<< trajLen; 
 				}
 				//cout << "\n";
+				//handle per-step location of points - build interpolated smooth positions
 				processPts(numObjs, debugTrajPts);
-				//handle per-step ratio of total traj 
+				//handle per-step ratio of total traj - build interpolated smooth ratios
 				processPts(numObjs, debugTmngPts);
 				//set actual conv traj points
 				setPts(debugTrajPts, debugTmngPts);
 				//cout << "Traj : " << name << " convTrajPts before size : " << beforeSize << " debugTrajPts after size : " << debugTrajPts.size() << "\tRatio : "<<(debugTrajPts.size() /(1.0 * beforeSize))<< std::endl;
 			}
+		} else {//only single traj point, or possibly none - setPts usually makes convTVelRats, so need to make here
+			for (int i = 0; i < convTrajPts.size(); ++i) {		convTVelRats.push_back(1.0f);		}
 		}
 		//debugTrajPts.clear();
 		//build actual tracking data trajectory
@@ -485,8 +490,10 @@ namespace gestureIKApp {
 	}//drawDebugTraj
 
 
-	 //trajectory file expected to have 1 column for every tracked marker, 1 row for every sample.  needs to be resampled for frames/playback speed (?)
-	 //srcTrajData holds x,y,timing data mapped to z,y and separate timing ara.
+	//trajectory file expected to have 1 column for every tracked marker dof, 1 row for every sample.  needs to be resampled for frames/playback speed (?)
+	//omniglot data has data in x,y,time-elapsed format, where x,y is in image-related coordinates
+	//converts x,y,timing data mapped to z,y (camera along x axis) and separate timing ara.
+	//also handles data of format x,y,delx,dely
 	void MyGestTraj::readTrajFile(bool useVel) {//read trajectory data from filename for this trajectory
 									 //cout << "Now Reading :" << filename << " trajectory file "<< std::endl;
 		srcTrajData.clear();
@@ -494,19 +501,19 @@ namespace gestureIKApp {
 		std::ifstream  trajData(filename);
 		std::string line, cell;
 		Eigen::Vector3d dat(0, 0, 0), tmpDat(0, 0, 0), lastDat(0,0,0), lastTmpDat(0, 0, 0);
-		double lastTmpTime = -1, lastDbgTmpTime=0,  datTime = 0, totTime = 0;
+		double lastTmpTime = -1, lastDbgTmpTime=0,  datTime = 0, lastDatTime = 1, totTime = 0;
 		int i = 0;
 		std::vector<double> vals(0);
 		while (std::getline(trajData, line)) {
 			vals.clear();
 			std::stringstream  ss(line);
 			while (std::getline(ss, cell, ',')) {		vals.push_back(stod(cell));		} //build an array of vals from csv
-			//z-y order - x-y in src image space loaded in as z-y so that simple scaling will map these values to IK space
+			//z-y order - x-y in src image space loaded in as z-y so that simple scaling will map these values to IK space (camera along x axis)
 			dat << 0, vals[1], vals[0];
-			if ((useVel) && (vals.size() > 3)) {					//use norm of velocity - only if at least 4 elements in array 
+			if ((useVel) && (vals.size() > 3)) {					//use norm of velocity - only if at least 4 elements in array (means reading in different format)
 				Eigen::Vector3d tmpV(0, vals[3], vals[2]);
 				datTime = tmpV.norm();
-			} else { 
+			} else { //using timing of each displacement for 
 				//set initial value for 3-value timing info - will only be -1 on first entry
 				if (lastTmpTime == -1) { 
 					datTime = 0;
@@ -514,33 +521,38 @@ namespace gestureIKApp {
 				}
 				else {
 					if (vals[2] - lastTmpTime == 0){
-						datTime = 0;
+						std::cout << "\n---->>Time doesn't change in letter traj : " << name << " at entry : " <<i<<"\n\n";
+						datTime = lastDatTime;//repeat last ratio
 					}
-					else {
-						datTime = 1.0 / (vals[2] - lastTmpTime);	//get per frame difference
-					}
+					else {	datTime = 1.0 / (vals[2] - lastTmpTime);	}//get per frame difference
 					lastTmpTime = vals[2];
 				}
-			}							//use timing value
-			//NOTE Trajectory timing info from matlab omniglot data includes time span between ending and beginning trajectories. 
+				lastDatTime = datTime;
+			}//use timing value
+			//NOTE Trajectory timing info from matlab omniglot data includes time span between 
+			//ending 1 and beginning another trajectory, which may be a few seconds.  
+			//always treat beginning of sub-trajectory as time 0 for that component
 
 			//only save point if different than last point
+			//vectors srcTrajData and srcTrajTmngRat need to be same length
 			if ((dat-lastDat).squaredNorm() > .0000001) {
 				srcTrajData.push_back(std::move(dat));
-				if (datTime != 0) {
+				//set next step's displacement as current displacement, set final displacement as 0
+				if (datTime != 0) {//not first entry
 					srcTrajTmngRat.push_back(datTime);
 					totTime += srcTrajTmngRat.back();
-				}		//set next step's displacement as current displacement, set final displacement as 0
+				}
 			}
 			lastDat << dat;
 			//debug output below : 
 			if (flags[debugIDX]) {
 				tmpDat << 0, dat(1), dat(2);
-				std::cout << "i:" << i++ << "\tdat:(" << buildStrFrmEigV3d(dat) << "\tdist travelled:" << ((tmpDat - lastTmpDat).norm()) << "\ttiming:" << srcTrajTmngRat.back() << " timing diff " << (srcTrajTmngRat.back() - lastDbgTmpTime) << "\n";
-				lastDbgTmpTime = srcTrajTmngRat.back();
+				std::cout << "Traj Name : "<< name<<"\ti:" << i << "\tdat: (" << buildStrFrmEigV3d(dat) << ")\tdist travelled: " << ((tmpDat - lastTmpDat).norm()) << "\ttl timing: " << totTime << " timing diff " << (totTime - lastDbgTmpTime) << "\n";
+				lastDbgTmpTime = totTime;
 				lastTmpDat << tmpDat;
 			}
-		}
+			++i;
+		}//while (std::getline(trajData, line))
 		//set last displacement to be equal to 2nd-to-last displacement and 1st to be equal to 2nd
 		if (srcTrajTmngRat.size() > 1) {
 			totTime -= srcTrajTmngRat[0];
@@ -550,6 +562,7 @@ namespace gestureIKApp {
 		double lval = (srcTrajTmngRat.size() > 0) ? srcTrajTmngRat.back() : 0;
 		srcTrajTmngRat.push_back(lval);
 		totTime += srcTrajTmngRat.back();
+
 		//build ratio of each incremental avg travel based on total time/length
 		if (totTime == 0) {//no total time calculated so just set at equal timing
 			for (int i = 0; i < srcTrajTmngRat.size(); ++i) {srcTrajTmngRat[i] = 1.0;}
